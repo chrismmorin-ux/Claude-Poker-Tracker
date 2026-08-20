@@ -134,6 +134,7 @@ accept_criteria: |
     the curve is HandHQ online cash, July 2009, 50NL; the founder's game is live 9-handed 1/2-1/3,
     so only the SHAPE transfers and any live claim must say it is transferred, not measured.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEquity.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

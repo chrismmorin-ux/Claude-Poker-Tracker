@@ -92,6 +92,7 @@ accept_criteria: |
   - THE WS-309 RULE APPLIES: the reachability assertion must be demonstrated FAILING against HEAD
     before the fix is written. It will — 1081 > 800 on the probe fixture.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

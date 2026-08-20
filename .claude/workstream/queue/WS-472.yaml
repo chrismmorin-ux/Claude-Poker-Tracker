@@ -30,4 +30,5 @@ accept_criteria: |
   - Editing a hot-path engine file without re-calibrating fails the test run, naming the
     calibration doc.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

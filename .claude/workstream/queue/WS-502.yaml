@@ -23,7 +23,7 @@ description: |
   SOURCE    : WS-293 — Range calibration as a standing metric — score inferred ranges against revealed hands, every run
   OUTCOME   : failed
   DETAIL    : JavaScript heap out of memory
-    [31mWebSocket server error: Port 24678 is already in use[39m
+    WebSocket server error: Port 24678 is already in use
     FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of
     memory
 

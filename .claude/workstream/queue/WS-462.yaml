@@ -23,4 +23,5 @@ accept_criteria: |
     splitRaiseOutcomes directly, including empty, single-seat, and all-fold-through
     configurations, with closed-form expected values where derivable.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

@@ -1,0 +1,111 @@
+id: "WS-565"
+title: "Ask the founder's device: has a hand already been silently lost, and what DB version is it on?"
+legacy_id: ""
+type: task
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-19T15:48:48.144Z"
+completion_commit: 32d968a4
+priority_score: 65.0
+priority_label: "P0"
+category: "measurement"
+capability: "core"
+program: "data-quality"
+runs_on: g16
+effort: S
+finding_id: ""
+description: |
+  Nobody in the 2026-08-19 sweep asked whether the failure they proved is POSSIBLE has already
+  HAPPENED. Six experts, ~90KB of analysis, and this ten-minute check was not run by any of them.
+
+  hands records carry timestamps and sessions carry hand counts, so a per-session count mismatch is
+  queryable directly from the founder's own IndexedDB. Reading db.version answers whether the v23/v24
+  cursor clobber (WS-560) is a live hazard on this device or archaeology.
+
+  HIGHEST INFORMATION-PER-MINUTE ITEM IN THE RUN. It also sets the priority of WS-556 and WS-560: a
+  confirmed loss makes them urgent; a clean history makes them preventive. Either answer is worth
+  having before the work starts, and the answer is currently unknown rather than unknowable.
+accept_criteria:
+  - "A one-off diagnostic (dev console or Settings debug panel) reports current db.version, hand count per session vs the session's recorded hand count, and any gaps"
+  - "The result is recorded on WS-556 as a measured finding with the date - not asserted"
+  - "The exposure set for WS-560 is stated as a fact rather than an assumption"
+files_involved:
+  - "src/utils/persistence/database.js"
+  - "src/utils/persistence/handsStorage.js"
+  - "src/utils/persistence/sessionsStorage.js"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-measurement-founder-device-hand-loss-and-db-version"
+  facilitator_ref: "K"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  BUILT AND VERIFIED 2026-08-19. The instrument exists and is proven; the MEASUREMENT on the
+  founder's own device is the one criterion I could not satisfy myself, and it is one tap.
+
+  WHAT SHIPPED
+    - `src/utils/persistence/handLossAudit.js` — read-only audit. Opens IndexedDB with NO
+      version argument so it can never trigger an upgrade (the WS-560 hazard).
+    - `src/components/views/SettingsView/DataAndAbout.jsx` — a "Check for lost hands" button
+      in the SHIPPED section, deliberately ABOVE the `import.meta.env.DEV` gate at :385.
+    - `scripts/diagnostics/hand-loss-audit.console.js` — standalone paste for any console.
+    - `src/main.jsx` — dev-console helper `window.__handLossAudit()`.
+
+  WHY IT IS NOT IN `__dev__` AND NOT DEV-GATED. It was written there first and moved. The
+  founder plays on a Galaxy S22 running the PRODUCTION build; the Dev Tools panel is
+  tree-shaken out of that build, and a console paste is not reachable on a phone. A check for
+  data loss that only runs on a machine holding no data cannot answer the question it exists
+  to answer. Per `.claude/rules/improvement-default.md` that limitation was removed rather
+  than worked around.
+
+  WHY THE COMPARISON CAN DETECT ANYTHING (verified, and it nearly went the other way). Hand
+  rows are written by `usePersistence.js:211`; the per-session counter is incremented at
+  `sessionReducer.js:163` and persisted by a SEPARATE debounced save at
+  `useSessionPersistence.js:162`. Two independent write paths, no shared transaction. I
+  initially concluded — wrongly — that `handCount` was written only by dev seeders, having
+  grepped `updateSession(` call sites and missed that it is set inside the auto-save closure.
+  Had that been true this audit would have been worthless. It was checked, not assumed.
+
+  KNOWN-ANSWER VERIFICATION (measured, not asserted)
+    Browser, live dev server, seeded fixtures:
+      counted 5 / rows 5, ended       -> gap 0, not suspect   PASS
+      counted 4 / rows 1, ended       -> gap 3, SUSPECT       PASS
+      counted 3 / rows 2, still open  -> gap 1, NOT suspect   PASS  (benign: independent debounces)
+      suspect set == [the gap-3 session] exactly              PASS
+    Node + fake-indexeddb, executing the standalone file's real bytes:
+      dbVersion 28 / gap 5 suspect / gap 0 clean / exactly 1 suspect   ALL PASS
+    Shipped UI clicked in-browser, rendering:
+      "Database v28 - 2 session(s) - 4 hand(s) saved vs 9 counted"
+      "Bellagio - counted 9, saved 4 (5 missing)"
+    Rendered control size, measured via boundingBox: 144 x 44 CSS px. A real 44px — the
+    Settings surface is portrait-native and outside the canvas transform, so unlike the
+    controls in WS-564 it is not scaled to ~30.6px. Measured, not read off the class string.
+    All seeded fixtures deleted afterwards; re-audit confirmed 0 leftovers.
+    Tests: 43 files / 971 tests pass (persistence + SettingsView). `npm run build` clean.
+    Production bundle carries `handLossAudit-*.js` (3,523 B lazy chunk) — it genuinely ships.
+
+  MEASUREMENTS THIS PRODUCED AS A SIDE EFFECT, settling three disputes from the sweep:
+    - IndexedDB version is 28, read live from the browser. CLAUDE.md says v13, SYSTEM_MODEL
+      says v27. Both wrong. (WS-461 owns the doc fix.)
+    - Store count is 25, read live from `db.objectStoreNames`. The architect said 23 from a
+      stale doc; the facilitator said 25 from the registry. 25 confirmed by the database itself.
+
+  INCIDENTAL FINDING, not filed as its own item pending founder call: `handSimulator-*.js` and
+  `seedRangeTestData-*.js` are EMITTED into `dist/` even though the Dev Tools UI is dev-gated,
+  because the dynamic `import()` calls in `handleSeed` survive the gate. Verified NOT reachable
+  in production — not preloaded from `index.html`, and `window.__sim` is registered 0 times in
+  the production bundle. So it is dead weight rather than a live seeding path into real data.
+  Belongs with the bundle-instrument work under FIND-110 / WS-461.
+
+  OPEN — REQUIRES THE FOUNDER, and is the actual point of this item:
+    Open the app on the S22, go to Settings > Data & About, tap "Check for lost hands", and
+    report the line it prints. That answer decides whether WS-556 is URGENT (loss has already
+    happened) or PREVENTIVE (it has not). Until then WS-556's priority is unmeasured.
+closed_by_event: ev-1787154528171-2aba9dd36eb9

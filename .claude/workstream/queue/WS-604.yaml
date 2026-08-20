@@ -1,0 +1,95 @@
+id: "WS-604"
+title: "A band-valued sizing target cannot express a PARAMETRIC rule — villain 1's `+1bb per limper` straddles band edges, so the sharpest measured rule on the corpus is unreachable by construction"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 83
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 by the agent implementing WS-552 (sizing-aware induction). It named this as a
+  limitation of its own design rather than shipping past it, and recommended it become its own
+  item. Agreed - the limitation is real, it is structural, and it bounds the whole sizing
+  programme.
+
+  THE RULE THAT CANNOT BE EXPRESSED. Villain 1's preflop open sizing was measured at 104/111 and
+  it is PARAMETRIC:
+
+      4bb base, 3bb from BTN/SB unopened, +1bb PER LIMPER
+
+  A band-valued target can find the seat conditioning - "3bb from the button" is a band, and the
+  induction will find it. It CANNOT express the additive limper term, because 4bb / 5bb / 6bb
+  straddle band boundaries. The rule is a LINE, and the instrument can only report which bucket a
+  point fell in. No amount of re-banding fixes that: narrower bands starve the cells (WS-578
+  measured exactly this), wider bands erase the term.
+
+  THIS IS NOT A TUNING PROBLEM, IT IS A TARGET-TYPE PROBLEM. WS-552 shipped size-as-BAND, which
+  is correct for what it does: it turns "he always bets" into "he bets 3/4 in position and 1/2
+  out" (measured pAdj 1.07e-35 on the load-bearing synthetic). But a categorical target over a
+  quantitative variable throws away the ordering and the metric. `0.45-0.60` and `0.60-0.72` are
+  adjacent and the model does not know it; `+1bb per limper` is a slope and the model has no
+  place to put one.
+
+  WHY IT MATTERS MORE THAN IT SOUNDS. Under the cold-read regime the whole thesis is that a
+  handful of tendencies LOCATES a villain fast. A parametric rule is the most compressed possible
+  form of a tendency - one intercept and one slope covering every limper count, learnable from
+  far fewer observations than the equivalent band table, and SAYABLE AT A TABLE, which a
+  ten-cell band grid is not. If the founder's claim that few tendencies locate a player is right,
+  parametric rules are exactly the shape those tendencies take. `WS-581`'s low-rank test is
+  the same intuition one level up.
+
+  IT ALSO BOUNDS THE SIMULATOR. `WS-580` needs a villain who generates actions "in primitive
+  order by action and hand, realistically". A simulator drawing from a band draws a bucket and
+  then has to invent a size inside it. A parametric rule generates the actual number.
+
+  WHAT WS-552 SHIPPED, AND WHY IT STAYS. The band search is not superseded by this. It handles
+  the case where sizing is genuinely categorical (two modes, no ordering between them), and its
+  action-homogeneous stratification and double-counting tripwire carry over unchanged. This item
+  ADDS a target type; it does not replace one.
+accept_criteria: |
+  - A size-as-REGRESSION target exists beside the size-as-band target: the induction can fit an
+    intercept-plus-slope form over a quantitative sizing variable within an action-homogeneous
+    stratum.
+  - Villain 1's `104/111` rule is RE-DERIVED from the corpus, and the derived form is compared to
+    the hand-measured one. This is the acceptance test; a regression target that cannot recover a
+    known rule has not been shown to work. Pre-register before running: `the fitted form recovers
+    a 4bb intercept, a BTN/SB unopened offset near -1bb, and a per-limper slope near +1bb`.
+  - Model SELECTION between band and regression is measured, not assumed. Both are fitted on the
+    same stratum and the one that wins on HELD-OUT score is the one that ships - the comparison
+    goes on the card. A regression that fits better in-sample and worse out-of-sample is the
+    obvious failure mode and must be visible.
+  - The double-counting discipline WS-552 established is preserved: the regression is fitted with
+    the ACTION HELD CONSTANT, and `assertActionHomogeneous` (or its equivalent) still throws.
+  - The two regimes stay separated. A bb-lattice slope and a pot-fraction slope are different
+    quantities and pooling them is the WS-578 commensurability error in another costume.
+  - The card carries which target type produced each rule, so a reader can never mistake a fitted
+    line for a measured bucket.
+  - Sizing legality bounds the fit: a min-raise floor and a stack ceiling truncate the response,
+    and a line fitted through a truncation is wrong. WS-552 recorded that NO FIELD currently
+    carries the legal sizing interval - that gap must close here or in `WS-601`.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "scripts/villainArchetype/sizingBands.mjs"
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-580", "WS-583"]
+sprint_id: null
+decision_flags:
+  - "Which quantitative target: raw bb, log-bb, or pot-fraction? They imply different error structures and different notions of 'close'."
+  - "Does a parametric rule need its own MIX verdict, or is it a third rule KIND beside always/mix?"
+source:
+  kind: "measurement"
+  detail: "2026-08-20 WS-552 implementation; villain 1's 104/111 parametric open-sizing rule is unreachable by a band-valued target"
+created_at: "2026-08-20T00:00:00.000Z"

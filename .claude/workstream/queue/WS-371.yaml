@@ -138,6 +138,7 @@ accept_criteria: |
     founder's game is LIVE 9-handed 1/2-1/3, so a live claim on them is TRANSFERRED, not
     measured — say so when reporting (fault register rank-1 entry).
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "src/utils/tendencyCalculations.js"
   - "src/utils/exploitEngine/handhqReferencePool.js"

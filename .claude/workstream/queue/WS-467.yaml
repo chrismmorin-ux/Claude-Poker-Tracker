@@ -31,4 +31,5 @@ accept_criteria: |
   - The U-4 measurement is reported once: verdict-flip count and mean EV gap at 1/2 and 1/3 rake
     over the stored-hand replay.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"

@@ -84,7 +84,6 @@ blocked_by_legacy: []
 enables: []
 sprint_id: null
 decision_flags:
-  - "Is this analysis-only or a live surface? A live path needs it fast enough for the table; an analysis primitive can be slow. The answer changes the implementation, so measure the cost before choosing."
   - "What is ε for the neutral zone — an absolute bb threshold, or a fraction of the pot? Pot-relative is more transportable across stack depths; absolute is easier to explain. This is a product decision about what 'close enough to indifferent' means."
 source:
   type: founder-directive
@@ -97,3 +96,5 @@ status_note: |
   the pieces are already in the repo unjoined, so a doctrine section without a build path would
   be a described capability that never arrives — the failure mode this session has hit twice
   (predictionAudit, WS-276's perceivedHeroRange).
+resolved_by_rule: ".claude/rules/surfaces-reach-the-table.md"
+resolved_on: "2026-08-20"

@@ -108,6 +108,7 @@ accept_criteria: |
     stamped with `manifest.disclaimerRegisterVersion`. ONLINE 2009 corpus, LIVE 9-handed
     founder game — any live claim is TRANSFERRED, not measured.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/poolBaseline.js"
   - "src/utils/exploitEngine/handhqReferencePool.js"

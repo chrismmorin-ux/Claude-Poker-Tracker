@@ -81,6 +81,7 @@ accept_criteria: |
   - Every figure carries a TREATMENT string in the WS-287 style. A number without a treatment
     is not a result.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/behaviorPolicy.mjs"
   - "scripts/backtest/ipsEstimator.mjs"

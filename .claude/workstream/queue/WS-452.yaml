@@ -27,4 +27,5 @@ accept_criteria: |
   - Plain English: when the app can't work out the rake for your game, it says so instead of
     quietly pricing the hand as rake-free.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

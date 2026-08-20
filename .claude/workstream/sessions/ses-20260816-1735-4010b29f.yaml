@@ -1,0 +1,39 @@
+id: "ses-20260816-1735-4010b29f"
+status: "abandoned"
+started_at: "2026-08-16T17:35:24.898Z"
+ended_at: "2026-08-16T22:48:01Z"
+mode: auto
+last_heartbeat: "2026-08-16T18:45:18.294Z"
+pid: 40632
+pid_recorded_at: "2026-08-16T18:45:18.294Z"
+host: MorinComputer
+agent_session_id: "4010b29f-81a7-4695-8073-ba282c5a5e91"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/backtest/ladderAxes.mjs"
+  - "scripts/backtest/separability.mjs"
+  - "scripts/backtest/studyLadderReport.mjs"
+  - "scripts/__tests__/separability.test.js"
+  - "src/constants/runtimeVersions.js"
+  - ".claude/workstream/queue/WS-320.yaml"
+  - "docs/research/player-segmentation-program.md"
+  - ".claude/workstream/queue/WS-506.yaml"
+  - ".claude/workstream/queue/WS-507.yaml"
+  - ".claude/workstream/queue/WS-508.yaml"
+  - ".claude/workstream/queue/WS-509.yaml"
+  - ".claude/workstream/queue/WS-510.yaml"
+  - ".claude/workstream/queue/WS-511.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-16.
+  Original start: 2026-08-16T17:35:24.898Z.
+  Last heartbeat: 2026-08-16T18:45:18.294Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

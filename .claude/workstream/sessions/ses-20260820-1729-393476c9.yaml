@@ -1,0 +1,97 @@
+id: "ses-20260820-1729-393476c9"
+status: completed
+started_at: "2026-08-20T17:29:44.319Z"
+ended_at: "2026-08-20T19:45:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-20T20:48:54.719Z"
+pid: 14376
+pid_recorded_at: "2026-08-20T20:48:54.719Z"
+host: MorinComputer
+agent_session_id: "393476c9-0b3d-4dc0-8927-7dad5e1dd395"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+released_items:
+  - "WS-540"
+
+files_locked:
+  - "scripts/backtest/heroEvTask.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/strategyArm.mjs"
+
+
+sprint: "SPR-197"
+sprint_status: "active — 1 item remaining (WS-540 pending)"
+
+handoff_notes: |
+  SPRINT SPR-197 / WS-540 — NOT DONE. 4 of 6 accept criteria met. Claim released.
+
+  WHAT SHIPPED (2 commits, pushed to origin/fix/compute-supply-chain-ws572):
+    534b6ee5  per-decision combo sample instead of per-rung        3.65x
+    17f1c421  per-board percentile table instead of per-combo      61.6x
+  Combined: 4.94 -> 0.03 s/decision on the ladder (~165x). Output BIT-IDENTICAL at
+  every step, verified by full JSON diff of run outputs (93 decisions, every rung
+  edge / paired delta / coverage figure unchanged).
+
+  THE PRE-REGISTERED FALSIFIER FIRED, AND IT WAS RIGHT TO. The approved plan assumed
+  the ticket's diagnosis (cost = per-player corpus walk) and would have persisted the
+  decision set. Measured: that would have bought 0.8%. The corpus walk was under 2%;
+  99.2% was sampleCombos, recomputed once per rung per decision. Confirmed
+  independently by node --cpu-prof (57.9% self time in evaluate5), which knows nothing
+  about the new instrument.
+
+  I ALSO GOT THE MECHANISM WRONG ONCE AND CAUGHT IT BY CHECKING: first guess was
+  comboClass; that is cheap string math (decisionRecord.mjs:110). Real path was
+  sampleCombos -> comboStrengthPercentile.
+
+  AND THE INSTRUMENT ITSELF HAD A BUG: first version recorded INCLUSIVE time, so
+  comboSample (nested inside strategyArms) was double-counted and the production/scoring
+  split was an artifact. Tell was a NEGATIVE "unaccounted wall". Now exclusive.
+
+  CRITERIA REMAINING (both now aimed at the right term):
+    - Decision production decoupled from arm scoring. RE-SCOPED: the reusable object is
+      the per-decision combo sample / per-board percentile table, not the decision row.
+      Now worth doing — the corpus walk is 99.6% of a run after these fixes.
+    - A ladder run reaches |delta| > MDE, or states the n that would. Every rung is still
+      UNRESOLVED at n=93 (edges +2.0..+2.9 bb vs MDE +3.5..+4.4). At 0.03 s/decision,
+      ~26,000 decisions is ~13 min and ~550,000 is ~4.6 h — was ~36 h and ~31 days.
+
+  NEXT SESSION SHOULD: run the ladder at n in the tens of thousands. It is now the
+  cheapest way to close the last criterion, and it is the first time it has been possible.
+
+  NOT DONE BY ME, FLAGGED: 43 commits unmerged to origin/main, so none of this reaches
+  the deployed app. Separate decision.
+
+context_notes: |
+  CONCURRENCY WAS THE DOMINANT HAZARD THIS SESSION — 6 live sessions on ONE working tree
+  and ONE git index. Four high-severity concurrency friction entries were captured today
+  across three different sessions, including two clobbers of scripts/standardOfRecord/
+  schema-baseline.json.
+
+  Three concrete traps hit here, all recorded via cwos-capture:
+    1. .current-session pointed at ses-...1747, NOT the session running /session-end
+       (ses-...1729) — a later session overwrote it. Following it would have closed
+       someone else's session. Took the id from the gate output + session YAML instead.
+    2. The git index already held 12 files staged by another session. A plain
+       'git commit' would have committed their work. Used
+       'git commit --only -- <explicit paths>' and verified all 12 survived.
+    3. Editing a queue YAML with Python TEXT-mode IO converted CRLF->LF and turned a
+       2-line claim release into a 124-line whole-file rewrite. Caught only by diffing
+       against a pre-edit snapshot; the edit reported success. Redone in binary mode.
+
+  A WORKTREE WOULD NOT HAVE HELPED and would have broken this work: run-rule-ladder.mjs
+  and ladder/rungs.card.js were UNTRACKED, so a fresh worktree would not contain the
+  ladder at all. Committing early is the protection, not isolation.
+
+  GAP: there is no CLI writer for releasing a live session's claim. cwos-claims.js does
+  not exist; cwos-session-recovery only acts on dead sessions. Hand-editing the queue
+  YAML is currently the only path, against CLAUDE.md's own routing rule.
+
+  VERIFICATION SCOPE: changes are confined to scripts/backtest/. handEvaluator.js was
+  NOT modified — the per-board table already existed there and was only wired in — so the
+  app build is untouched. Directly affected suites pass (94 + 86 tests). Full sharded
+  suite was still running at session close; NOT a clean full-suite pass claim.

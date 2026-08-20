@@ -48,4 +48,5 @@ accept_criteria: |
     part of this ticket — a permanently-red 19-test suite trains everyone to ignore real
     failures in it.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

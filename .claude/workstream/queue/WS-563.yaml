@@ -1,0 +1,125 @@
+id: "WS-563"
+title: "Confirmation on Reset Hand - the only irreversible control in the app is one unconfirmed tap beside a near-identical safe one"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-19T15:48:48.144Z"
+completion_commit: 32d968a4
+priority_score: 38.0
+priority_label: "P1"
+category: "ux"
+capability: "core"
+program: "design"
+runs_on: g16
+effort: S
+finding_id: ""
+description: |
+  Reset Hand discards the entire hand's recorded actions in one tap. It sits adjacent to Reset
+  Street (same dark treatment, similar size, non-destructive) and directly above the full-width gold
+  Next Hand CTA, on a surface used one-handed under time pressure at a live table.
+
+  time_to_detect: INSTANT. recoverability: NONE - re-entry is from memory, mid-session.
+
+  THE SIZE ARGUMENT IS STRUCK, and the strike is recorded so it is not re-litigated:
+  `tests/playwright/touch-floor.spec.js:48` pins Reset Hand at minToday 24 with reason
+  "deliberately de-emphasized destructive action, 40 design px". The smallness is an INTENTIONAL
+  mitigation, and a smaller target is HARDER to slip onto - the original argument cut against its own
+  conclusion. DO NOT ENLARGE IT. What survives alone, at HIGH, is the missing confirmation.
+
+  Design gate: `docs/design/audits/2026-07-31-entry-confirm-before-commit.md` already exists for this
+  class. Check it per-control rather than assuming it closed the loop - it evidently did not cover
+  this one.
+accept_criteria:
+  - "Reset Hand requires a confirmation distinguishable from routine controls (hold-to-confirm or modal); Reset Street is unaffected"
+  - "The control's rendered size is unchanged - the de-emphasis mitigation is preserved"
+  - "The change references the audit-id / surface-id it implements, per the Design Program Guardrail"
+  - "Verified by devshot at the S22 profile, not from the class string"
+files_involved:
+  - "src/components/views/TableView"
+  - "tests/playwright/touch-floor.spec.js"
+  - "docs/design/surfaces/"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-ux-src-components-views-TableView-reset-hand"
+  facilitator_ref: "H"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  DONE 2026-08-19 — but NOT the work the ticket described. The ticket's premise was largely
+  false, and the fix it proposed would have reversed a deliberate founder-persona ruling.
+  Reporting that first, because I wrote the ticket and relayed the claim.
+
+  WHAT THE TICKET GOT WRONG
+  1. "No confirmation." Technically true and misleading. `CommandStrip.jsx:379` says:
+     "AUDIT-2026-04-21-TV F1: snapshot state for undo toast, REPLACING window.confirm.
+     Mirrors the Next Hand pattern; mid-hand-chris explicitly forbids modal interrupts."
+     A confirmation was REMOVED ON PURPOSE and replaced with a 12s undo toast. Adding one
+     back would reverse that ruling on a speed-critical surface.
+  2. "Visually near-identical to the adjacent Reset Street." False. Reset Street is
+     `#4c0519` at 48px; Reset Hand is `#1f2937` at 40px, opacity 0.75, with a RotateCcw
+     icon. Different colour, height, opacity, and it carries an icon.
+  3. "Directly above the full-width Next Hand CTA." Already addressed:
+     `ControlZone.jsx:65` — "AUDIT-2026-04-21-TV F10: Reset Hand moved OUT of this row
+     (was adjacent to Next Hand)... to reduce motor-proximity miss-tap risk", plus added
+     `pt-3` spacing.
+  The size clause was already struck at composition (touch-floor.spec.js:48 pins the
+  de-emphasis as intentional). With that struck and 1-3 above, nothing of the original
+  finding survived. The product-ux expert reported a real surface and got its history
+  wrong; I inherited that without checking the file.
+
+  THE DEFECT THAT IS ACTUALLY THERE, found by asking whether the undo works rather than
+  whether a confirm exists. THE UNDO WAS INCOMPLETE AND SAID "Hand restored" ANYWAY.
+    Destroyed by RESET_HAND (gameReducer.js:266-274): currentStreet, absentSeats,
+      actionSequence, potOverride, reviewTag
+    Destroyed by RESET_CARDS (cardReducer.js:183-189): communityCards, holeCards,
+      allPlayerCards
+    Captured by the undo snapshot: actionSequence, dealerButtonSeat, communityCards,
+      holeCards, currentStreet, absentSeats
+    NEVER CAPTURED: potOverride, reviewTag, allPlayerCards
+  So a mis-tap plus Undo returned a hand missing the founder's manual pot correction, the
+  mid-hand review tag, and EVERY VILLAIN CARD RECORDED THAT HAND. `allPlayerCards` is the
+  read data this product exists to collect. Same family as WS-556: a success message that
+  is not true.
+
+  AND THE SAME BUG WAS IN `handleNextHand` (`CommandStrip.jsx:332`), whose snapshot omitted
+  the identical three fields while NEXT_HAND clears potOverride/reviewTag and nextHand
+  dispatches RESET_CARDS. Fixed both — a fix with a known broken corner is not done.
+
+  CHANGES
+    - `src/contexts/GameContext.jsx` — expose `potOverride`. It was consumed only
+      internally by potInfo, so no caller could snapshot it. That is WHY it was missing.
+    - `src/components/views/TableView/CommandStrip.jsx` — both undo snapshots capture
+      potOverride, reviewTag and allPlayerCards; both restore payloads replay them.
+    - `src/reducers/__tests__/destructiveUndoCoverage.test.js` — NEW guard.
+
+  WHY THE GUARD IS A REDUCER TEST, NOT A COMPONENT TEST. The snapshots are hand-written
+  field lists in a component; what gets destroyed is decided by the reducers. They drifted,
+  and that is exactly how this gap appeared. A component test would assert today's snapshot
+  restores today's fields and would NOT fail when someone adds a seventh field to RESET_HAND
+  next month. This test fails on that change and names the file to edit.
+
+  VERIFICATION (measured)
+    - Anchor check: with the PRE-FIX field lists the guard fails and names precisely
+      ['potOverride','reviewTag'] and ['allPlayerCards']. With the fix, 4/4 pass.
+    - End-to-end in the running app, real clicks: tag a hand for review -> taggedBefore
+      true; Reset Hand -> taggedAfterReset FALSE (destroyed); click Undo inside the 12s
+      window -> taggedAfterUndo TRUE. That last value was false before this change.
+    - 951 tests pass across 49 files (reducers, contexts, TableView). Build clean.
+
+  DELIBERATELY NOT RESOLVED — needs a decision, not a guess. `NEXT_HAND` also ADVANCES
+  `seatStacks` (via advanceHand) and increments `handNumber`. Undoing Next Hand does not
+  roll either back, so an undone hand still advances the monotonic hand counter and settles
+  the stack ledger. Whether undo should reverse that is a ledger-provenance question
+  governed by INV-STK-01 ("only 'entered'/'carried' may disprove a stack-depth claim") and
+  by what handNumber is meant to count. Changing it silently could corrupt provenance in a
+  way that is worse than the gap. The guard test documents the exclusion explicitly rather
+  than hiding it. Filed as WS-570.
+closed_by_event: ev-1787154528594-466354ac566b

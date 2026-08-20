@@ -1,0 +1,67 @@
+id: "WS-531"
+title: "F4 — derived Stratum group level, to catch the 17% of decisions falling to the global prior"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 85
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Design record: docs/research/villain-strategy-inference-2026-08-17.md §3.3, §6 (F4), §7.
+
+  THE HOLE, ALREADY COUNTED. 1,716 of 10,147 scored decisions — 17% — fall all the way back to
+  the global pool prior, which is the WORST predictor in the ladder at log-loss 0.909. The
+  fallback ladder today ends at the whole population:
+
+    villain's exact spot -> broader spots -> ENTIRE POOL
+
+  The missing rung, which player-archetypes-empirical-2026-07-26.md already specified:
+
+    villain's exact spot -> broader spots -> villain's STRATUM -> entire pool
+
+  VOCABULARY IS BINDING. The register term is Stratum: "a quantile interval on a measured,
+  separability-proven behavioural axis — the replacement for a named archetype." Each stratum
+  carries its own separability evidence FROM THE SAME RUN (chi2/df against a same-run control,
+  between-player SD, split-half reliability, disjoint-control cross-correlation) or it gets
+  NO ROW.
+
+  DO NOT USE THE SIX AUTHORED ARCHETYPES AS THE GROUP LEVEL. That is the study's own first
+  design constraint. Measured: silhouette 0.3428 at k=2 (twice any other k), inertia falling
+  with no elbow — a continuum with ONE dominant axis (looseness + stickiness together), not
+  discrete types. Cross-tab purity 0.63/0.44; Fish = vpip>40 cuts through the loose centroid
+  of 40.5%; 21% of players unlabelable. Discrete type names would re-import thresholds the
+  data cuts through.
+
+  Note also: c-bet frequency carries almost no type information on the dominant axis
+  (57.0% vs 56.7% across poles). A stat being widely tracked is not evidence it separates.
+accept_criteria: |
+  - Stratum axis DERIVED and separability-proven in the same run, per separability.mjs.
+  - F4: beats BOTH the six authored archetypes AND the k=2 rate clustering on held-out
+    villain-action log-loss. Paired per-decision on an identical set.
+  - Share of decisions still landing on the global prior reported before and after
+    (baseline: 1,716 / 10,147 = 16.9%).
+  - Shrinkage is continuous through the new rung — no "if n >= K use the specific estimate"
+    threshold anywhere. That anti-pattern is named in exploitEngine/CLAUDE.md.
+  - Result Card.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/separability.mjs"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "scripts/backtest/cluster-player-types.py"
+blocked_by: ["WS-527"]
+blocked_by_legacy: []
+enables: ["WS-533"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 villain strategy inference, turn 3"
+created_at: "2026-08-17T00:00:00.000Z"

@@ -1,0 +1,53 @@
+id: "WS-567"
+title: "Run the tests before the ledger gates - an untracked backtest file blocks 100% of local test signal today"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P2"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+runs_on: any
+effort: S
+finding_id: ""
+description: |
+  `.github/workflows/ci.yml:27` runs check-label-ledger.sh BEFORE `ci.yml:34` runs npm test.
+  `scripts/smart-test-runner.sh` - CLAUDE.md's own documented pre-commit command - has the same
+  ordering.
+
+  Untracked `scripts/backtest/ladder/rungs.card.js` (19,333 B, 5 unledgered keyed-numeric-table
+  constructs at :73/:89/:127/:173/:253/:349) blocks the local runner RIGHT NOW, so the only way to get
+  a test signal is npx vitest run - which is exactly what the senior engineer had to do during the
+  sweep that found this.
+
+  CI is clean ONLY because the file is untracked. Committing it converts a local annoyance into a full
+  CI outage whose output is IDENTICAL for "1 test broken" and "15,922 tests broken".
+
+  A gate whose failure mode is "no information" rather than "specific information" trains its user to
+  bypass it, which defeats its purpose over time. That already happened in this run.
+accept_criteria:
+  - "Tests run before, or independently of, the governance ledger gates in both ci.yml and smart-test-runner.sh - a ledger failure never suppresses the test signal"
+  - "A ledger-gate failure prints which construct in which file, not a bare non-zero exit"
+  - "rungs.card.js is either ledgered or gitignored deliberately, with the choice recorded"
+files_involved:
+  - ".github/workflows/ci.yml"
+  - "scripts/smart-test-runner.sh"
+  - "scripts/check-label-ledger.sh"
+  - "scripts/backtest/ladder/rungs.card.js"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-infrastructure-.github-workflows-ci.yml-21-34"
+  facilitator_ref: "M"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

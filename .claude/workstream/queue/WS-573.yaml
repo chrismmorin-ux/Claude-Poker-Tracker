@@ -68,6 +68,7 @@ acceptance:
   - "The hero-EV harness either accounts for within-hand correlation (block/hierarchical bootstrap over hands rather than players), or refuses to emit a CI at all"
   - "If a CI is still emitted under the false independence assumption, every consumer that gates on non-overlap is changed to stop doing so, and the limitation travels with the output rather than living only in ipsEstimator's header"
   - "Any strategy-arm conclusion previously accepted on a non-overlap test is re-checked against corrected intervals, or explicitly marked as unverified"
+runs_on: "any"
 files_involved:
   - "scripts/backtest/ipsEstimator.mjs"
   - "scripts/backtest/heroEvRunner.mjs"

@@ -127,13 +127,14 @@ accept_criteria: |
     trivially fixable, file it and say so rather than folding it in; a fix that arrives inside another
     ticket has no measurement of its own.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/modelAudit.js"
   - "src/utils/exploitEngine/decisionAccumulator.js"
   - "src/utils/analysisPipeline.js"
   - "src/utils/exploitEngine/calibrationMetrics.js"
 blocked_by:
-  - "WS-389"
+  - "WS-432"
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -194,3 +195,8 @@ status_note: |
   measured on the shared harness, and because running a leak measurement whose result will later have
   to be re-run against a reproducible baseline is work done twice. If the founder wants this earlier,
   the leak-versus-decay arms in criterion 4 are independently meaningful and could run first.
+gate_resolution: |
+  2026-08-20: gate re-pointed. WS-389 is status=dismissed with superseded_by: WS-432,
+  and WS-432 is done — the reproducibility work this item waited on SHIPPED. The resolver
+  only clears a blocker on status=='done', so a dismissed-and-superseded blocker never
+  resolves and its dependents stall forever. Second resolver gap, filed as WS-590.

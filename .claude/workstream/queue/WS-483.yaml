@@ -33,6 +33,7 @@ accept_criteria: |
   - Classification stays callBranchEV-anchored per repo doctrine — this change is shape, not
     semantics, and a paired advice-distribution diff (probeFrequency) shows zero divergence.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/riskAnalysis.js"

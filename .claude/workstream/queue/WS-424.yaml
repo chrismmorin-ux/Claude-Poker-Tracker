@@ -223,6 +223,7 @@ accept_criteria: |
     `context_bundle`; a discovery finding citing a withheld source is flagged. The barrier and the
     audit trail cover different holes and the ticket must not treat one as making the other redundant.
 effort: "L"
+runs_on: "any"
 files_involved:
   - ".claude/settings.json"
   - ".claude/hooks/"

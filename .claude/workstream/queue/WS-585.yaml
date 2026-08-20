@@ -1,0 +1,77 @@
+id: "WS-585"
+title: "The Read is named and empty — the second-argument rule defines conduct-conditioned-on-hero and only the argument-less object was built"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 84
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-18, the sentence that produced the whole second-argument rule:
+  "My read on a villain is that he'll overfold TO ME. This villain profile has got zero
+  elements of overfolding, overbetting, or overanything - it's his game in his terms,
+  and that makes it not a read."
+
+  THE RULE NAMED THREE OBJECTS AND ONE WAS BUILT. "Over-" is a comparative operator and
+  needs a second argument. A Conduct Card takes NONE ("I fold 89% here"). An Appraisal
+  takes a STANDARD - that is WS-551. A Read takes HERO - "he overfolds TO ME" - and it
+  is the one the founder actually asked for. `conductCard.js` line 23 carries the table
+  describing it as a doc comment; that comment is the only trace of it in the repo.
+
+  WHAT IT IS. A Read is a villain's conduct CONDITIONED on hero being the opponent -
+  his action distribution restricted to spots where hero is the aggressor / the caller /
+  in the pot at all, compared against the same villain's unconditioned Conduct Card. The
+  quantity is the difference between those two distributions, which is exactly Divergence
+  with the conditioning set declared. No new comparison path.
+
+  WHY IT IS NOT COSMETIC. §3.2 of NAMING-HISTORY.md: conduct is a best response to a
+  perceived opponent, so a card pooled across all opponents carries the same shape of
+  error as the 2026-08-19 fold-rate-pooled-over-raise-sizes miss - where the conditioning
+  error was ~5x the statistical error AND OPPOSITE IN SIGN. A Conduct Card is not wrong;
+  it is unconditioned, and the register says so. The Read is what makes the conditioning
+  explicit instead of absent.
+
+  THE N PROBLEM IS THE WHOLE DIFFICULTY AND MUST NOT BE PAPERED OVER. Restricting a
+  villain's decisions to "vs hero" cuts n hard - at 35-51 observations per player total,
+  the vs-hero slice is often empty. Two things follow and both are required: the Read
+  reports its own n and the parent card's n side by side, and it SHRINKS toward the
+  unconditioned parent exactly as subclass grids are carved from parent grids (DEC-025
+  Amd 1) rather than being estimated independently.
+
+  RELATED BUT DISTINCT: WS-276 (done) shipped PERCEIVED RANGE - villain's model of hero.
+  That is hero as an object in villain's head. This is hero as a conditioner on measured
+  villain behaviour. Opposite directions; neither substitutes.
+accept_criteria: |
+  - A Read is produced from a villain Conduct Card plus a declared hero-conditioning set,
+    and is refused when the conditioning set is not declared.
+  - Reported as Divergence from the unconditioned parent card, unsigned, with BOTH n's.
+  - Shrinkage toward the parent is hierarchical, never an independently fitted child grid.
+  - Emits nothing rather than a point estimate when the conditioned n cannot support one,
+    with the reason from a closed enum (same discipline as `unexamined`).
+  - Resolves to a Result Card with a declared `metrics` variant - it makes a comparative
+    claim, so it does NOT get its own card type (ADR-009 forbids the second path).
+  - VOCABULARY.md's `Read` entry updated from "named" to its shipped form in the same change.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "src/utils/standardOfRecord/divergence.js"
+  - "src/utils/standardOfRecord/metricsSchemas.js"
+  - "docs/standard-of-record/VOCABULARY.md"
+blocked_by: ["WS-551"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18 second-argument rule; ticketed 2026-08-20 from the naming-history lattice"
+created_at: "2026-08-20T00:00:00.000Z"

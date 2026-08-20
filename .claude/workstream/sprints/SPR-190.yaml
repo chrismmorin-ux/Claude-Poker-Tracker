@@ -1,0 +1,41 @@
+id: "SPR-190"
+title: "Make hand loss impossible to miss: measure whether it has already happened, give the save a light, a"
+status: done
+approved_at: "2026-08-19T14:47:25.805Z"
+completed_at: "2026-08-19T15:49:07.717Z"
+completed_by_commit: "32d968a4"
+program_focus: "data-quality"
+override_class: "founder-directed"
+
+goal: |
+  Make hand loss impossible to miss: measure whether it has already happened, give the save a light, and stop one tap from discarding a hand
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-19T14:47:25.805Z"
+  matches: []
+
+composition_notes: |
+  FOUNDER OVERRIDE (option A, 2026-08-19). The deterministic composer anchored WS-548 (94); founder directed the launch/sweep items instead. Recorded rather than silently substituted: the sweep items' priority scores were assigned by the AI in the same session that produced them and are NOT independently ranked against WS-548's 94. The defensible half of the override is that WS-548 is runs_on:node1 with compute_ready:false and should never have been composed as local sprint work while node1 was reachable - filed as WS-569. Order is deliberate: WS-565 first because its answer (has a hand ALREADY been lost?) determines whether WS-556 is urgent or preventive.
+
+items:
+  - id: "WS-565"
+    title: "Ask the founder's device: has a hand already been silently lost, and what DB version is it on?"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-19T15:48:48.144Z"
+  - id: "WS-556"
+    title: "The save has no light: surface lastSavedAt and the auto-save catch, and flush the pending write on pagehide"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-08-19T15:48:48.144Z"
+  - id: "WS-563"
+    title: "Confirmation on Reset Hand - the only irreversible control in the app is one unconfirmed tap beside a near-identical safe one"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-19T15:48:48.144Z"
+
+created_at: "2026-08-19T14:47:25.805Z"

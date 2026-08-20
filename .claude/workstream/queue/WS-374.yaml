@@ -110,6 +110,7 @@ accept_criteria: |
   - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
     stamped with `manifest.disclaimerRegisterVersion`.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/poolBaseline.js"
   - "src/utils/exploitEngine/handhqReferencePool.js"

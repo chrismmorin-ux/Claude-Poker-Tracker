@@ -64,6 +64,111 @@ description: |
   engine RECKLESS, not timid, because every villain hand wrongly folded is a hand the bluff gets
   paid by. The deep branches (`gameTreeDepth2.js`) were not part of that fix. That is the first
   place to look, and it is a hypothesis, not a conclusion.
+
+  ── MECHANISM CONFIRMED 2026-08-20 (SPR-193). It is NOT inflated fold equity. ──
+  The hypothesis in "WHERE TO LOOK" above is REFUTED. The bias is not a mis-set fold constant
+  anywhere in gameTreeDepth2 — it is a STRUCTURAL asymmetry in which candidates get refined.
+
+  ABLATION, 40 boards, paired, same seeds, only the named stage changed:
+
+      arm                                raise    call    fold
+      budget  2000 (truncated)           80.0%   12.5%    7.5%
+      budget 20000, depth3Barrel ON     100.0%    0.0%    0.0%
+      budget 20000, depth3Barrel OFF     77.5%   17.5%    5.0%
+
+  The ENTIRE swing is `depth3Barrel`. With it ablated, completing the budget makes the engine
+  slightly LESS aggressive than the truncated arm (77.5% vs 80.0%) — the sane direction, and
+  the founder's "deeper must be >= naive" invariant holding on this axis.
+
+  THE MECHANISM, with file:line (gameTreeEvaluator.js):
+
+    :2007  the gate runs the stage only when a depth-2-refined BET/RAISE candidate exists AND
+           `topBetCandidate.ev > checkCandidate.ev` — i.e. ONLY when the aggressive action is
+           ALREADY WINNING. Refining the current leader and not its rivals can only widen the
+           lead; it can never discover that the alternative would have gained more.
+    :2063  `topBetCandidate.depth3 = true` — the ONLY place depth-3 is ever assigned. Four
+           branches get `.depth2` (:1799 call, :1842 check, :1934 bet, :1995 check-raise);
+           exactly one branch, always the aggressive one, gets `.depth3`.
+    :1440  per-candidate `depth` IS tracked and exposed on recommendations...
+    :1306  ...and the final ranking sorts on EV alone (`byEvWithBlockerTieBreak`), with no
+           depth awareness. A depth-3 estimate is compared directly against depth-2 estimates
+           and the argmax is taken.
+
+  HORIZON ASYMMETRY, which is what the extra depth actually buys: on the flop,
+  `computeDepth3BarrelEV` prices bet -> turn barrel -> river barrel (TWO future streets), while
+  `computeCallDepth2EV` (gameTreeDepth2.js:715, `nextStreet = street === 'flop' ? 'turn' :
+  'river'`) prices the call with ONE. Future optionality is non-negative, so the aggressive line
+  pockets a street of it that the passive line is structurally denied. Truncation was hiding
+  this because at budget 2000 `depth3Barrel` was budget-gated on 40/40 boards — it had never
+  run in production at all.
+
+  This is the optimizer's curse manufactured by construction: refine one arm, not the other,
+  then take the max. It also explains the WS-575 decomposition above — flipRate FELL (the
+  reinforced leader is more stable) while meanGapOnFlip grew 2.7x (the deeper estimate moves
+  further) — two effects the aggregate was averaging together.
+
+  ── ARM 2 BUILT AND MEASURED. THE HORIZON HYPOTHESIS IS REFUTED. ──
+  Founder ruling 2026-08-20 was "both arms, measured against each other". Both were built.
+
+      arm (40 boards, paired, same seeds, only the setting differs)   raise    call    fold
+      budget  2000, parity off  (shipped before WS-574)               80.0%   12.5%    7.5%
+      budget 20000, parity off  (coverage fixed, bias exposed)       100.0%    0.0%    0.0%
+      budget 20000, ARM 1 rank at common depth                        77.5%   17.5%    5.0%
+      budget 20000, ARM 2 passive branch also gets depth-3           100.0%    0.0%    0.0%
+
+      ARM 1 vs ARM 2: 9/40 top-action differences (22.5%)
+
+  ARM 2 IS INDISTINGUISHABLE FROM NO GUARD AT ALL. That was NOT the expectation. The
+  prediction on record before the run was that equalising the horizon would reduce raise share,
+  because the aggressive line was pocketing a street of optionality the passive line was denied.
+  It did not.
+
+  The stage is not silently gated — verified from the ledger on a single board:
+
+      depthParity: off              callDepth3  gated  blockedBy=["parity"]
+      depthParity: passive-depth3   callDepth3  completed
+      top (off):             raise:121.9(d3)  call:24.3(d2)
+      top (passive-depth3):  raise:121.9(d3)  call:27.4(d3)
+
+  So both branches genuinely reach depth-3, and the answer does not move. THE ASYMMETRY IS NOT
+  IN THE DEPTH, IT IS IN THE GAIN: depth-3 adds ~+80 chips to the aggressive branch (41.9 ->
+  121.9) and +3.1 to the passive one (24.3 -> 27.4). A 26:1 ratio in what the same extra street
+  is worth to each side.
+
+  CHECKED AND REFUTED, so nobody re-checks it: this is NOT a units mismatch. The obvious
+  candidate was that `computeDepth3BarrelEV` returns a pot-gross EV that gets blended with a
+  net depth-2 number. It does return gross (`ev: normalizedEV`, no hero-investment subtraction)
+  — but `computeBetCallDepth2EV`, the value it is blended against, returns gross by the same
+  convention (`ev: totalWeight > 0 ? totalEV / totalWeight : 0`). The blend is consistent.
+
+  ── WHERE THE RESIDUAL ACTUALLY IS ──
+  Both trees value hero's future by `Math.max(checkEV, bestBetEV)` per runout. A max over noisy
+  estimates is biased upward — the optimizer's curse INSIDE the estimator rather than at the
+  final argmax — and the barrel tree applies it twice, on a much larger pot, to the line with
+  more future options. That is a magnitude defect in the estimator, not a comparison defect, and
+  it is consistent with this ticket's own decomposition showing meanGapOnFlip growing 2.7x at
+  full coverage.
+
+  NEXT, and it is a removal not an accommodation: de-bias the max inside the depth-2/3 runout
+  loops. The standard treatments are a held-out max (choose the action on one sample, value it
+  on another) or an explicit optimism correction. Either is testable against the same paired
+  sweep, and either would move the +80 without touching the ranking.
+
+  STATUS: ARM 1 SHIPS as the default (`depthParity: 'common-depth'`), because it is the only
+  arm measured to remove the bias. ARM 2 SHIPS BEHIND ITS FLAG, not deleted — it is the
+  correct structure and it is what makes the residual visible as a magnitude problem rather
+  than a depth problem. Deleting it would discard the measurement that located the real defect.
+
+  ── OPEN: WHICH FIX ──
+  Both candidates restore depth parity; they differ in cost and in what depth-3 is allowed to
+  decide. Founder decision, not an implementation detail:
+    (A) Give the passive branch the same horizon — a depth-3 rooted at hero CALLING, which is a
+        genuinely different tree (villain barrels, hero responds), not a reuse of the barrel
+        evaluator. Real new work; removes the asymmetry at its source.
+    (B) Rank at the deepest COMMON depth — depth-3 still sets the reported EV and the barrel
+        plan, but cannot reorder against candidates that never received it. Small and
+        statistically defensible, at the cost of depth-3 no longer deciding anything.
+
 accept_criteria: |
   - The mechanism driving raise share to 98% at full coverage is identified with file:line, and
     demonstrated by a measurement that moves when the mechanism is changed.

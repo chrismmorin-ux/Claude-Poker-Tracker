@@ -78,6 +78,7 @@ accept_criteria: |
     outputs, never inputs) and theory-gaps.draft.md Tier E already flags it as arguably
     wrong today, independent of this ticket.
 effort: "L"
+runs_on: "any"
 files_involved:
   - "scripts/research/build-equity-matrix.mjs"
   - "scripts/research/spectrum.py"

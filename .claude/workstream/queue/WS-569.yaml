@@ -1,0 +1,78 @@
+id: "WS-569"
+title: "`/next compose` proposes node1-bound items as ordinary G16 sprint work, against its own documented rule"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 48.0
+priority_label: "P1"
+category: "infrastructure"
+capability: "governance"
+program: "infrastructure"
+runs_on: any
+effort: S
+finding_id: ""
+description: |
+  FOUND 2026-08-19 during the launch/sweep session, by running the command and reading its own
+  output against its own skill definition.
+
+  THE DEFECT. `node kit/scripts/cwos-next.js compose --human` anchored the proposed sprint on
+  **WS-548**, whose composed item record reads:
+
+      "id": "WS-548", "raw_score": 94, "effort": "M",
+      "runs_on": "node1",
+      "compute_ready": false,
+      "mode": "plan-first"
+
+  The `/next` skill states the rule without qualification:
+
+  > Never compose a `runs_on: node1` item as a normal sprint item when node1 is reachable.
+  > It belongs on the compute node; pulling it into a G16 sprint is how the fleet ends up
+  > doing the same work twice.
+
+  node1 WAS reachable in that session — `cwos-fleet-compute.js status` answered, and
+  `cwos-fleet-compute.js feed` had successfully submitted `ws-503-17172f8726ce` to it earlier in
+  the same session. So the guard did not fire when its precondition was plainly met.
+
+  COMPOUNDING: the same item carries `compute_ready: false`, and the fleet panel lists WS-548
+  first among "9 item(s) need a spec written". So the composer proposed, as hands-on G16 work,
+  an item that (a) belongs on the compute node and (b) cannot currently run there either. The
+  correct disposition for WS-548 is "author its `compute_job` spec", which is different work
+  with a different shape.
+
+  WHY IT MATTERS BEYOND ONE SPRINT. The composer reads `runs_on` — it is present in the item
+  record it emits — so this is a missing filter, not missing data. Every future `/next` on the
+  G16 will keep surfacing node1 work at the top whenever a node1 item outranks the local
+  candidates, which is exactly the condition under which the fleet duplicates effort. Related
+  history: `project_node1_compute_supply_chain` records that node1 idled 314 of 379 ticks
+  because `runs_on` never reached state via the reducer whitelist. That was a data-plumbing
+  bug; this is the ranking bug on the other side of the same field.
+
+  SCOPE NOTE: the fix is a filter or a damping factor, not a removal. A node1 item should still
+  be visible to `/next` — the skill wants it surfaced as fleet-compute work — it just must not
+  be composed as an ordinary sprint item for the local machine.
+accept_criteria:
+  - "compose excludes runs_on: node1 items from ordinary sprint composition while node1 is reachable, and states the exclusion in composition_notes rather than dropping them silently"
+  - "When a node1 item outranks every local candidate, compose says so and points at the fleet-compute path instead of proposing it as local work"
+  - "A node1 item with compute_ready: false is surfaced as 'needs a compute_job spec' — authoring the spec is the composable work, not the item itself"
+  - "When node1 is UNREACHABLE the prior behaviour is preserved, since the skill scopes the rule to the reachable case"
+  - "A regression test composes against a fixture where the top-ranked item is runs_on: node1 and asserts it is not proposed as a local sprint item"
+files_involved:
+  - "kit/scripts/cwos-next.js"
+  - "kit/scripts/cwos-fleet-compute.js"
+  - ".claude/skills/next"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-infrastructure-kit-scripts-cwos-next.js-compose-node1-leak"
+  note: "Found by running the command, not by auditing the source — the composed output contradicted the skill text in the same session that fed node1."
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

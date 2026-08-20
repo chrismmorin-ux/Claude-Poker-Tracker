@@ -1,0 +1,393 @@
+id: guide-authority
+name: Guide Authority
+schema_version: 4
+status: NEW
+
+contract: >
+  A guide reads as authoritative in proportion to how specific its title is. This program
+  ensures that authority is EARNED by conditioning rather than borrowed by deletion. A word
+  may leave a guide's title only if the guide carries the set of guides it marginalizes over
+  and the Weighting it did so under. Without this program, the guide form becomes a machine
+  for laundering specific measurements into general advice — the exact WS-291 mechanism
+  ("nothing forced two numbers onto the same axis, so a wrong number never had to meet a
+  right one"), except faster, because deleting a qualifier is easier than inventing an
+  instrument and the result reads MORE authoritative rather than less.
+
+capability_brief:
+  value: "Guides whose authority is bounded by their conditioning, and whose holes are visible and queued."
+  problems_prevented:
+    - "A specific, measured claim generalized by deleting a qualifier, carrying its credibility to a population it was never measured on"
+    - "A guide that reads as complete because the cells nobody examined look identical to the cells examined and found empty"
+    - "Strategy prose asserted at a confidence its warrant does not support"
+    - "A general guide authored top-down and then 'specialized' by vibes — the inverse of derivation"
+    - "Occupancy asserted from the 2009 online corpus and read as a live frequency"
+  cost:
+    activation: "~20 min to inventory existing guides and score their conditioning"
+    ongoing: "Blind-spot protocol every 60 days; a Census check alongside any guide authoring"
+  first_output:
+    - "Inventory of every document in docs/guides/ and whether its title's conditioning set is complete"
+    - "Which existing guides make general claims with no carried Weighting"
+    - "The four new vocabulary terms registered in VOCABULARY.md (Occupancy, Resolved/Unresolved node, Decision Load, Guide)"
+    - "GUIDE-STANDARD.md validated against its own grammar with no exemptions"
+  activation_command: "/pulse run guide-authority baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: "Generalization without weighting"
+    description: >
+      A guide states something at a conditioning set less specific than the one it was
+      measured at, without carrying the set of guides it marginalizes over or the Weighting
+      used. This is the program's namesake failure.
+    examples:
+      - "'Guide to QQ' asserting a frequency that was only ever measured as 'QQ vs tight-passive'"
+      - "A stake qualifier dropped without stating that stakes were pooled and how"
+      - "An occupancy figure averaged across opponent types with no statement of how often each is faced"
+    detection: >
+      Any guide whose title has fewer filled slots than the atoms behind it, with no
+      `weighting:` and no `marginalizes_over:` in its §0 Standing block.
+
+  - name: "Prose outrunning warrant"
+    description: >
+      A statement's rhetorical confidence exceeds the warrant tier that settles it. The
+      `fear` warrant exists precisely so this is declarable rather than hidden.
+    examples:
+      - "An `equity`-warranted line whose arithmetic does not support the strength of its claim"
+      - "A `read`-warranted statement that names no falsifiable population number"
+      - "Passive deviation in the MEDIUM band presented as structure rather than admitted as fear"
+    detection: >
+      Any guide statement without a warrant tag; any `equity` or `structure` warrant whose
+      cited arithmetic is absent; any `read` warrant with no scoreable claim attached.
+
+  - name: "Unstated occupancy"
+    description: >
+      A guide gives strategy without saying where the hand's playing time actually goes. A
+      guide that is all policy and no occupancy is a chart, and charts are not what this
+      form is for.
+    examples:
+      - "A guide listing correct actions per node with no measure over which nodes occur"
+      - "Decision load asserted without the occupancy weighting that defines it"
+      - "Line frequencies quoted with no denominator and no conditioning set"
+    detection: "Any guide with a §2 Resolution or §3 Decision Load section but no §1 Occupancy measure."
+
+  - name: "A guide with no holes"
+    description: >
+      A Census carrying zero `unexamined` rows. Founder ruling 2026-08-16: an n=0 cell
+      reports `unexamined`, never an inherited value. A guide that claims to have looked
+      everywhere has not looked, and total coverage is a stronger claim than any guide in
+      this repo can currently support.
+    examples:
+      - "A guide whose every cell carries a number, on a domain where no live sample exists"
+      - "A Census that collapses `unexamined` into `observed-zero`"
+      - "A cell silently inheriting the general guide's value instead of reporting the gap"
+    detection: >
+      `Census.unexamined` empty on any guide whose domain exceeds the atom set behind it;
+      any cell value present where the atom count is zero.
+
+  - name: "Authored hierarchy level"
+    description: >
+      A general guide written directly rather than derived from the specific guides beneath
+      it. The lattice runs bottom-up — specific is authoritative, general is the marginal.
+    examples:
+      - "A 'Guide to pocket pairs' written first, with per-hand guides 'specialized' from it"
+      - "A general claim with no set of specific claims it aggregates"
+      - "A hierarchy level whose numbers do not reproduce when the marginalization is re-run"
+    detection: >
+      Any guide at a less-specific conditioning set whose stated figures do not reproduce
+      from re-marginalizing its declared children under its declared Weighting.
+
+requires_external_expertise: false
+expertise_type: ""
+expertise_cadence: ""
+
+scope:
+  file_patterns:
+    - "docs/guides/**"
+    - "src/utils/standardOfRecord/**"
+    - "docs/standard-of-record/VOCABULARY.md"
+  invariants: []
+  anti_invariants:
+    - "A generalized guide with no carried Weighting"
+    - "A guide claim whose warrant is weaker than its prose"
+    - "A Census with zero `unexamined` rows"
+    - "A hierarchy level authored rather than derived"
+    - "An occupancy figure sourced from the online corpus and not stamped as transferred"
+  constraints: []
+
+tier: active
+
+tier_triggers:
+  watch: "Any document in docs/guides/ makes a conditioned claim"
+  active: "A guide exists at more than one conditioning set, i.e. the lattice has depth"
+  critical: "A published guide is found to have generalized without a carried Weighting"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Inventory every guide, score the completeness of its conditioning set, and find generalizations with no carried Weighting"
+    problem_classes: all
+    outputs:
+      - baseline_report
+      - initial_findings
+      - problem_class_coverage
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 21
+    focus: "Full review of all problem classes across every document in docs/guides/"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent changes within scope — did a guide ship, or a slot get dropped, without a Weighting?"
+    method: >
+      Run `node scripts/standardOfRecord/check-guide-ledger.mjs --observe`. It appends a row to
+      docs/standard-of-record/guide-observance.jsonl and exits non-zero on violation. Then git
+      diff against last_run_by_protocol.delta.date, filtered to scope file_patterns.
+      READ THE TIME SERIES, not just the latest row: `derived` staying at 0 while `documents`
+      grows is the form being talked about and not used, and a single row cannot show that.
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial review — find the claim that is more general than its evidence"
+    prompt_additions: >
+      You are running a CHALLENGE protocol on this repo's guide form. For each guide,
+      attempt to BREAK its claim to authority:
+      - Pick a general statement. Re-marginalize its declared children under its declared
+        Weighting. Does the number reproduce? If there are no declared children, that is
+        the finding.
+      - Find a statement whose prose is more confident than its warrant tier permits.
+      - Find a cell carrying a value where the atom count behind it is zero.
+      - Find an occupancy figure that traces to the 2009 online corpus and is not stamped
+        as transferred. The founder's game is live 9-handed 1/2-1/3; the corpus is a
+        distinct population and a claim anchored on it is transferred, not measured.
+      - Find a guide whose title has an implicit slot — a qualifier the reader will supply
+        unconsciously (stack depth, table size, rake) that the guide never names. An
+        unnamed slot is worse than a dropped one, because nothing marks it as marginalized.
+      - Check GUIDE-STANDARD.md against its own grammar. If it needs an exemption to be a
+        valid instance of itself, AS-733 is falsified and the form is not self-describing.
+      Do NOT report guides that are sound. Only report genuine breaks.
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What kind of guide are we still not writing, and what conditioning are we still not naming?"
+    prompt_additions: >
+      You are running a BLIND SPOT protocol. Review this program's history:
+      - Which problem classes have never produced a finding — clean, or unchecked?
+      - Which slots does the guide form not HAVE? The title schema was authored from one
+        session's imagination of what conditions a poker claim. What conditions a claim
+        that nobody thought to make a slot for? Rake, table pace, stack depth, session
+        length, and the founder's own fatigue are all candidates that were not slots on
+        2026-08-16.
+      - Which `unexamined` Census rows have been sitting unconverted to queue items? The
+        founder's ruling was that holes become the work queue. An unexamined row that
+        never becomes an item means the ruling is decorative and AS-732 is falsified.
+      - Is decision load actually being measured, or is it being asserted? AS-730 is the
+        structural claim the whole form rests on; if it has never been tested, say so.
+      - Which guides exist OUTSIDE docs/guides/ — prose in docs/research/, a surface spec,
+        a session note — that make conditioned claims and are not governed here? Scope
+        was drawn around a directory, and a directory is not a claim boundary.
+      - Read docs/standard-of-record/guide-observance.jsonl as a SERIES. Is `derived` flat
+        while `documents` climbs? That is the form being discussed and not used, and no
+        single row shows it. Is `unexamined` flat — meaning holes are neither opened nor
+        closed? A monitor whose numbers never move is measuring nothing.
+      - Break the gate deliberately and confirm each violation class still fires. The
+        precedent that forces this: check-label-ledger's own review found a run-time
+        assertion comparing a function against itself through a delegation nobody had
+        noticed — a check that could not fail, reading as coverage.
+      Recommend scope expansions or new problem classes.
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 8
+    priority_floor: 25
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 8
+
+  on_stale:
+    action: create_work_item
+    message: "Program 'Guide Authority' has not been checked in {days} days. Run /pulse run guide-authority to clear."
+    block_sprint: false
+    stale_days: 30
+
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+assumptions:
+  - id: AS-730
+    type: empirical
+    claim: >
+      Decision load is not proportional to occupancy — a hand's genuinely-chosen decisions
+      concentrate in nodes it occupies relatively rarely, and the nodes it occupies most
+      often are disproportionately forced.
+    basis: >
+      Founder observation 2026-08-16 ("the rough decisions mostly come from bluffcatcher,
+      which arise when XYZ line happens"). Untested. This is the structural claim the whole
+      guide form rests on: if load tracks occupancy linearly, a Guide collapses into a chart
+      with prose around it and the form has no reason to exist.
+    falsifies_if:
+      watch_surfaces: ["docs/guides/**", "src/utils/standardOfRecord/"]
+      trigger_event: >
+        Occupancy-weighted decision load is found to be a monotone linear function of
+        occupancy across hand classes, i.e. the most-occupied nodes carry proportionally
+        the most unresolved mass.
+      threshold: "Rank correlation between per-node occupancy and per-node unresolved mass above 0.8 across at least three hand classes"
+      control_case: >
+        The correlation must be computed on nodes, not on hands. A hand-level correlation
+        would be dominated by how often the hand is dealt and would not test the claim.
+      window: "First three Guides emitted at a complete conditioning set"
+    revisit: "At the third Guide instance"
+    status: proposed
+
+  - id: AS-731
+    type: methodological
+    claim: >
+      Every general statement worth making about a hand class is expressible as a weighted
+      marginal of statements at a more specific conditioning set — i.e. the lattice is
+      complete and nothing has to be authored top-down.
+    basis: >
+      Design intent of the founder's title-slot construction, 2026-08-16. Not yet tested.
+      The suspicion worth holding: some true general statements may be about the SHAPE of
+      the distribution across cells rather than about any weighted average of them, and
+      those would resist marginalization entirely.
+    falsifies_if:
+      watch_surfaces: ["docs/guides/**"]
+      trigger_event: >
+        A general claim is identified that is clearly true, clearly useful, and provably not
+        a weighted marginal of any set of specific claims.
+      threshold: "One such claim, argued and recorded"
+      control_case: >
+        The same reconstruction procedure must be run against a general claim KNOWN to be a
+        weighted marginal — an occupancy-weighted fold-to-open rate pooled across position
+        cells, whose children are all measured — and must recover it from those children
+        under the declared Weighting. A procedure that cannot reproduce a marginal it is
+        handed cannot be trusted when it certifies some other claim as irreducible; without
+        that control, "not a weighted marginal" is indistinguishable from "we marginalized
+        it wrong".
+      pass_criterion: >
+        Every general claim in a derived Guide is reproduced from its children under the
+        declared Weighting to within the children's combined interval, AND the control
+        marginal above is recovered in the same run. A claim that fails reproduction is
+        recorded as a counter-example with its argument rather than quietly re-derived.
+      window: "First two hierarchy levels authored"
+    revisit: "When the first general Guide is derived from children"
+    status: proposed
+
+  - id: AS-732
+    type: empirical
+    claim: >
+      Reporting `unexamined` rather than inheriting a value causes the gap to be worked —
+      i.e. visible holes function as a work queue rather than as permanent decoration.
+    basis: >
+      Founder ruling 2026-08-16, chosen over shrinkage specifically because "the holes
+      become the work queue." The Census already distinguishes `unexamined` from
+      `observed-zero`; this assumption is about whether the distinction changes behaviour.
+    falsifies_if:
+      watch_surfaces: ["docs/guides/**", ".claude/workstream/queue/"]
+      trigger_event: "Unexamined Census rows accumulate across two sweeps with no corresponding queue items created."
+      threshold: "More than 20 unexamined rows standing with fewer than 3 queue items referencing them"
+      window: "Two sweep cycles (42 days)"
+    revisit: "Second sweep"
+    status: proposed
+
+  - id: AS-733
+    type: methodological
+    claim: >
+      The guide form is self-describing without special-casing — GUIDE-STANDARD.md is a
+      valid instance of its own grammar, with every slot empty, and needs no exemption
+      clause to validate.
+    basis: >
+      Founder requirement 2026-08-16 ("allowed to follow its own rules in describing
+      itself"). Authored as self-applying; not yet machine-validated.
+    falsifies_if:
+      watch_surfaces: ["docs/guides/GUIDE-STANDARD.md"]
+      trigger_event: "The standard requires an exemption, a special case, or a 'this section does not apply to this document' clause in order to validate against its own grammar."
+      threshold: "One exemption"
+      control_case: >
+        The same validator run must REJECT a deliberately malformed guide — a standing block
+        with an open slot and no Weighting, the program's namesake violation. A validator
+        that passes GUIDE-STANDARD.md because it passes everything is evidence of nothing,
+        which is the inertness failure this program already treats as a violation. That
+        rejection is executed, not described: scripts/__tests__/guideLedger.test.js drives
+        every violation class through `compare` on synthetic rows.
+      pass_criterion: >
+        check-guide-ledger.mjs validates docs/guides/GUIDE-STANDARD.md with zero violations
+        while it is ledgered GUIDE:<id> — not EXCLUDED — and the malformed control above is
+        rejected in the same run.
+      window: "First validator run over docs/guides/"
+    revisit: "When the grammar validator ships"
+    status: proposed
+
+market_dynamics:
+  drivers:
+    - "The founder's own game moves; a guide conditioned on 1/2-1/3 live rots if the stake or format changes"
+    - "New conditioning dimensions appear as the model gains vocabulary — every new slot invalidates prior titles as under-specified"
+  risks:
+    - "Ceremony cost exceeds value if every prose sentence demands a warrant tag"
+    - "The lattice fragments into cells too specific to ever have data, and every guide becomes wholly unexamined"
+  review_cadence_days: 90
+  subsumption_risk: low
+  self_preference: ours
+  durable_ground: >
+    A guide's authority here derives from this repo's own atom sets, engine commits and
+    Deal Book hashes. No external poker content can carry a replication manifest against
+    this engine, and no general poker guide is conditioned on the founder's measured field.
+  last_reviewed: 2026-08-16
+
+interconnections:
+  feeds_into:
+    - domain-correctness
+    - anti-hallucination
+  fed_by:
+    - strategy-of-record
+  blocks: []
+
+phase_relevance:
+  foundation: high
+  pre-launch: high
+  launch: medium
+  growth: medium
+  maturity: high
+
+last_run_by_protocol:
+  baseline:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  delta:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  sweep:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  challenge:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  blind_spot:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+
+created_at: "2026-08-16T00:00:00Z"
+created_by: founder-directive
+work_items_open: 2
+findings_open: 0

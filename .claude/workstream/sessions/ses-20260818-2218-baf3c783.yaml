@@ -1,0 +1,128 @@
+id: "ses-20260818-2218-baf3c783"
+status: complete
+started_at: "2026-08-18T22:18:00.350Z"
+ended_at: "2026-08-19T02:05:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-19T04:18:20.370Z"
+pid: 34316
+pid_recorded_at: "2026-08-19T04:18:20.370Z"
+host: MorinComputer
+agent_session_id: "baf3c783-74a0-4e23-9fea-ca6c4ca24008"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/villainArchetype/mixTest.mjs"
+  - "scripts/villainArchetype/__checks__/mixTest.check.mjs"
+  - "scripts/villainArchetype/induceCore.mjs"
+  - ".tmp-arch/compare.mjs"
+  - ".tmp-arch/verdicts.mjs"
+  - "scripts/villainArchetype/profileVillain.mjs"
+  - "scripts/villainArchetype/dumpLeaf.mjs"
+  - ".tmp-arch/mkdata.mjs"
+  - ".tmp-arch/villain-one.html"
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "scripts/villainArchetype/decisionSchema.mjs"
+  - ".tmp-arch/page.head.html"
+  - ".tmp-arch/page.body.html"
+  - ".tmp-arch/page.script.html"
+  - ".tmp-arch/population.mjs"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "src/utils/standardOfRecord/__tests__/conductCard.test.js"
+  - "scripts/villainArchetype/buildRangeCharts.mjs"
+  - ".tmp-arch/chartSpecs.mjs"
+  - ".tmp-arch/page.sections.html"
+  - ".tmp-arch/page.sections.js"
+  - "scripts/villainArchetype/populationBaseline.mjs"
+  - ".tmp-arch/summary.new.html"
+  - ".tmp-arch/interp.new.html"
+  - "scripts/villainArchetype/exploitCard.mjs"
+  - "scripts/villainArchetype/runExploitCard.mjs"
+  - ".tmp-arch/ex.head.html"
+  - ".tmp-arch/ex.body.html"
+  - ".tmp-arch/ex.script.html"
+  - ".tmp-arch/sizecheck.mjs"
+  - ".tmp-arch/mkqueue.mjs"
+  - ".tmp-arch/handoff.mjs"
+
+
+handoff_notes: |
+  THE VILLAIN CONDUCT CARD SESSION. Started as "evaluate villain 1 and make a visual", became
+  a new Standard-of-Record record form plus its first two consumers. Three independent
+  adversarial passes ran against each artefact and each pass found defects the other two missed.
+
+  WHAT SHIPPED AND IS GREEN
+    - Conduct Card: the record form a `Read` surface never had, while `Declared` surfaces have
+      had the Strategy Card since WS-322. src/utils/standardOfRecord/conductCard.js, schema v2,
+      24 tests, additive check green (28 objects / 386 fields), 631 SoR tests pass.
+    - VOCABULARY.md registers: Conduct Card, the second-argument rule, Mix, Mix verdict,
+      separatorSearch, the conduct occupancy bound, and the code-`Read`-means-Conduct collision.
+    - The mix rule shape (founder's idea, measured): villain 1 went 34 rules -> 13, coverage
+      unchanged at 100%, accuracy 83.0% -> 84.4%, median interval 20pp -> 12pp.
+    - Card CC-SO0OmHLLvkJp emitted, content-hashed, with v2 provenance:
+      PokerStars, 2009-07-01..2009-07-23, 50NLH, short-handed ONLY (6-max 982 / 5h 438 / 4h 96,
+      nine-handed ZERO).
+    - populationBaseline.mjs - the field measured on the same instrument, which is what a
+      comparison needs and what the first version of the dossier did not have.
+
+  FIVE INSTRUMENT BUGS FOUND AND FIXED, each now gated
+    iBetThisStreet read the CURRENT street aggressor, so it flipped false the moment someone
+      raised over him - all 39 "raise over my bet" rows claimed he never bet.
+    off_button counted seats from the button INCLUDING blinds, so one value meant EP at
+      six-handed and the small blind at four. It was pooling seats that play nothing alike.
+    can_raise did not exist, so mixes counted forced continuations as choices.
+    Board texture disagreed with the draw flags on some rows.
+    EP was one undifferentiated label; now UTG/UTG1/UTG2/MP (founder: "SB, BB and UTG are
+      drastically different").
+
+  THE HEADLINE CORRECTION, AND THE METHOD LESSON IN IT
+    The dossier's flagship claim - "he is choosing hands, not seats", elasticity 2.16x vs a
+    chart's 5.03x - was WRONG. The reference chart is labelled "9-max 100bb cash" in
+    rangeMatrix.js:272 and he never played a nine-handed hand. Measured against the field he
+    actually sat in, his elasticity is the 58th percentile: the most ordinary number on the page.
+    Withdrawn, along with "sizing is arithmetic" and the c-bet claim (that one failed twice
+    over - a collider AND an inverted inference).
+
+    The structural fix was the founder's: comparisons are a DIFFERENT OBJECT from the
+    description. The Conduct Card now contains zero comparisons; the population baseline lives
+    in a separate Appraisal section. That is the second-argument rule, which the artefact
+    violated after the register defined it.
+
+  THE EXPLOIT CARD IS NOT PUBLISHABLE AND WHY
+    Built and adversarially tested; three conclusion-changing defects, all verified locally:
+      1. Field fold rates were pooled over ALL raise sizes and applied to a 2bb open. The field
+         BB folds 57.4% to 2bb and 79.5% to 4bb. Size-matched, the sizing ranking INVERTS (3bb
+         beats 2bb), the field control flips sign (+0.576 -> -0.498), and "most of the edge is
+         the game, not the man" is BACKWARDS - at 2bb it is overwhelmingly the man. -> WS-548
+      2. It prices only the fold branch, so dEV/drisk = -(1-P) < 0 always: it can ONLY ever
+         recommend the minimum size, for a 60% folder and a 99% folder alike. -> WS-549
+      3. The interval multiplied per-seat Wilson bounds, which is a worst-case envelope with
+         ~99.9% coverage, not 95%. FIXED IN MODULE (seeded Jeffreys-Beta posterior on the
+         product, validated against the textbook mean 0.8802 vs 0.8801).
+
+    I WAS WRONG TWICE IN OPPOSITE DIRECTIONS on the same question: first claiming a
+    subject-specific edge on bad intervals, then "correcting" to it-is-everyone on the interval
+    fix. Both wrong. The conditioning error is ~5x the interval error and pushes the other way,
+    so fixing the statistics while leaving the conditioning wrong moved the conclusion further
+    from the truth, confidently. That is the lesson worth carrying.
+
+  ARTEFACTS
+    Conduct Card dossier   https://claude.ai/code/artifact/382d2264-cbe9-4db8-b71e-812db6b7485b
+    Exploit Card           https://claude.ai/code/artifact/8889915d-97a7-42f5-984b-fab154d37a64
+                           (PUBLISHED BUT SUPERSEDED - do not act on it, see WS-548/549)
+
+  QUEUED THIS SESSION: WS-548 .. WS-555. Start with WS-548 then WS-549; they are P0 and the
+  exploit card is wrong until both land. The size-conditioned field curve is already measured
+  (.tmp-arch/sizecheck.mjs) - persisting it is most of WS-548.
+
+  NOT DONE, DELIBERATELY: villain 2. The founder's original order was villain 1 evaluated
+  first, and the description changed under us four times; comparing two rulesets built by
+  different inducers is exactly the confound WS-554 exists to prevent.
+
+  NOTE FOR THE NEXT SESSION: everything under .tmp-arch/ is scratch and NOT in git. The
+  durable work is in scripts/villainArchetype/, src/utils/standardOfRecord/, and
+  docs/standard-of-record/VOCABULARY.md.

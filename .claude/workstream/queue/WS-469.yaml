@@ -31,4 +31,5 @@ accept_criteria: |
   - handAnalysis/ is inside ROOTS; check-rake-seam exists and gates raw estimateRake usage outside
     the seam; gameTreeDepth2.js has one rake idiom (verified by the new gate itself).
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"

@@ -1,0 +1,124 @@
+id: "WS-540"
+title: "Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 90
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  A PREDICTION I MADE AND THE MEASUREMENT REFUTED, 2026-08-17.
+
+  THE PREDICTION. run-strategy-arms.mjs took 220 s for 45 decisions (~4.9 s/decision).
+  Its header states strategy arms are "free -- pure functions of the decision, no engine call.
+  The whole cost of a run is the ENGINE arm." So an engine-free ladder runner should have run
+  in minutes. WS-536 was written with that as an accept criterion.
+
+  THE MEASUREMENT. scripts/backtest/run-rule-ladder.mjs, engine-free, five strategy arms and
+  ZERO engine arms: 420 s for 85 decisions. **4.9 s/decision -- unchanged.** Removing the
+  engine arm bought nothing in wall clock. A second run: 12 players, 47 decisions, same rate.
+
+  THE ACTUAL CAUSE, found 2026-08-18 and MORE SPECIFIC than the first diagnosis in this ticket.
+  heroEvRunner.mjs:248-254:
+
+      if (workers > 0 && strategyArms.length > 0) {
+        throw new Error('runHeroEv: strategy arms are not yet transportable to workers '
+          + '-- run with workers: 0');
+      }
+
+  STRATEGY ARMS CANNOT RUN IN WORKERS AT ALL. Any run containing one is forced to workers: 0.
+  This machine has 20 CPUs and the ladder uses ONE. That is the throughput story, and it is a
+  ~20x ceiling sitting behind a single named restriction rather than a diffuse "the corpus walk
+  is expensive" (which was this ticket's first, vaguer diagnosis and is superseded here).
+
+  WHY THEY ARE NOT TRANSPORTABLE: an arm carries a `policyAt` CLOSURE, and a function cannot be
+  structured-cloned to a worker. But a Strategy Card is DATA -- a `.card.js` module with a
+  content hash -- so a worker can load the card by path and rebuild the arm on its own side.
+  The arm's whole interface is one pure function of the decision, so nothing else has to cross.
+
+  Secondary term, still real: the per-player corpus walk (indexEvalPlayers, buildRangeProfile,
+  accumulateDecisions) is amortised over ~4 SCORED DECISIONS PER PLAYER against ~200 hands read
+  each. Parallelism fixes the wall clock; decoupling decision production from arm scoring fixes
+  the waste.
+
+  WHY THIS BLOCKS THE LADDER. Every rung in the first two runs is UNRESOLVED: |edge| < MDE on
+  all five. The n required to resolve a rung delta, scaled from the runs' own mdeDetectBB:
+      run 1 (n=85, MDE 20.12 bb) -> ~550,000 decisions for +/-0.25 bb
+      run 2 (n=47, MDE  5.87 bb) ->  ~26,000 decisions for +/-0.25 bb
+  The 20x spread between two slices is itself the finding: at n<100 the variance estimate is
+  too unstable to size the real run from. At 4.9 s/decision even the low end is ~35 hours.
+
+  DIRECTIONS, none of which is "run a smaller ladder":
+    - Raise decisions-per-player yield. `maxDecisionsPerPlayer` and the qualification filters
+      currently discard most of what each expensive player walk produces.
+    - MAKE STRATEGY ARMS TRANSPORTABLE TO WORKERS. This is the headline fix: send the card's
+      path + contentHash to the worker and rebuild the arm there, rather than trying to clone a
+      closure. Verify the rebuilt arm's hash matches, so a worker silently scoring a different
+      card is impossible.
+    - Cache range profiles across rungs and across runs. Every rung re-walks the same corpus
+      to produce an IDENTICAL decision set -- by design, since the arms must be paired on one
+      set -- so the walk should happen once and the arms replay over it.
+    - Decouple decision PRODUCTION from arm SCORING entirely: persist the decision set as an
+      atom set once, then score any number of rungs over it for free. This is the shape the
+      Decision Atom record already has ("aggregates are VIEWS over atoms, never the record").
+
+  The last one is almost certainly the right answer and would make the ladder interactive:
+  author a rung, score it in seconds against a persisted decision set, iterate.
+  IMPLEMENTED 2026-08-18. Strategy arms now cross the boundary as DESCRIPTORS -- the loaded
+  Strategy Card plus its build options -- and the worker rebuilds the arm via
+  `rehydrateStrategy`. `fromStrategyCard` is a pure function of (card, opts) and a loaded card
+  is structured-cloneable, so the arm never travels; its inputs do.
+
+  MEASURED: 217.3s -> 33.7s at 8 workers on an identical slice (6.44x), with EVERY rung edge,
+  EVERY paired delta and the coverage block BIT-IDENTICAL to the serial run. Serial remains the
+  bit-identity baseline and is unchanged.
+
+  A DEFECT IN THE SAFETY MECHANISM, FOUND AND FIXED IN THE SAME CHANGE: the first hash check
+  compared `descriptor.contentHash` against `arm.descriptor.contentHash`. Both are copied off
+  `card.contentHash`, so the check was a TAUTOLOGY -- a card that lost a rule in transit while
+  keeping its advertised hash passed cleanly. The hash is now RE-DERIVED via
+  `hashObject(canonicalCardBody(card))`, exactly as `loadStrategyCard` stamps it, which is why
+  `rehydrateStrategy` is async. Caught only because a test was written for the tampered-card
+  case specifically; nothing else in the pipeline could have surfaced it.
+
+  Tests: scripts/__tests__/strategyArmWorkerTransport.test.js (8) +
+  scripts/__tests__/ladderRungs.test.js (9). 17 passing.
+
+  STILL OPEN on this ticket: the per-phase cost breakdown, and decoupling decision PRODUCTION
+  from arm SCORING so adding a rung does not re-walk the corpus.
+
+accept_criteria: |
+  - Strategy arms run in workers: a rung ladder uses more than one core, verified by wall clock.
+  - The worker rebuilds each arm from the card and ASSERTS the contentHash matches, so a worker
+    scoring a stale or different card fails loudly rather than producing a plausible number.
+  - The per-phase cost breakdown is MEASURED (corpus read / profile build / accumulate / arm
+    evaluation), not inferred.
+  - Decision production is decoupled from arm scoring, so adding a rung does not re-walk the
+    corpus.
+  - A ladder run reaches an n where at least one rung delta has |delta| > MDE, or the run
+    reports that it did not and states the n that would.
+  - The refuted prediction stays recorded in run-rule-ladder.mjs's header. Do not delete it
+    once the real cause is fixed -- a future reader would otherwise re-derive it.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/runner.mjs"
+  - "scripts/backtest/atomStore.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement-refuted-prediction"
+  detail: "2026-08-17 — engine-free runner built on a cost model the measurement disproved"
+created_at: "2026-08-17T00:00:00.000Z"

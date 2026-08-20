@@ -1,0 +1,58 @@
+id: "WS-561"
+title: "Check event.origin on the app-side postMessage listeners - the extension's own casino-page listener already does"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 50.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "extension"
+program: "security"
+runs_on: g16
+effort: S
+finding_id: "FIND-083"
+description: |
+  `src/hooks/useSyncBridge.js:238` and `ignition-poker-tracker/content/app-bridge.js:149` gate
+  their window.postMessage handlers on event.source only. event.source === window is true for ANY
+  script running in that document.
+
+  `ignition-poker-tracker/content/ignition-capture.js:442-443` checks BOTH source and origin, with a
+  comment naming the pattern ("RT-42: defense-in-depth origin check"). The codebase knows the right
+  answer and applied it on one hop of two.
+
+  THE CONSEQUENCE IS MODEL POISONING, NOT XSS - and that is worse here.
+  `useSyncBridge.js:246-256` validates hand SHAPE (validateHandForRelay + validateHandRecord), which
+  stops malformed data and does nothing about FABRICATED data. For a product whose entire value is
+  Bayesian villain modelling built from recorded hands, a believable fake stream is more damaging
+  than defacement, and it is silent: poisoned posteriors produce plausible advice.
+
+  time_to_detect: UNBOUNDED. recoverability: POOR - fabricated hands are not separable from real
+  ones after the fact.
+
+  ALREADY DIAGNOSED as FIND-083 but MISFILED: `FIND-083.yaml:7` says program
+  methodology-integrity while `:16` says "ROUTE: origin check to security". WS-514 covers only the
+  captureId/dedup half. This half is unowned.
+accept_criteria:
+  - "Both listeners validate event.origin against the expected origin, matching the ignition-capture.js:442-443 pattern"
+  - "A test injects a same-document postMessage from an unexpected origin and asserts it is rejected"
+  - "FIND-083's security half is re-filed under program security; the methodology-integrity record cross-references it"
+files_involved:
+  - "src/hooks/useSyncBridge.js"
+  - "ignition-poker-tracker/content/app-bridge.js"
+  - ".claude/workstream/findings/FIND-083.yaml"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-data-integrity-src-hooks-useSyncBridge.js-238-256"
+  facilitator_ref: "F"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

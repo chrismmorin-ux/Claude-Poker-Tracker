@@ -106,6 +106,7 @@ accept_criteria: |
     part of this change. Comparative figures resolve to a Result Card with a replication
     manifest per ADR-009, stamped with `manifest.disclaimerRegisterVersion`.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/rangeEngine/populationPriors.js"
   - "src/utils/pokerCore/softWeights.js"

@@ -1,0 +1,49 @@
+id: "ses-20260816-0815-03a61b53"
+status: "abandoned"
+revived_at: "2026-08-16T16:07:32.030Z"
+started_at: "2026-08-16T08:15:30.340Z"
+ended_at: "2026-08-16T21:33:01Z"
+mode: auto
+last_heartbeat: "2026-08-16T17:31:28.988Z"
+pid: 40632
+pid_recorded_at: "2026-08-16T17:31:28.988Z"
+host: MorinComputer
+agent_session_id: "03a61b53-5bbc-48a8-8361-68178295ddf2"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "docs/domain/readiness/overturn-ledger.yaml"
+  - "scripts/readiness/model-readiness.mjs"
+  - "scripts/__tests__/modelReadinessStaleness.test.js"
+  - "docs/domain/readiness/scorecard-history.yaml"
+  - ".claude/workstream/queue/WS-503.yaml"
+  - ".claude/workstream/queue/WS-504.yaml"
+
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-16.
+  Original start: 2026-08-16T08:15:30.340Z.
+  Last heartbeat: 2026-08-16T17:31:28.988Z.
+
+  Git commits during this session (13):
+    - f54e9557 feat(strategy): player segmentation charter — where the EV actually comes from, and the two dead instruments found on the way
+    - 9361286b chore(ws-320): re-key the study-ladder job so the corrected instrument re-runs
+    - 1e7fc0f8 merge: ws320-separability-control-fix — the control axis decides the verdict, and ENGINE_VERSION v127 names the orphan-merge era
+    - a60d4084 fix(separability): the control axis was printed, never applied — three of five WS-320 verdicts were wrong
+    - 0c2ef1fc fix(readiness): the gate reported STALE FAILURES for 20 days and nothing could see it
+    - cb51a70b docs(next): the node1 panel is a pipeline view, not a sprint view
+    - 211a6f8a feat(fleet): node1 gets a pipeline panel, and dedupe stops re-running finished work
+    - c5b8beaf fix(fleet): a FAILED job was as invisible as an unreviewed success
+    - 5b2c3a29 feat(strategy): multiway limped pots — founder approves building on the limp finding
+    - 2f0eed02 docs(research): retract WS-492's bb-level stake mapping — DEC-082
+    - 2c96e355 fix(fleet): node1 ranked an EMPTY index for 4.5 hours and said so every 10 min
+    - 6d785025 fix(backtest): sort corpus discovery — --max-files sliced a filesystem-ordered list
+    - 90f72d3f feat(fleet): finished runs file their own review item
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

@@ -98,6 +98,7 @@ accept_criteria: |
     stored data rather than by re-running the engine. Today the factor is an anonymous scalar inside
     two expressions and no artefact records it.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/gameTreeConstants.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

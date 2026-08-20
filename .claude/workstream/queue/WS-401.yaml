@@ -90,6 +90,7 @@ accept_criteria: |
     instance of the general pattern (a derived estimate standing in for an available measurement)
     rather than a one-off arithmetic slip.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/preflopAdvisor.js"
   - "src/utils/exploitEngine/liveGameContext.js"

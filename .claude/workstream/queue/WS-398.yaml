@@ -112,6 +112,7 @@ accept_criteria: |
     exist at HEAD and record the count. Fixing them is out of scope; leaving the count unstated is
     how a three-site divergence becomes a four-site one.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/villainObservations.js"
   - "src/utils/exploitEngine/unexploitableFloor.js"

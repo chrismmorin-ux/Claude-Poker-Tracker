@@ -44,6 +44,7 @@ accept_criteria: |
     branch is deleted after its surviving content is reachable from the integration
     line), and the deploy-freshness check reports GREEN.
 effort: "L"
+runs_on: "any"
 created_at: "2026-08-14"
 source:
   type: manual

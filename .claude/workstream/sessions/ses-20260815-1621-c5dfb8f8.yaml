@@ -1,12 +1,12 @@
 id: "ses-20260815-1621-c5dfb8f8"
-status: active
-revived_at: "2026-08-15T21:35:51.978Z"
+status: "abandoned"
+revived_at: "2026-08-16T16:06:19.534Z"
 started_at: "2026-08-15T16:21:16.370Z"
-ended_at: null
+ended_at: "2026-08-16T16:33:02Z"
 mode: auto
-last_heartbeat: "2026-08-16T08:05:13.926Z"
+last_heartbeat: "2026-08-16T16:06:19.536Z"
 pid: 26892
-pid_recorded_at: "2026-08-16T08:05:13.926Z"
+pid_recorded_at: "2026-08-16T16:06:19.536Z"
 host: MorinComputer
 agent_session_id: "c5dfb8f8-09c6-4a1c-a183-38e5f7b77777"
 
@@ -18,11 +18,36 @@ files_locked:
   - "vite.config.js"
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
   - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/backtest/corpusFiles.mjs"
+  - "docs/research/ws-492-full-corpus-2026-08-15.md"
 
 handoff_notes: |
-  Session auto-recovered by cwos-session-recovery on 2026-08-15.
+  Session auto-recovered by cwos-session-recovery on 2026-08-16.
   Original start: 2026-08-15T16:21:16.370Z.
-  Last heartbeat: 2026-08-15T16:21:16.370Z.
+  Last heartbeat: 2026-08-16T16:06:19.536Z.
+
+  Git commits during this session (28):
+    - c5b8beaf fix(fleet): a FAILED job was as invisible as an unreviewed success
+    - 5b2c3a29 feat(strategy): multiway limped pots — founder approves building on the limp finding
+    - 2f0eed02 docs(research): retract WS-492's bb-level stake mapping — DEC-082
+    - 2c96e355 fix(fleet): node1 ranked an EMPTY index for 4.5 hours and said so every 10 min
+    - 6d785025 fix(backtest): sort corpus discovery — --max-files sliced a filesystem-ordered list
+    - 90f72d3f feat(fleet): finished runs file their own review item
+    - 94e8467c fix(fleet): close the idle window instead of asking the founder to accept it
+    - 1efbb3cd docs(next): name the steady state — a finished job does not close an item
+    - 98ae4c54 fix(fleet): report skipped candidates on success, not only on failure
+    - d281b938 fix(fleet): done-summary must be .cjs — the repo is type:module
+    - 71203f9a fix(fleet): stop the feeder re-running the item it just finished
+    - 312c39a7 chore(fleet): version the node1 feeder scripts
+    - a48d3b1a chore(workstream): file WS-493/494/495 — the supply chain and what it surfaced
+    - 39c7f134 feat(fleet): distinguish "needs a spec" from "needs code first"
+    - aed5a742 feat(fleet): keep cm-node1 fed with the most important node1 work
+    - 7c9fe1a6 chore(workstream): heartbeat checkpoint immediately before the hero-EV re-baseline launch
+    - 183b2289 fix(backtest): run-hero-ev crashed on launch — the orphan merge dropped a binding it still used
+    - 1089b88f chore(workstream): event log checkpoint before the hero-EV re-baseline
+    - ffe79f80 chore(workstream): session heartbeat state before the hero-EV re-baseline
+    - e5e06fdd fix(test): size Scenario 8's timeout for the slowest machine, and correct a stale comment
+    - ... and 8 more
 
   RECOVERY NOTES:
     - system/state.md may be stale — next /session-start should flag it.

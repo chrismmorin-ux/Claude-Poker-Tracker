@@ -1,0 +1,82 @@
+id: "WS-520"
+title: "A preflop indifference criterion — Resolution is undefined before the flop, so a Guide cannot say which preflop decisions are forced and which are genuinely live"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 48.0
+priority_label: "P1"
+category: "engine-accuracy"
+capability: "analysis"
+program: "guide-authority"
+finding_id: ""
+description: |
+  THE GAP. The guide form's §2 Resolution asks, per node: is the correct action FORCED, or is
+  the choice genuinely live? Postflop that question has machinery — POKER_THEORY §15.2 defines
+  the neutral zone as `{ p : |EV(bet|p) - EV(check|p)| < eps }`, and
+  `docs/guides/hand-class-99-TT-JJ.md` §6 exercises it over eight board x range sweeps, with
+  measured error bars and an explicit `UNRESOLVED` label when the interval cannot separate the
+  value from the threshold.
+
+  PREFLOP HAS NO EQUIVALENT. Nothing computes whether a preflop node's alternatives separate.
+  Without it, a Guide's §2 can only assert resolution, and §3's Decision Load — the
+  occupancy-weighted mass of UNRESOLVED nodes — cannot be computed at all, because half the
+  product does not exist.
+
+  WHY THIS IS NOT JUST "RUN THE POSTFLOP CODE ON PREFLOP". Two things differ and both matter:
+
+  1. The postflop criterion is defined over the board-conditional strength percentile
+     (`comboStrengthPercentile`), which needs a board. Preflop the cross-hand coordinate is the
+     169-cell grid and suit isomorphism is exact — a different axis, not a degenerate case of
+     the same one.
+
+  2. Preflop alternatives are not {bet, check}. They are {fold, limp, open} on one tree and
+     {fold, coldCall, threeBet} on the other (`rangeEngine/CLAUDE.md` §4), plus the 4-bet tree
+     that does not exist (WS-270, WS-521). A two-way indifference test does not describe a
+     three-way node.
+
+  DO NOT IMPORT A THRESHOLD. The temptation is a fixed epsilon in bb. `check-label-ledger.mjs`
+  exists precisely because discrete keys standing between game state and a numeric engine
+  parameter kept appearing despite prose forbidding them in four documented forms. A preflop
+  epsilon is exactly that shape and needs a ledger row and a named foundation, or it is the
+  next entry in the Label & Foundation Ledger.
+
+  ALSO IN SCOPE: whether `UNRESOLVED` preflop is one verdict or several. A node can be
+  unresolved because the EVs genuinely tie, or because the MEASUREMENT cannot separate them at
+  the sample available. The 99/TT/JJ study conflates these under one label and says so. A Guide
+  that reports them as the same fact repeats the Census's collapsed-zero error on a new axis.
+accept_criteria: |
+  - A function that, given a preflop node (hand class, position, facing-action, geometry),
+    returns `resolved` | `unresolved` with the criterion and its epsilon named.
+  - The epsilon carries a Label & Foundation Ledger row naming its foundation, or a reasoned
+    exclusion. It may not be a bare constant.
+  - Three-way nodes are handled as three-way, not as two two-way comparisons.
+  - `unresolved-tie` and `unresolved-underpowered` are distinct return values, not one label.
+  - At least one worked example on TT, since that is the first Guide's subject (WS-519).
+effort: L
+runs_on: any
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - ".claude/context/POKER_THEORY.md"
+  - "docs/guides/GUIDE-STANDARD.md"
+blocked_by: []
+blocked_by_legacy: ""
+enables:
+  - "WS-519"
+sprint_id: null
+decision_flags: []
+source: "founder-directive"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  Surfaced 2026-08-16 while authoring the guide form. `GUIDE-STANDARD.md` §2 names this gap in
+  the standard itself rather than papering it with a threshold: "Preflop it does not [exist],
+  and that gap is on the program's build list rather than papered over with a threshold."
+
+  READ `.claude/context/POKER_THEORY.md` BEFORE STARTING — this is engine-adjacent work and the
+  guardrail is mandatory. Generic statistical reasoning is almost always wrong here.

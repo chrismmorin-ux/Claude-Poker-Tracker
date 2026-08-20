@@ -1,0 +1,50 @@
+id: "WS-568"
+title: "Settle whether the 14 npm advisories reach the browser bundle before deciding anything about a CI gate"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P2"
+category: "infrastructure"
+capability: "core"
+program: "security"
+runs_on: any
+effort: S
+finding_id: ""
+description: |
+  npm audit --omit=dev on the main app returns 14 vulnerabilities (2 critical, 1 high, 11
+  moderate): grpc-js, protobufjs, websocket-driver, opentelemetry - all transitive via firebase and
+  posthog-js, all Node-only shapes. The extension audits clean (0).
+
+  THE SECURITY ENGINEER RECOMMENDED A CI GATE WITHOUT CHECKING REACHABILITY, and said so himself: "I
+  have not verified whether Vite tree-shakes these Node-only transitive dependencies out of the
+  shipped browser bundle."
+
+  Gating CI on advisories of unproven reachability in a no-server, single-user app is compliance
+  theatre. But SKIPPING the question is not the alternative - that would be accommodating an unknown
+  rather than removing it. Settle reachability (one inspection of dist/, ~30 min), then the gate
+  decision is trivial in either direction.
+accept_criteria:
+  - "Reachability of each advisory's affected code in dist/ is determined by inspection of the built bundle and recorded"
+  - "If any is reachable: an npm audit gate lands in ci.yml, scoped to production dependencies"
+  - "If none is reachable: that is recorded on FIND-105 with the date and the bundle hash, and the gate is not added"
+files_involved:
+  - "package.json"
+  - ".github/workflows/ci.yml"
+  - "dist/"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-infrastructure-package.json-npm-audit-reachability"
+  facilitator_ref: "N"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

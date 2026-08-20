@@ -1,0 +1,76 @@
+id: "WS-544"
+title: "WHERE does SPR enter, not WHETHER — per-situation axis probe, and the proxy question"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 88
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A CLAIM I MADE AND RETRACTED, 2026-08-18. Ladder v1 measured R4 (an SPR gate) at +0.0075 bb,
+  CI [-0.0958, +0.1372], and I reported it as "on this evidence this pool does not read
+  stack-to-pot". THAT STATEMENT IS WITHDRAWN. It is not supported by what was measured.
+
+  FOUNDER, correctly: "SPR isn't a part of the model YET. There may be some small subset of
+  actions where the villain considers SPR, and that including it yields better decision and
+  behavioral coverage than can be achieved without it. The alternative is that villain NEVER,
+  FOR ANY DECISION, EVER FACTORS IN SPR into his decision. That's a strong statement, especially
+  when I observe villains looking at stack sizes and asking about it at the table. This is where
+  in aggregate SPR is washed out, but in specific situations it (or pot odds, or something else)
+  enters the equation and influences villain behavior."
+
+  WHAT WAS ACTUALLY MEASURED: ONE encoding (three bands on a single size bucket), in AGGREGATE,
+  at n=2,126, on the BLENDED field, with an interval now known to be too narrow (the cluster
+  bootstrap's independence assumption does not hold -- 2.91 EVAL players per hand). An aggregate
+  null over a mixture is the weakest possible evidence about a subset effect: an axis that
+  matters in 5% of situations, with opposite signs elsewhere, sums to zero and looks absent.
+
+  THE PROXY QUESTION, which may matter more than SPR itself. The villain may not compute SPR and
+  may instead BIN stacks coarsely -- "deep", "short", "we're both short" -- simplifying his own
+  decision making. If so the axis is real and my PARAMETERISATION was wrong, which an aggregate
+  test cannot distinguish from absence. The same applies to pot odds: the villain may not compute
+  a ratio but may recognise a small set of price categories.
+
+  WHAT TO BUILD -- an instrument that LOCATES an axis rather than voting on it:
+    - Per-cell contribution: decompose a rung delta by (street x facingAction x sBucket x
+      sprBand), so an axis that helps in a few cells and hurts elsewhere shows its structure
+      instead of its sum. This is the change ledger's GROSS-vs-NET argument (WS-537) applied to
+      an axis rather than to a rule.
+    - Binned proxies as separate arms: coarse 2-bin and 3-bin stack splits alongside the 5-band
+      SPR encoding. If a coarse bin beats the fine one, the villain simplifies and we have found
+      HOW.
+    - Report the cells where the axis is BEST, with their own n and MDE, not only the aggregate.
+    - Behavioural coverage alongside EV: an axis can improve action prediction while moving no
+      money, and that still tells us the villain uses it.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/ladder/rungs.card.js"
+  - "scripts/backtest/decisionGeometry.mjs"
+  - "src/utils/pokerCore/sprBands.js"
+blocked_by: ["WS-537"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+accept_criteria: |
+  - A per-cell decomposition of every axis rung, with per-cell n and MDE. An aggregate null is
+    never reported without it.
+  - Coarse-bin proxy arms scored against the fine-grained encoding. If a proxy wins, that IS the
+    finding about how the villain simplifies.
+  - Behavioural coverage reported beside EV for every axis arm.
+  - The retraction above stays recorded in the ladder spec. A future reader must not re-derive
+    "the pool does not read SPR" from a run that could not have shown it.
+  - If SPR genuinely does not appear in ANY cell at adequate power, that is stated with the per-
+    cell power that supports it -- not inferred from an aggregate.
+source:
+  kind: "founder-correction"
+  detail: "2026-08-18 — an aggregate null over a mixture cannot refute a subset effect"
+created_at: "2026-08-18T00:00:00.000Z"

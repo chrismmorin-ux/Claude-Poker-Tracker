@@ -1,0 +1,61 @@
+id: "WS-558"
+title: "Land the deploy gate now - FIND-098's blocker is cleared, and CI and deploy still fire in parallel on every push to main"
+legacy_id: ""
+type: infrastructure
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 72.0
+priority_label: "P0"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+runs_on: any
+effort: M
+finding_id: "FIND-097"
+description: |
+  `ci.yml` and `deploy.yml` both trigger on push to main; grep for workflow_run/needs across
+  .github/workflows/ returns ZERO (re-verified 2026-08-19). `deploy.yml` runs
+  `check-untracked-imports.mjs` + `npm run build` - NO test step. Pushing local main right now
+  produces a failing CI run and a successful production deploy of the same commit, in parallel.
+
+  THE SEQUENCING BLOCKER IS CLEARED. FIND-097's recommended_fix sequenced this behind FIND-098
+  ("root-cause the EV inversion BEFORE landing the gating"). FIND-098 is now STALE: the facilitator
+  ran `src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js` on HEAD 32d968a4 on 2026-08-19
+  - 201/201 pass, 238s. Eight commits landed on that file since it was filed. Retire FIND-098 as
+  part of this item; it has been suppressing launch and security health for 12 days.
+
+  PREREQUISITE INSIDE THIS ITEM. `scripts/__tests__/phhAdapter.test.js` fails in BOTH the committed
+  tree (`:195`) and the working tree (`:205`), 1 failed / 21 passed each - verified by running both.
+  Broken by `56ef59096` (WS-521), which added priorRole/scenario/raisesFaced to
+  `derivePreflopDecisions()` in `src/utils/rangeEngine/lineTaxonomy.js` without updating the pinned
+  golden case, and whose commit message claims "4,887 tests pass". Gating a red tree just blocks
+  every deploy. Root-cause it - decide whether priorRole is correct output the golden must absorb,
+  or a regression - do NOT blind-snapshot it.
+
+  Also: 19 local commits are unpushed (origin/main f54e9557, 2026-08-16).
+accept_criteria:
+  - "phhAdapter golden case passes on the committed tree, root-caused rather than snapshot-updated"
+  - "deploy.yml runs on workflow_run of the CI workflow, gated on conclusion == success"
+  - "Branch protection on main requires the CI check - verified with gh api branches/main/protection, and the current setting recorded either way"
+  - "A deliberately failing test on a scratch branch demonstrably blocks the deploy job"
+  - "FIND-098 marked resolved with the 201/201 evidence; FIND-097 closed by this item"
+files_involved:
+  - ".github/workflows/deploy.yml"
+  - ".github/workflows/ci.yml"
+  - "scripts/__tests__/phhAdapter.test.js"
+  - "src/utils/rangeEngine/lineTaxonomy.js"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-infrastructure-.github-workflows-deploy.yml-1-20"
+  facilitator_ref: "C"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

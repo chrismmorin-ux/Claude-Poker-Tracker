@@ -87,6 +87,7 @@ accept_criteria: |
     and every surface document and report the full list. Two instances found by hand implies the
     denominator is unknown.
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "src/constants/viewRegistry.jsx"
   - "src/components/views/AnchorLibraryView/AnchorLibraryView.jsx"

@@ -1,0 +1,117 @@
+id: "WS-543"
+title: "Dominated-event calibration arms — rulesets whose sign is known before the run"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 91
+priority_label: "P1"
+category: "methodology-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-18: "There are some things we can use to make a clear and obvious check that
+  our testing is right, dominated events. Turning on or off a dominated event (like flipping a
+  switch to call every large bet with 100% of hands, or similar events) should yield clear
+  results in the direction we expect (they end up overcalling when villain value bets or bets
+  nutted, and thus they lose money). These help us calibrate the model."
+
+  THIS IS URGENT RATHER THAN NICE-TO-HAVE, because the estimator has three named distortions
+  and one acknowledged broken assumption, and NOTHING currently tells us how much they bite:
+
+    1. One-decision horizon. Everything downstream of the scored node is the field's play.
+    2. Decision-weighted, not hand-weighted. Measured in-repo: reweighting by 1/k moved an edge
+       3.6878 -> 1.1626, a factor of 3.17.
+    3. Selected scored population: valuePoolBB is positive, not ~0.
+    4. BROKEN: ipsEstimator.mjs's own header records that "a hand belongs to exactly one scored
+       player ... is false by construction -- measured at 2.91 EVAL players per hand -- and the
+       cluster bootstrap's independence assumption does not hold." EVERY CI THIS HARNESS HAS
+       EVER PRODUCED IS TOO NARROW BY AN UNKNOWN FACTOR.
+
+  A dominated arm has a sign known BEFORE the run, so it measures the instrument rather than the
+  poker. The pattern already exists: `ALWAYS_FOLD` and `UNIFORM` ship precisely because "both
+  have a sign known in advance, which is exactly what makes them a plumbing proof"
+  (run-strategy-arms.mjs header). This extends it from plumbing to CALIBRATION.
+
+  CANDIDATE DOMINATED ARMS, each with its pre-registered expected sign:
+    - call-every-large-bet    call 100% facing sBucket 100-150 and 150+.  EXPECT strongly NEGATIVE
+                              (overcalls exactly where the field value-bets and is nutted).
+    - fold-every-small-bet    fold 100% facing sBucket 0-33.               EXPECT NEGATIVE
+                              (folds at the best price on offer).
+    - raise-everything        raise 100% wherever raise is legal.          EXPECT strongly NEGATIVE.
+    - never-fold              call/raise 100%, never fold.                 EXPECT strongly NEGATIVE.
+    - always-fold             (exists) measured -1.9942 bb at n=45.        EXPECT NEGATIVE.
+    - clone-the-pool          pi_ours := pi_pool exactly.                  EXPECT EXACTLY ZERO --
+                              the sharpest check of all, since edge = wisValue - poolValue and a
+                              field-identical policy must give weight 1 everywhere. Any deviation
+                              from 0 is pure instrument error and is directly readable as such.
+
+  `clone-the-pool` is the one to build first. It converts "how wrong is the instrument" from a
+  caveat into a measured number.
+  RUN 2026-08-18, n=2,155. VERDICT: **INSTRUMENT_FALSIFIED**, as pre-registered.
+  Record: docs/research/ws543-instrument-calibration-2026-08-18.md · out/calibration-v1.json
+
+    clone-the-pool        ESS 100%   +0.0000  exact (algebraic identity reproduced to the digit)
+    fold-every-small-bet  ESS  87%   -0.4242  correct
+    always-fold           ESS  74%   -1.1751  correct
+    never-fold            ESS  37%   +2.8478  *** CONTRADICTS *** [+1.207, +4.670]
+    raise-everything      ESS  21%   +4.3176  *** CONTRADICTS *** [+1.624, +7.243]
+    call-every-large-bet    --         --     never fired (no 100%+ pot bets in 2,155 decisions)
+
+  ESS PREDICTS THE FAILURE PERFECTLY. Correct at >=74%, confidently wrong at <=37%. The
+  mechanism: wisValue averages over the decisions the policy's SUPPORT reaches while poolValue
+  averages over ALL scored decisions, so a narrow-support policy is graded against a different
+  population than its own baseline. never-fold looks brilliant because it is only ever graded on
+  the hands it agreed to play.
+
+  THE CORE PATH IS EXACT. clone-the-pool returns +0.0000 at ESS 2155/2155, mean weight 1.000000.
+  Whatever is wrong is not in the corpus walk, weighting, self-normalisation or bootstrap.
+
+  BEARS ON THE LADDER: v1's rungs ran at ESS 37-40% -- the same zone where never-fold returned a
+  confidently wrong answer. The rung LEVELS are not readable as strategy quality. The paired
+  deltas are a different construction (within shared decisions, population term cancels) and may
+  survive, but that is untested and needs its own dominated-arm check.
+
+  A CORRECTION TO THIS TICKET'S OWN PREMISE: it named the 2.91-players-per-hand clustering
+  violation as the reason to doubt v1's intervals. MEASURED: hand-clustering widens them 1.013x
+  at the median -- a 1% effect. That was not where the problem lived. Dominated arms found a
+  failure that reasoning about the estimator did not, which is the argument for having them.
+
+  SHIPPED: `lowSupport` + `essShareThreshold` now ride on every estimateEdge result, so a reader
+  cannot receive an edge without the support flag that says whether to trust it.
+
+  STILL OPEN: the deeper fix. An ESS gate is a warning, not a removal. Options are a
+  support-matched baseline (changes the estimand and must be renamed), stochastic rather than
+  deterministic arms (keeps support broad -- R1-R4 already mix; R0 does not), or a different
+  estimator for narrow-support policies. Filed as WS-546.
+
+accept_criteria: |
+  - Every arm's expected sign is PRE-REGISTERED in a file, hashed, before the run -- same
+    mechanism as emRecoveryPrereg.json, which the runner refuses to run without.
+  - `clone-the-pool` returns an edge indistinguishable from 0. If it does not, the magnitude of
+    its deviation is the instrument's error floor and every other figure is reported against it.
+  - Any arm whose measured sign CONTRADICTS its pre-registration is recorded unhedged and halts
+    interpretation of the ladder until explained. A dominated arm coming back positive means the
+    instrument is lying, and every rung result to date is then suspect.
+  - The clustering violation (2.91 EVAL players per hand) is quantified: how much wider do the
+    intervals get under a hand-level or session-level cluster? Until that number exists, no
+    ladder delta may be described as RESOLVED.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/strategyArm.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/run-rule-ladder.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18 — dominated events as instrument calibration"
+created_at: "2026-08-18T00:00:00.000Z"

@@ -32,4 +32,4 @@ source:
 created_at: "2026-05-01"
 updated_at: "2026-06-13"
 deferred_at: "2026-06-13"
-deferred_reason: "EAL anchor-library expansion: acceptance 0 anchors, Tier-1 validated is a runtime IndexedDB data/usage goal (created via AnchorLibraryView during live play), not a buildable code task; matcher dependency already shipped. Reversible: set status back to backlog."
+deferred_reason: "EAL anchor-library expansion: acceptance ‘0 anchors, Tier-1 validated’ is a runtime IndexedDB data/usage goal (created via AnchorLibraryView during live play), not a buildable code task; matcher dependency already shipped. Reversible: set status back to backlog."

@@ -99,6 +99,7 @@ accept_criteria: |
   - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
     stamped with `manifest.disclaimerRegisterVersion`.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/foldEquityCalculator.js"

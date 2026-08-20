@@ -97,6 +97,7 @@ accept_criteria: |
     stamped with `manifest.disclaimerRegisterVersion`. ONLINE 2009 corpus against a LIVE
     9-handed 1/2-1/3 game — TRANSFERRED, not measured, and say so.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/handhqReferencePool.js"
   - "src/utils/exploitEngine/poolBaseline.js"

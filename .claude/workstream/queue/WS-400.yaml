@@ -124,13 +124,14 @@ accept_criteria: |
     constant that HAS an anchor. Changing it to fix a confidence display would un-validate a
     validated constant, which the roundtable explicitly warned against.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/pokerCore/betaMath.js"
   - "src/utils/exploitEngine/bayesianConfidence.js"
   - "src/utils/exploitEngine/__tests__/unexploitableFloor.test.js"
   - "src/utils/exploitEngine/CLAUDE.md"
 blocked_by:
-  - "WS-389"
+  - "WS-432"
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -219,3 +220,8 @@ status_note: |
   identical decision set, the baseline arm and the minimum detectable effect that accept criterion 1
   depends on) did not exist in `.claude/workstream/queue/` when this was filed — checked by grep.
   Wire its ID into `blocked_by` when it lands.
+gate_resolution: |
+  2026-08-20: gate re-pointed. WS-389 is status=dismissed with superseded_by: WS-432,
+  and WS-432 is done — the reproducibility work this item waited on SHIPPED. The resolver
+  only clears a blocker on status=='done', so a dismissed-and-superseded blocker never
+  resolves and its dependents stall forever. Second resolver gap, filed as WS-590.

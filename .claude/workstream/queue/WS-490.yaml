@@ -59,6 +59,7 @@ accept_criteria: |
   - Register entry added to docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md with a
     falsifier, per the repo rule that confirming or retiring an entry requires recorded evidence.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/mine-behavior-policy.mjs"
   - "scripts/backtest/run-hero-ev.mjs"

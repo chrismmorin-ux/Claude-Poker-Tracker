@@ -58,6 +58,7 @@ accept_criteria: |
     and the villain's own evidence, with the same-source rule restated (group values
     must come from OTHER players).
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/villainDecisionModel.js"
   - "src/utils/analysisPipeline.js"

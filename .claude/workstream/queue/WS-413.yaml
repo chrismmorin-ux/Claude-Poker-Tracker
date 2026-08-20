@@ -79,6 +79,7 @@ accept_criteria: |
     Local non-zero and canonical zero means the divergence is live. If canonical is non-zero by the
     time anyone reads this, someone already upstreamed it and this item closes.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "kit/scripts/cwos-reconcile.js"
   - "C:/Users/chris/repos/homebase/kit/scripts/cwos-reconcile.js"

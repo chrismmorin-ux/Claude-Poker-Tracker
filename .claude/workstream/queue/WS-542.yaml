@@ -1,0 +1,77 @@
+id: "WS-542"
+title: "Stratify the ladder to the MOST COMMON villain — the 76.7% pole, not the blend"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 87
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER RULING, 2026-08-18: "study the surface of our MOST COMMON villain and how it makes
+  decisions."
+
+  The ladder as built (scripts/backtest/run-rule-ladder.mjs) scores every rung against ALL
+  qualifying EVAL players. That is the blend, and the blend describes nobody — it is the same
+  defect the Field Strategy Card was renamed to make visible.
+
+  THE MEASURED PARTITION, and it is DERIVED rather than authored:
+  `docs/research/player-archetypes-empirical-2026-07-26.md`, k-means over six canonical stats,
+  1,390 players, silhouette 0.3428 at k=2 (twice as good as any other k), inertia falling with
+  no elbow — a continuum with ONE dominant axis, looseness and stickiness together.
+
+    tight / foldy   76.7%   vpip 19.9  pfr 12.3  3bet 3.6  foldTo3Bet 85.4  cbet 57.0  foldToCbet 57.6
+    loose / sticky  23.3%   vpip 40.5  pfr 19.6  3bet 5.8  foldTo3Bet 66.4  cbet 56.7  foldToCbet 49.2
+
+  "Our most common villain" is the tight/foldy pole at 76.7%. The rungs' current frequencies
+  are a frequency-weighted BLEND of both poles (R1's 55% fold facing a bet is exactly such a
+  blend), so today the ladder models an average player who does not exist.
+
+  VOCABULARY IS BINDING. The register term is Stratum: "a quantile interval on a measured,
+  separability-proven behavioural axis — the replacement for a named archetype. Each stratum
+  carries its own separability evidence FROM THE SAME RUN (chi2/df against a same-run control,
+  between-player SD, split-half reliability, disjoint-control cross-correlation), or it gets NO
+  row." The k=2 poles are a CANDIDATE stratum axis, not an approved one, until that evidence
+  rides with them. `separability.mjs` is the instrument and it already exists.
+
+  DO NOT substitute the six authored `classifyStyle` archetypes. Measured cluster purity against
+  the natural partition is 0.63 / 0.44; TAG spans BOTH poles at 54% of the pool; 21% of players
+  fall through all six buckets; the natural loose group is shattered across four labels. That is
+  the failure this item exists to avoid re-importing.
+
+  A SECOND, SHARPER READING that the stratification makes available: if a rung fits the dominant
+  pole well and the other pole badly, the RESIDUAL BETWEEN POLES is itself the finding — it says
+  the two populations need different rule sets rather than different parameters on one.
+accept_criteria: |
+  - The ladder runs against a DECLARED stratum, with `villainScope.level = 'stratum'` and the
+    stratum id stamped on every card. Never inferred from which players happened to qualify.
+  - The stratum carries its separability evidence from the SAME run per separability.mjs, or it
+    gets no row.
+  - Rung frequencies re-grounded on that stratum's measured figures, not on the pole blend.
+    R1's 55% is a blend today and must be replaced with the pole's own 57.6%.
+  - Both poles reported side by side even though only one is being modelled — a rung that fits
+    one and not the other is a finding about population structure, not a failure of the rung.
+  - Per-stratum n stated; a stratum too thin to carry a rung delta says so rather than
+    reporting a point estimate.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/ladder/rungs.card.js"
+  - "scripts/backtest/separability.mjs"
+  - "docs/research/player-archetypes-empirical-2026-07-26.md"
+blocked_by: ["WS-531"]
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18 — study the surface of our most common villain"
+created_at: "2026-08-18T00:00:00.000Z"

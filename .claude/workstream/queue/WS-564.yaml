@@ -1,0 +1,64 @@
+id: "WS-564"
+title: "The touch-floor gate measures one container and fixmes the state that matters - card slots and the nav rail are invisible to it"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 35.0
+priority_label: "P1"
+category: "ux"
+capability: "core"
+program: "design"
+runs_on: g16
+effort: M
+finding_id: ""
+description: |
+  `tests/playwright/touch-floor.spec.js:102` scopes the entire roster to the command-column
+  testid, so `src/components/ui/CardSlot.jsx` - the highest-frequency touch target in the app - and
+  the persistent 12-button nav rail are OUTSIDE the measured root. `:131-134` is test.fixme on the
+  mid-hand action grid and HandReplay transport - not test.skip with a passing baseline.
+
+  CLAUDE.md tells every future session that rendered-size enforcement lives in that file, which reads
+  as coverage. It is not.
+
+  MEASURED on a live dev server at the S22 profile (1170x540, DPR2, scale 0.694687, matching devshot
+  exactly), rendered boundingBox CSS px post-transform:
+    - hole-card slots      27.8 x 40.3
+    - community-card slots 38.9 x 55.6
+    - all 12 nav buttons   28 x 28
+  Arithmetic confirms against source: `CardSlot.jsx:27-28` declares 56 and 40; 56 x 0.6947 = 38.9,
+  40 x 0.6947 = 27.8.
+
+  SEMANTICS, not just geometry: `CardSlot.jsx:63-67` is a plain div with onClick - no role, tabIndex,
+  aria-label or onKeyDown - so it is unreachable by tab order and invisible to any accessibility walk.
+  The nav buttons carry title only, which requires hover and therefore does not exist on a touchscreen.
+
+  SCOPE BOUNDARY: WS-489 owns the GEOMETRY fix (interactive regions in real CSS px). This item owns
+  the INSTRUMENT GAP plus semantics - a purely geometric fix would still pass CI with zero accessible
+  names. Inherits the open DPR question: `deviceProfiles.mjs:9-12` marks the S22 DPR provisional; at
+  2.625 every number above gets WORSE.
+accept_criteria:
+  - "The touch-floor roster covers CardSlot (both variants) and the nav rail, or the spec states in code why a surface is exempt"
+  - "The :131-134 fixme is replaced by a real measurement of the mid-hand action grid and HandReplay transport, with a PINNED baseline where the floor is not yet met"
+  - "An accessible-name check fails CI when an interactive element has no accessible name; CardSlot gains role/tabIndex/aria-label/onKeyDown and nav buttons gain aria-label"
+  - "The S22 DPR is measured on the real device via /device-probe.html and deviceProfiles.mjs:9-12 stops saying provisional"
+files_involved:
+  - "tests/playwright/touch-floor.spec.js"
+  - "tests/playwright/deviceProfiles.mjs"
+  - "src/components/ui/CardSlot.jsx"
+  - "src/components/ui/"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-ux-tests-playwright-touch-floor.spec.js-45-134"
+  facilitator_ref: "I"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

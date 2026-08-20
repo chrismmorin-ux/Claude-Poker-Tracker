@@ -104,6 +104,7 @@ accept_criteria: |
   - NO SCOPE CREEP INTO `profileStrategy`. This ticket moves where two numbers come from. The
     strategy profiling maths, the entry-map loader, and the console report are untouched.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "scripts/backtest/run-strategy-profile.mjs"
   - "scripts/backtest/leakageGuard.mjs"

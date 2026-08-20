@@ -122,13 +122,14 @@ accept_criteria: |
     `manifest.disclaimerRegisterVersion`. The corpus is online-2009 and the founder's game is live
     9-handed 1/2–1/3, so any live reading of the delta is TRANSFERRED, not measured — say so.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/__tests__/gameTreeSizingHelpers.test.js"
 blocked_by:
-  - "WS-389"
+  - "WS-432"
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -195,3 +196,8 @@ status_note: |
   `blocked_by` when it lands. Filed unblocked rather than blocked on a nonexistent ID, because this
   is also the one item in the family whose EV criterion is evaluable with the harness that already
   produced the existing Result Cards.
+gate_resolution: |
+  2026-08-20: gate re-pointed. WS-389 is status=dismissed with superseded_by: WS-432,
+  and WS-432 is done — the reproducibility work this item waited on SHIPPED. The resolver
+  only clears a blocker on status=='done', so a dismissed-and-superseded blocker never
+  resolves and its dependents stall forever. Second resolver gap, filed as WS-590.

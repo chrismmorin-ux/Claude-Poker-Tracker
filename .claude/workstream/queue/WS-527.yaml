@@ -1,0 +1,68 @@
+id: "WS-527"
+title: "Latent-holding EM fitter — recover pi(a | s, h) over the corpus, folds included"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 90
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Design record: docs/research/villain-strategy-inference-2026-08-17.md §4, §5.
+
+  THE DEFECT THIS REMOVES. Every hand-conditional number in this repo is fitted on
+  showdown-revealed decisions only. teachableArmsProbe.mjs:161 requires
+  hand.gameState.showdownCards[vSeat]; its action set (line 63) is
+  ACTIONS4 = ['raise','call','check','bet'] — THERE IS NO FOLD. Reaching showdown is
+  downstream of the action, so the existing table is P(action | class, reached showdown):
+  a collider, which deletes exactly the cases where the action worked. A bluff that takes
+  the pot is never shown.
+
+  Measured consequence (per-player-width-2026-08-05.result-card.json):
+    medianRevealedPerPlayer: 13 · foldRevealRate: 0 · 68.1% of players underpowered.
+
+  More corpus does not fix it. 12.9M hands makes the biased number tighter, not truer.
+
+  BUILD. EM over whole hand histories.
+    E-step — posterior over each seat's holding given the observed action sequence and board,
+             under the current policy.
+    M-step — re-estimate pi from posterior-weighted counts.
+    Showdowns enter as OBSERVED h and anchor the fixed point against degenerate solutions.
+    P(fold | s) from behaviorPolicy.mjs is a HARD equality constraint, not a soft prior.
+
+  Generative by construction, which is required: WS-529's rule basis parameterises THIS fit
+  rather than describing it, so that one object serves as ruleset, predictor and simulator.
+  A separately-fitted discriminative rule set cannot be sampled from and drifts from the fit.
+
+  Leakage: POOL/EVAL partition + walk-forward, same partition.mjs everyone else uses.
+  Corpus lives outside the repo — see scripts/backtest/README.md and $HANDHQ_CORPUS_ROOT.
+accept_criteria: |
+  - Fitted pi(a | s, h) covering the FOLD branch, not only continue branches.
+  - Reproduces the measured marginal P(fold | s) from behaviorPolicy.mjs within stated tolerance.
+  - Held-out predictive score against: (a) the marginal pi(a|s), (b) the shipped engine.
+    Current shipped villain-prediction baseline is log-loss 0.757 (WS-436, n=10,147).
+  - Calibration against showdown truth via rangeCalibrationProbe's coverage / coverageLift.
+  - Result Card with full replication manifest; convergence diagnostics reported, not assumed.
+  - Runs unattended on cm-node1 against the full 27-directory corpus.
+effort: "XL"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/behaviorPolicy.mjs"
+  - "scripts/backtest/teachableArmsProbe.mjs"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+  - "scripts/backtest/partition.mjs"
+blocked_by: ["WS-526"]
+blocked_by_legacy: []
+enables: ["WS-528", "WS-529", "WS-531"]
+sprint_id: null
+decision_flags: ["heavy-design"]
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 villain strategy inference, turns 1-4"
+created_at: "2026-08-17T00:00:00.000Z"

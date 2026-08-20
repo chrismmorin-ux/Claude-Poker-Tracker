@@ -49,6 +49,7 @@ accept_criteria: |
   ShowdownView classification decided and recorded; WS-441's interim px inflation
   removed; viewScrollContainers.test.js green throughout.
 effort: "L"
+runs_on: "g16"
 files_involved:
   - "src/components/views/TableView/TableView.jsx"
   - "src/components/views/TableView/CommandStrip.jsx"

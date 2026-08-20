@@ -135,6 +135,7 @@ accept_criteria: |
     `manifest.disclaimerRegisterVersion` stamped, and `refinementBudgetMs` recorded as a
     load-bearing constant in the replication manifest. This ticket is the proof that it is one.
 effort: "L"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

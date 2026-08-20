@@ -121,6 +121,7 @@ accept_criteria: |
     doctrine holds. Continuation ranges narrow by equity against the continuing range, not by bucket
     label; fold equity on a future street derives from the fold curve, not from a style category.
 effort: "XL"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/gameTreeDepth2.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

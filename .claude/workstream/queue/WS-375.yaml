@@ -102,6 +102,7 @@ accept_criteria: |
   - NO SCOPE CREEP INTO THE EVALUATOR'S MATHS. This ticket moves where a table comes from. The
     MC replicates, the seed stride at `:238-245`, and the Field construction are untouched.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "scripts/backtest/entryEvaluator.mjs"
   - "scripts/backtest/leakageGuard.mjs"

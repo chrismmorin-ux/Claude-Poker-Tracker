@@ -1,0 +1,75 @@
+id: "WS-545"
+title: "The villain's EV distribution — which hands does he lose with, and how much?"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 86
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-18: "I also think I need a better way of seeing the edge or loss of a model
+  against the field. Villain's EV distribution (a result of his strategy) will yield a lot of
+  data. Does he lose EV with all of his hands? Just his marginal ones? Never with high pp?
+  Excessively with JJ? Villain's rules should increase in complexity to allow for these to
+  emerge, since villain actually sees these situations. We can see how his strategy does
+  actually and as a result dissect their strategy completely to guide our later exploitative
+  analysis."
+
+  A SINGLE AGGREGATE EDGE IS THE WRONG SHAPE FOR THIS QUESTION. "The rung earns +0.20 bb" hides
+  whether the model bleeds uniformly or loses everything in one hand class. The founder's
+  examples are the right unit: high pocket pairs, JJ specifically, marginal hands.
+
+  THIS IS ALREADY THE REPO'S OWN DOCTRINE, unapplied here: "Aggregates are VIEWS over atoms,
+  never the record." The Decision Atom set carries what is needed; nothing reads it this way.
+
+  WHAT TO PRODUCE -- the EV distribution, not the EV:
+    - Realised EV per hand class (169 preflop classes, and postflop strength where a holding is
+      revealed), for the FIELD and for each rung, on the same decisions.
+    - The DIFFERENCE per class: where does the rung's play diverge from the villain's, and what
+      does that divergence cost? This is the per-class analogue of matchError.
+    - Spread, not just mean: a class whose mean is zero because it wins huge and loses huge is a
+      different animal from one that breaks even every time, and the exploit lives in the first.
+    - Conditioning stated per cell, with n and MDE. A 169-cell decomposition at n=2,126 gives
+      ~12 decisions per cell; most cells will be UNEXAMINED and must say so rather than
+      displaying a point estimate.
+
+  THE JJ CASE IS THE TEST OF WHETHER THIS WORKS. If the founder's intuition that a specific
+  class bleeds excessively is real, this instrument must show it with its own n. If every class
+  looks identical, either the intuition is wrong or the decomposition is too coarse -- and those
+  are different findings that must not be conflated.
+
+  WHY IT GUIDES THE EXPLOIT LATER: a class where the villain loses badly is a class where he is
+  playing a strategy we can name and counter. The EV distribution IS the map of his leaks, and
+  it is a direct input to the WS-539 drill deck -- "he loses 1.4 bb per hand with JJ facing a
+  turn raise" is both a finding and a drill card.
+accept_criteria: |
+  - Per-hand-class realised EV for the field and for each rung, on an identical decision set.
+  - Per-class DIFFERENCE reported with its own n and MDE. Cells too thin report `unexamined`,
+    never a point estimate.
+  - Distribution shape per class (at minimum median and quartiles), not only the mean.
+  - Showdown-conditioning stated wherever postflop strength is used: a class figure built only
+    on revealed hands carries the same collider that WS-527 exists to remove.
+  - Output is a VIEW over the atom set, so a new question does not require a re-run. If it does,
+    the record was the wrong shape.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/atomStore.mjs"
+  - "scripts/backtest/handOutcome.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-539"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18 — the EV distribution, not the EV"
+created_at: "2026-08-18T00:00:00.000Z"

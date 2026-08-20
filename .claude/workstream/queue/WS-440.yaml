@@ -19,6 +19,7 @@ description: |
 accept_criteria: |
   Verify current behavior at HEAD; make the hint dismissable and self-recovering on orientation change; add a test simulating rotate-away/rotate-back mid-entry.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/components"
 blocked_by: []

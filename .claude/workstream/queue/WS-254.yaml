@@ -149,6 +149,7 @@ accept_criteria: |
     rename — check `PERSISTENCE_OVERVIEW.md` and the extension sync path first.
   - No regression in the full src/utils engine suite or the extension suite (824+ tests).
 effort: "S"
+runs_on: "g16"
 files_involved:
   - "src/utils/tendencyCalculations.js"
   - "ignition-poker-tracker/shared/stats-engine.js"

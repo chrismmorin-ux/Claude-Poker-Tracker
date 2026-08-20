@@ -1,0 +1,53 @@
+id: "WS-553"
+title: "Range charts are ordered by a realization-blind table - POKER_THEORY named the falsifier before the charts used it"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 84
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  The 13 preflop range charts order hand classes by EQUITY_VS_OPEN. POKER_THEORY.md:207 already
+  records that this table does NOT encode equity realization, calls it a named approximation
+  "stated because it is load-bearing", and names the exact fix:
+  
+    "Falsifier: regenerate EQUITY_VS_OPEN with realization weighting and re-run."
+  
+  The charts walked into a documented defect. Consequence: the ordering over-ranks offsuit aces
+  and under-ranks small pairs and suited connectors - which is precisely where all five of the
+  "ordering refuted" findings land (22 x3, 76s, KQo).
+  
+  The founder's own reading is the mechanism: low pairs have poor REALIZED equity - they miss
+  the flop overwhelmingly and cannot continue - which is why solver outputs still do not open 22
+  under the gun even though 22 is a slight favourite against two overcards in an all-in.
+  
+  So the refutations may be measuring the instrument rather than the player. That does not make
+  the underlying finding wrong - opening 22 UTG for 4bb into five players is wider than
+  equilibrium and set-hope is the motive - but it does mean the chart cannot currently tell the
+  two apart.
+accept_criteria: |
+  - A realization-weighted ordering exists and is the charts' default.
+  - Re-run the 13 charts and report how many of the 5 refutations survive.
+  - PRE-REGISTER that count before running.
+  - The charts state which ordering they used, on their face, either way.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/villainArchetype/buildRangeCharts.mjs"
+  - "src/utils/pokerCore/preflopEquityTable.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

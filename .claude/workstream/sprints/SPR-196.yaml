@@ -1,0 +1,31 @@
+id: "SPR-196"
+title: "Ship WS-596: remove the ESS-scaling finite-sample bias in the SNIS estimator — dominated arms must r"
+status: approved
+approved_at: "2026-08-20T17:21:30.054Z"
+program_focus: "methodology-integrity"
+
+goal: |
+  Ship WS-596: remove the ESS-scaling finite-sample bias in the SNIS estimator — dominated arms must return their pre-registered sign
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-20T17:21:30.054Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-596 selected by founder adjustment (option 3, manual).
+  CLI anchor WS-548 REJECTED as unsafe for this session: held by stale session ses-20260820-0221 (92m dead) which left 865 lines of STAGED uncommitted work in its own files_involved; also runs_on: node1.
+  WS-596 verified parallel-safe: all four files_involved are clean in the working tree (103 non-workstream files are dirty across 4 live sessions).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-596"
+    title: "The estimator's bias is a function of ESS, not of the policy - r = -0.95 across 8 arms"
+    mode: plan-first
+    effort: L
+    status: pending
+
+decisions_needed:
+  - "[object Object]"
+
+created_at: "2026-08-20T17:21:30.054Z"

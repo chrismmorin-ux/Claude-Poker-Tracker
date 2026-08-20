@@ -1,0 +1,48 @@
+id: "ses-20260816-1852-48e79e5e"
+status: "abandoned"
+revived_at: "2026-08-17T00:08:22.074Z"
+started_at: "2026-08-16T18:52:38.194Z"
+ended_at: "2026-08-17T05:18:01Z"
+mode: auto
+last_heartbeat: "2026-08-17T01:04:55.971Z"
+pid: 40632
+pid_recorded_at: "2026-08-17T01:04:55.971Z"
+host: MorinComputer
+agent_session_id: "48e79e5e-475b-4b88-ae29-03305d6097f6"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/standardOfRecord/harvestLabelConstructs.mjs"
+  - "src/utils/standardOfRecord/labelLedger.js"
+  - "src/utils/standardOfRecord/__tests__/labelLedger.test.js"
+  - "scripts/standardOfRecord/check-label-ledger.mjs"
+  - "scripts/check-label-ledger.sh"
+  - "scripts/smart-test-runner.sh"
+  - ".github/workflows/ci.yml"
+  - "scripts/check-required-equity-seam.mjs"
+  - "docs/standard-of-record/LABEL-AND-FOUNDATION-LEDGER.md"
+  - ".claude/context/POKER_THEORY.md"
+  - ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+  - "scripts/__tests__/labelHarvest.test.js"
+  - "scripts/__tests__/compactTier.test.js"
+
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-17.
+  Original start: 2026-08-16T18:52:38.194Z.
+  Last heartbeat: 2026-08-17T01:04:55.971Z.
+
+  Git commits during this session (5):
+    - 6f4cf7db feat(ws-445): triage complete — 145 of 145 constructs claimed, and seven findings that needed only an index
+    - 2487b520 feat(ws-445): triage tranche 2 — 28 reasoned exclusions, each read at its definition site first
+    - 9a602deb feat(ws-445): triage tranche 1 — 21 constructs claimed, and the engine's most depended-upon table has no provenance
+    - e7a19199 feat(ws-445): reach becomes a derived quantity — traceLabelReaders, and the three things it found on its first runs
+    - dd5e4019 feat(ws-445): the Label & Foundation Ledger — prose was tried for months and 145 constructs existed anyway
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

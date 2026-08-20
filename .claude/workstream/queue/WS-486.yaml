@@ -37,6 +37,7 @@ accept_criteria: |
   - One exported CLUSTER_BAR = {value: 30, unit: 'players', rationale} replaces the three copies;
     layerAblation gates on byPlayer.size with the decision count kept as a warning.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/standardOfRecord/resultCard.js"
   - "scripts/backtest/layerAblation.mjs"

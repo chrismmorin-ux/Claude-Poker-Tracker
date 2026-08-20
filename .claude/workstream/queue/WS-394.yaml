@@ -124,6 +124,7 @@ accept_criteria: |
     the producer and assert that every fixture in the suite belongs to it. A fixture invented to
     demonstrate behaviour is not evidence the behaviour exists.
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "src/utils/exploitEngine/villainDecisionModel.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

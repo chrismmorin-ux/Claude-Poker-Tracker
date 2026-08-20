@@ -1,0 +1,70 @@
+id: "ses-20260819-1508-d895a5d8"
+status: "abandoned"
+started_at: "2026-08-19T15:08:03.109Z"
+ended_at: "2026-08-20T02:33:01Z"
+mode: auto
+last_heartbeat: "2026-08-19T22:50:28.537Z"
+pid: 33836
+pid_recorded_at: "2026-08-19T22:50:28.537Z"
+host: MorinComputer
+agent_session_id: "d895a5d8-5d9b-40fa-b5ea-23c40151ccb7"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - ".tmp-arch/genDossier.mjs"
+  - ".tmp-arch/dossier/template.html"
+  - ".tmp-arch/shot.mjs"
+  - "scripts/villainArchetype/ruleCountVsN.mjs"
+  - ".tmp-arch/canRaiseBug.mjs"
+  - "scripts/villainArchetype/loadVillain.mjs"
+  - "scripts/villainArchetype/dumpLeaf.mjs"
+  - "scripts/villainArchetype/buildDossier.mjs"
+  - ".tmp-arch/explainers-v1.json"
+  - ".tmp-arch/explainers-v2.json"
+  - ".tmp-arch/character/v1.html"
+  - ".tmp-arch/character/v2.html"
+  - "scripts/villainArchetype/rangeCombinatorics.mjs"
+  - ".tmp-arch/patch1.py"
+  - ".tmp-arch/patch2.py"
+  - "scripts/villainArchetype/handStrength.mjs"
+  - ".tmp-arch/patch3.py"
+  - ".tmp-arch/patch4.py"
+  - ".tmp-arch/patch5.py"
+  - "scripts/villainArchetype/__checks__/handStrength.check.mjs"
+  - ".tmp-arch/audit.mjs"
+  - "scripts/villainArchetype/detectability.mjs"
+  - "scripts/villainArchetype/behaviourRegistry.json"
+  - ".tmp-arch/basics.py"
+  - "scripts/villainArchetype/rangeInference.mjs"
+  - "docs/villain-archetype/CONTINUATION.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-20.
+  Original start: 2026-08-19T15:08:03.109Z.
+  Last heartbeat: 2026-08-19T22:50:28.537Z.
+
+  Git commits during this session (16):
+    - 9c5d2463 chore(session): close ses-20260819-2250 — Conduct Card instrument, table-shape program queued
+    - 165300af feat(conduct-card): a rule now says which of its conditions HERO chose
+    - 92530075 feat(conduct-card): rule identity is the spot, and the lift is concentrated in a handful of them
+    - 5ddb4a75 feat(conduct-card): the card is now a policy that can be run, and scored against a baseline
+    - 93b5a319 fix(conduct-card): the separator test declared a zero-information feature significant
+    - 2438e6c0 fix(conduct-card): separatorSearch described a correction the run no longer used
+    - 46d1aa16 docs(villain-archetype): the handoff asserted three things this session refuted
+    - 2d1c79a0 fix(villain-archetype): the census called hand-outcome absent and it was already shipped
+    - ec0d251d fix(engine): depth-2 has never once finished — and finishing it exposes a 98% raise bias
+    - e7cb1fe1 docs(villain-archetype): the handoff said "uncommitted" and the concurrent commit made that a lie
+    - bef79a14 fix(villain-archetype): the known-answer check still named an enum the refactor deleted
+    - 6ebc1f39 WS-573: file the two backtest-integrity defects HomeBase declined
+    - 838416e6 feat(ws-496): depth-2's curse resolves at 13.98 — 9.7x depth-1, intervals non-overlapping
+    - 5edb5f49 chore(queue): close SPR-191 items and dismiss the two harvester duplicates
+    - db4c7e96 feat(ws-496): the curse probe measured zero because the engine has no second opinion — now it does, and the curse is 1.44 chips
+    - ca89f9e2 fix(compute): a code fix never re-opened the job it invalidated, and the workaround for it could not have worked
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

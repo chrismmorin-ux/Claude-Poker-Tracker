@@ -54,6 +54,7 @@ accept_criteria: |
     artifact should follow without a second edit. A hard-coded licence string in a generator is the
     same defect in miniature that WS-420 is about.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "scripts/backtest/run-hole-map.mjs"
   - "scripts/backtest/holeMapHtml.mjs"

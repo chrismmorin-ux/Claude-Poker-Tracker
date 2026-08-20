@@ -88,6 +88,7 @@ accept_criteria: |
     200 and the app at 500. Whatever is decided, the two numbers should either agree or the gap
     should be a stated, stamped configuration difference rather than an accident.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/pokerCore/monteCarloEquity.js"
   - "src/utils/exploitEngine/gameTreeContext.js"

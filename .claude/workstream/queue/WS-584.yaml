@@ -1,0 +1,76 @@
+id: "WS-584"
+title: "Hero's own play has no card — heroSelfObservation ships observations nothing expresses as a Conduct Card, so hero cannot be measured by the machinery built for villains"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 88
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FROM THE NAMING EXERCISE, 2026-08-20 (docs/standard-of-record/NAMING-HISTORY.md §5).
+  The argument lattice has exactly two empty cells; this is the first, and it is the
+  one every other open item leans on.
+
+  THE STATE. `exploitEngine/heroSelfObservation.js` shipped with WS-276 and produces
+  range-level observations about hero's own play — `observeHeroContinuationRate` and
+  friends, k/n with intervals. WS-311 notes it and says plainly: "Nothing reads it."
+  Meanwhile `standardOfRecord/conductCard.js` builds a Conduct Card — a full action
+  distribution per spot with a Wilson interval on every share — and takes `subjectId`
+  and nothing else. There is no reason in the code why that subject cannot be hero.
+  The data exists. The object does not.
+
+  WHY IT IS LOAD-BEARING. Everything hero-facing that is currently unstateable becomes
+  stateable the moment hero has a card:
+    - "What hero says he does vs what he did" is `Divergence(hero Strategy Card,
+      hero Conduct Card)` — the register's ONE permitted comparison path, no new
+      instrument, no second axis.
+    - The Lesson (WS-587) has no way to say "the gap at this spot" without it.
+    - WS-299 (line-level realization) prices a line against hero's actual policy;
+      a hero Conduct Card IS that policy in the register's own form.
+    - WS-554's trajectory machinery applies to hero unchanged once he is a subject.
+
+  WHAT TO WATCH. The conduct occupancy bound rides on every card and rides harder here:
+  hero's card is dense where the founder played and silent where he did not, and the
+  consumer most likely to misuse it is the founder himself. Also note the register's
+  standing refusal — a card built by a superseded inducer is not silently compared
+  (WS-554) — so hero's card must carry the same induction provenance block villains do.
+
+  NOT A DUPLICATE OF WS-311. WS-311 is the user-facing SURFACE and carries design
+  Gates 1/2/4. This is the OBJECT, engine-internal, no surface, no gate. WS-311's
+  surface reads this card rather than reading raw observations.
+accept_criteria: |
+  - `buildConductCard` accepts hero as a subject with no special-casing; hero's card
+    validates under `conductCardProblems` exactly as a villain's does.
+  - Source is hero's own recorded decisions (live + imported), NOT the corpus, and the
+    card's provenance block says so.
+  - `Divergence(hero Strategy Card, hero Conduct Card)` computes over a common
+    situation set and returns an unsigned distance, per the single-comparison-path rule.
+  - The conduct occupancy bound is attached and non-optional; a best response computed
+    outside hero's Occupancy is refused, not warned.
+  - Held-out discipline inherited from WS-551 — no in-sample accuracy is reported as
+    though it were predictive.
+  - A register entry for the hero card is added to VOCABULARY.md in the same change.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "src/utils/exploitEngine/heroSelfObservation.js"
+  - "src/utils/standardOfRecord/divergence.js"
+  - "docs/standard-of-record/VOCABULARY.md"
+blocked_by: ["WS-551"]
+blocked_by_legacy: []
+enables: ["WS-311", "WS-585", "WS-587"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-20 naming-history exercise; falsifier fired on the initial projection, see NAMING-HISTORY.md §4"
+created_at: "2026-08-20T00:00:00.000Z"

@@ -1,0 +1,46 @@
+id: "WS-592"
+title: "WS-295 FAILED on cm-node1 — the runner recorded no detail and the step log has no error — the job died before its first step"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-20T16:14:05.274Z"
+completion_commit: b5e54400
+priority_score: 27
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A compute job on cm-node1 reached a terminal state WITHOUT succeeding. It produced no
+  artifacts, so it landed in no inbox — nothing else would ever have surfaced it, and the
+  machine went idle having achieved nothing.
+
+  JOB       : ws-295-28d02a0a9124
+  SOURCE    : WS-295 — The optimizer's curse — is the engine's stated EV systematically above what its advice actually realizes?
+  OUTCOME   : failed
+  DETAIL    : the runner recorded no detail and the step log has no error — the job died before its first step
+
+  Retries are already exhausted at the runner level (maxAttempts), so re-submitting the
+  identical spec will fail identically. The spec or the code has to change first — which
+  also re-keys the job hash and lets the feeder pick it up again.
+accept_criteria: |
+  - The cause is identified and fixed in the code or the compute_job block, not worked
+    around by shrinking the run until it fits.
+  - WS-295 either runs to completion or its blocker is stated explicitly.
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest — failed job ws-295-28d02a0a9124"
+created_at: "2026-08-20T04:26:25.416Z"
+closed_by_event: ev-1787242445307-079b24d71486

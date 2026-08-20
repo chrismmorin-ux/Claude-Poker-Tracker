@@ -90,6 +90,7 @@ accept_criteria: |
     §Gate 3, internal observation means using the app as the unmodelled persona would — here,
     reading out/hole-map.html as someone who intends to quote a number from it.
 effort: "L"
+runs_on: "any"
 files_involved:
   - "docs/design/personas/core/"
   - "docs/design/personas/situational/"

@@ -1,0 +1,55 @@
+id: "ses-20260820-0221-10a55c6c"
+status: "abandoned"
+revived_at: "2026-08-20T15:41:22.417Z"
+started_at: "2026-08-20T02:21:24.714Z"
+ended_at: "2026-08-20T19:48:02Z"
+mode: auto
+last_heartbeat: "2026-08-20T15:41:22.419Z"
+pid: 32800
+pid_recorded_at: "2026-08-20T15:41:22.419Z"
+host: MorinComputer
+agent_session_id: "10a55c6c-a399-4913-a94c-afb5a69de7c2"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-548"
+
+files_locked:
+  - "scripts/villainArchetype/openSizeAxis.mjs"
+  - "scripts/villainArchetype/__checks__/openSizeAxis.check.mjs"
+  - "scripts/villainArchetype/foldToOpenCurve.mjs"
+  - "scripts/villainArchetype/__checks__/sizeConditioning.check.mjs"
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "scripts/villainArchetype/runFoldToOpenCurve.mjs"
+  - "scripts/villainArchetype/exploitCard.mjs"
+  - "scripts/villainArchetype/__checks__/pairedPricing.check.mjs"
+  - "scripts/villainArchetype/__checks__/run-all.mjs"
+  - "scripts/villainArchetype/spotFrequency.mjs"
+  - "scripts/villainArchetype/__checks__/spotFrequency.check.mjs"
+  - "src/utils/__tests__/seatUtils.test.js"
+  - "src/utils/seatUtils.js"
+  - "docs/guides/straddle-structure-wind-creek-1-3.md"
+  - "docs/research/shape-pooled-showdown-ranges-2026-08-20.md"
+  - "docs/research/adaptation-five-staked-2026-08-20.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-20.
+  Original start: 2026-08-20T02:21:24.714Z.
+  Last heartbeat: 2026-08-20T15:41:22.419Z.
+
+  Git commits during this session (6):
+    - 17f1c421 perf(ladder): one enumeration per board, not per combo — 61.6x, and the corpus-walk diagnosis is finally true
+    - 534b6ee5 perf(ladder): the rules were never the cost — 3.25x from one combo sample per decision, not per rung
+    - 5b5a8101 fix(fault-register): the bias tracks ESS, not support — r=-0.97 vs r=-0.01
+    - b5e54400 fix(estimator): the support bias was real, and removing it did not flip a single sign
+    - 446ab938 fix(compute): the refusals named the wrong remote — node1 pulls G16, not GitHub
+    - 5e4aaabe fix(compute): the OOM was not a memory problem — node1 ran the code from before the memory fix
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

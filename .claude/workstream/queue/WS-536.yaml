@@ -1,0 +1,116 @@
+id: "WS-536"
+title: "Incremental strategy ladder — one rule at a time, scored against the corpus pool"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 88
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER PLAN, 2026-08-17: "Start with an Engine. Give it one rule. Fold anything except a
+  preflop range. Then using stats about the field, build a logical game tree... One rule at a
+  time, simple broad. Then apply another. Then another, or split something. Evolve the strategy
+  from the ground up. Keep track of how that ruleset does when playing in the corpus pool."
+
+  THE RAILS ALREADY EXIST AND HAVE NEVER CARRIED POKER CONTENT. WS-425 built the whole wire:
+  Strategy Card -> arm -> IPS estimator -> edgeBB -> Result Card -> Ladder.
+    - `strategyArm.mjs:497` `fromStrategyCard(card)` turns a declared ruleset into a scoreable
+      arm. The interface is one function:
+        policyAt({ctx, hand, geo, responses}) -> {covered, actions} | {covered: false}
+    - `strategyArm.mjs:415` `ALWAYS_FOLD` already ships as an arm.
+    - run-strategy-arms.mjs's own header: the shipped arms are "not poker content and both have
+      a sign known in advance, which is exactly what makes them a plumbing proof."
+  The founder's rule 1 is literally the next card after ALWAYS_FOLD, and would be the first
+  real poker content this rig has carried.
+
+  USE `FALLBACK_POOL` for the evolution ladder — "the published rule ALONE, playing population
+  poker everywhere else". That is the reading the founder wants. FALLBACK_ENGINE measures a
+  different thing (marginal contribution dropped into our engine) and FALLBACK_REFUSE silently
+  changes the decision set and is refused as a headline.
+
+  THE SCORE ALREADY EXISTS: `exploitationEfficiency` (strategyPosition.mjs, consumed at
+  heroEvReport.mjs:220) — of the money available beyond playing like the field, what fraction
+  did this card capture. Starts near zero with fold-only and climbs. Upper pier post is Pool
+  Best Response (built). Lower post is Equilibrium (WS-538, does not exist).
+
+  TWO MEANINGS OF "SIMULATE AGAINST THE POOL", and only one works today:
+    - IPS reweighting on real corpus hands — works now. But holeMap.mjs already documents the
+      catch: a line the pool rarely takes has pi_pool near zero, so the weight explodes or caps
+      at 20. THE NOVEL RULES THAT ARE THE ACTUAL EDGE ARE EXACTLY WHERE IPS IS WEAKEST. Hole
+      pricing from pot geometry is the second path and must be wired for those rules.
+    - Forward simulation against a pool model — needs pi_pool(a | s, h), i.e. WS-527. Without
+      it simulated villains act independently of their cards, which is not poker.
+
+  RULES ARE DERIVED (WS-535), per the founder's 2026-08-17 ruling. A hero-authored card remains
+  legal — a Strategy Card is a DECLARED surface and is allowed to be a chart; the repo's
+  "labels are never inputs" doctrine constrains VILLAIN modelling, not hero declarations — but
+  it is not what is being built here.
+  THE LADDER IS AUTHORED: docs/research/villain-rule-ladder-spec-2026-08-17.md, rungs R0-R7,
+  each grounded in a measured pool figure. R0's floor is MEASURED (always-fold edge -1.9942 bb,
+  n=45, out/ladder-rung0-smoke.json).
+
+  THE UNLOCK, found by running it 2026-08-17: an ENGINE-FREE ladder runner. The smoke run took
+  220s for 45 decisions -- 4.9 s/decision -- and run-strategy-arms.mjs's own header states
+  strategy arms are "free -- pure functions of the decision, no engine call. The whole cost of
+  a run is the ENGINE arm." Under FALLBACK_POOL an uncovered decision falls back to the
+  behaviour policy at weight exactly 1 and needs NO engine call. Without this the ladder cannot
+  reach resolving n; with it, 16k decisions is cheap.
+
+  THE N THAT RESOLVES IT, scaled from the smoke run's half-width:
+    +/-0.25 bb  ->  ~16,000 decisions
+    +/-0.10 bb  ->  ~100,000 decisions
+  At n=45 every arm's interval spans zero, including the one whose sign was known in advance.
+
+  EXEMPLAR HANDS ARE REQUIRED, not optional. Founder 2026-08-17: "I should be able to see the
+  incremental EV, and examples of the real EV sources of simulated play against the pool."
+  Aggregates are VIEWS over Decision Atoms, never the record -- so every rung's EV must drill
+  down to the individual hands that produced it, not stop at a branch total.
+
+  FOUNDER RULING 2026-08-18 — THE LADDER'S TARGET IS MATCH, NOT MAXIMISE. "The goal is to play
+  like a villain and document and learn and how losing of a player are they." Optimally
+  exploitative play is explicitly LATER. The headline is therefore
+  matchErrorBB = |ruleSetEdgeBB - targetEdgeBB|, MINIMISED, and a rung that beats the field is a
+  WORSE villain model. edgeBB is already that instrument read inverted: a rule set behaving
+  exactly like the field carries weight 1 everywhere, so wisValue = poolValue and edge is
+  exactly 0. Registered as metrics.villain-model-card.evFidelity (schema v2).
+
+accept_criteria: |
+  - A ladder of cards, each adding or splitting exactly ONE rule, every rung scored on an
+    IDENTICAL decision set through the same estimator.
+  - Every rung emits a Result Card; `exploitationEfficiency` reported per rung.
+  - `coveredShare` reported per rung — an arm covering 30% has an edge diluted by construction
+    and the paired delta's `discordantN` is its honest n.
+  - Rules with near-zero pool support are priced through the hole-map geometry path, NOT
+    through IPS, and which path priced each rule is stamped.
+  - Ladder rebases rather than resets across Deal Book generations.
+  - The rung where added rules stop buying edge is REPORTED, not tuned away.
+  - The headline per rung is matchErrorBB against a MEASURED target (WS-541), not edgeBB read as
+    a direction to maximise. A rung whose |edge| grows is flagged as DIVERGING from the villain.
+  - An ENGINE-FREE runner exists (FALLBACK_POOL, no engine arm) and reaches >= 16,000 decisions.
+  - Every rung drills from its EV figure to exemplar hands, not just to branch totals.
+  - R2 (pot-odds pricing) and R5 (SPR gate) are reported even if they buy NOTHING -- a null
+    there is a finding about whether the pool prices or reads SPR at all, not a tuning target.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/strategyArm.mjs"
+  - "scripts/backtest/run-strategy-arms.mjs"
+  - "scripts/backtest/strategyPosition.mjs"
+  - "scripts/backtest/holeMap.mjs"
+  - "scripts/backtest/ladder.mjs"
+blocked_by: ["WS-537", "WS-540", "WS-541"]
+blocked_by_legacy: []
+enables: ["WS-539"]
+sprint_id: null
+decision_flags: ["heavy-design"]
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 — evolve the strategy from the ground up, one rule at a time"
+created_at: "2026-08-17T00:00:00.000Z"

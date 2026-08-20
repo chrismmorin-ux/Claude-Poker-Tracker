@@ -1,0 +1,70 @@
+id: "ses-20260817-2024-74727ffa"
+status: "abandoned"
+revived_at: "2026-08-18T15:08:10.587Z"
+started_at: "2026-08-17T20:24:41.560Z"
+ended_at: "2026-08-18T21:03:02Z"
+mode: auto
+last_heartbeat: "2026-08-18T16:54:40.665Z"
+pid: 35588
+pid_recorded_at: "2026-08-18T16:54:40.665Z"
+host: MorinComputer
+agent_session_id: "74727ffa-f421-4266-9891-8503c8c317ad"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "docs/research/villain-strategy-inference-2026-08-17.md"
+  - "docs/standard-of-record/VILLAIN-STRATEGY-CARD-50NL-ONLINE-2009.md"
+  - ".claude/workstream/queue/WS-526.yaml"
+  - ".claude/workstream/queue/WS-527.yaml"
+  - ".claude/workstream/queue/WS-528.yaml"
+  - ".claude/workstream/queue/WS-529.yaml"
+  - ".claude/workstream/queue/WS-530.yaml"
+  - ".claude/workstream/queue/WS-531.yaml"
+  - ".claude/workstream/queue/WS-532.yaml"
+  - ".claude/workstream/queue/WS-533.yaml"
+  - "scripts/backtest/emRecovery.mjs"
+  - "scripts/backtest/run-em-recovery.mjs"
+  - "scripts/__tests__/emRecovery.test.js"
+  - "docs/research/ws526-fold-branch-identifiability-2026-08-17.md"
+  - ".claude/workstream/queue/WS-534.yaml"
+  - ".claude/workstream/queue/WS-535.yaml"
+  - ".claude/workstream/queue/WS-536.yaml"
+  - ".claude/workstream/queue/WS-537.yaml"
+  - ".claude/workstream/queue/WS-538.yaml"
+  - ".claude/workstream/queue/WS-539.yaml"
+  - "docs/research/villain-rule-ladder-spec-2026-08-17.md"
+  - "scripts/backtest/ladder/rungs.card.js"
+  - "scripts/__tests__/ladderRungs.test.js"
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - ".claude/workstream/queue/WS-540.yaml"
+  - ".claude/workstream/queue/WS-541.yaml"
+  - ".claude/workstream/queue/WS-542.yaml"
+  - "scripts/__tests__/strategyArmWorkerTransport.test.js"
+  - ".claude/workstream/queue/WS-543.yaml"
+  - ".claude/workstream/queue/WS-544.yaml"
+  - ".claude/workstream/queue/WS-545.yaml"
+  - "scripts/backtest/ladder/calibrationPrereg.json"
+  - "scripts/backtest/ladder/calibrationArms.mjs"
+  - "scripts/backtest/run-calibration.mjs"
+  - "docs/research/ws543-instrument-calibration-2026-08-18.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-18.
+  Original start: 2026-08-17T20:24:41.560Z.
+  Last heartbeat: 2026-08-18T16:54:40.665Z.
+
+  Git commits during this session (6):
+    - 4965e64c feat(villain-archetype): the dossier — every fact about a hand, laid next to every other fact
+    - 2e7d7bae feat(villain-archetype): write rules as poker first, then test them — and the first one is refuted
+    - c0ee3d3a spec(villain-archetype): the rule language is the limitation, not the data — engine context v1
+    - de956136 feat(villain-archetype): stop describing villains by their stats and start describing what they decide
+    - 191dcd19 docs(villain-model): the average villain describes almost nobody, except where nobody has a choice
+    - 56ef5909 feat(ws-521): the opener's response to a 3-bet was emitted nowhere — and the prior that fixed it described the wrong half of the tree
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

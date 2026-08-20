@@ -1,0 +1,93 @@
+id: "WS-599"
+title: "A Conduct Card is written to a scratch directory and its pointer is discarded — seven cards exist and none is authoritative"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 87
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 while scoping the Conduct Card cluster. The card generator WORKS — this is not
+  a "not built yet" gap. Seven real, schema-valid Conduct Cards sit on G16 right now:
+
+    .tmp-arch/profiles-v2/jSCaL6Fm4lAi.conduct-card.json      110 KB  45 rules   9,442 decisions
+    .tmp-arch/profiles-fullring/jSEItZVTvrRp.conduct-card.json 117 KB  41 rules  13,723 decisions
+    .tmp-arch/profiles-6max/Ah5FmohxpLfw.conduct-card.json     186 KB
+    .tmp-arch/{profiles,profiles-fixed,profiles-full,regress}/*.conduct-card.json
+
+  `.tmp-arch/` is GITIGNORED (.gitignore:84). So every one of them is untracked scratch output on
+  the founder's daily driver, and NOTHING IN THE REPO CITES ANY OF THEM. There is no pointer, no
+  manifest record, no hash on file — nothing that could later find the card a result depended on.
+
+  THE CODE ALREADY KNOWS. `scripts/villainArchetype/emitConductCard.mjs:231` documents the exact
+  failure in its own comment: five cards for one subject sitting in `.tmp-arch/` with 19, 25, 18,
+  18 and 25 rules, from five different runs. Five answers to one question and no rule that says
+  which one is the answer.
+
+  THE POINTER'S CONTENT ALREADY EXISTS AND IS THROWN AWAY. `emitConductCard.mjs` mints
+  `contentHash`, `rulesetHash`, `manifest.engineCommit`, `dealBookHash` and
+  `disclaimerRegisterVersion` — every field a pointer needs. Then `profileVillain.mjs:610` does
+  `writeFileSync(`${OUT}/${safe}.conduct-card.json`, ...)` into a bare directory and the identity
+  is discarded at write time. This is a persistence gap, not a derivation gap.
+
+  WHAT THE STANDING RULE REQUIRES. `.claude/rules/artifact-location.md` (founder ruling
+  2026-08-20) is unambiguous and this path violates every clause of it:
+    - Heavy artifacts live OUTSIDE the repo, and CM-NODE1 is their canonical home. These are on
+      G16, in a scratch dir, produced by a G16 run.
+    - The repo holds the replication manifest and THE POINTER — "enough identity (hash, size,
+      location) that a card can always find its atoms, and that a missing artifact fails loudly
+      rather than silently resolving to something else." Neither exists.
+    - "Unreachable must be an error, never a fallback." There is no consumer path at all yet, so
+      there is nothing to make refuse — which is exactly when to build it correctly.
+    - "A local copy is a cache and says so", carrying the canonical hash, mismatch a hard failure.
+
+  WHY THIS IS THE ITEM THAT MAKES THE OTHERS COMPOUND. WS-578, WS-552, WS-551, WS-550 and WS-579
+  each improve the card. Without a canonical location and a persisted pointer, each improvement
+  produces ONE MORE UNCITABLE FILE in `.tmp-arch/`, indistinguishable from the six already there.
+  The improvements do not accumulate into anything the repo can cite, and the ranking question
+  ("which card is current?") gets strictly worse with every run.
+
+  THIS TICKET DID NOT EXIST. Scoped 2026-08-20; the whole Conduct Card cluster (WS-548..555, 578,
+  579, 580, 583) covers deriving the card and never covers where it lands.
+accept_criteria: |
+  - A card is written to its canonical location on CM-NODE1, not to a G16 scratch directory.
+    Per artifact-location.md the compute node owns its output; a G16-produced card is a cache.
+  - A pointer record is persisted IN THE REPO for every emitted card: cardId, subjectId,
+    contentHash, rulesetHash, byte size, canonical location, engineCommit, dealBookHash,
+    disclaimerRegisterVersion, emittedAt. Small, hand-reviewable, versions with the code.
+  - A resolver reads a pointer and returns the card. When the canonical artifact is UNREACHABLE
+    it RAISES — it does not fall back to a local copy and does not recompute a substitute. Both
+    fallbacks are named and forbidden by the rule; assert the refusal in a test.
+  - A local copy carries the canonical contentHash and a mismatch is a HARD FAILURE, not a
+    warning. Assert with a deliberately corrupted cache fixture.
+  - The "which card is current" question has an answer in data: exactly one pointer per
+    (subjectId, rulesetHash) is current, superseded ones are retained and marked, never deleted.
+  - The seven existing `.tmp-arch/` cards are either registered through the new path or explicitly
+    recorded as pre-standard scratch. They are NOT silently deleted and NOT silently promoted.
+  - `emitConductCard.mjs` / `profileVillain.mjs` cannot write a card without also writing its
+    pointer. A card with no pointer is the defect; make it unrepresentable rather than validated.
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "scripts/villainArchetype/profileVillain.mjs"
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "src/utils/standardOfRecord/conductCard.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-578", "WS-551", "WS-554"]
+sprint_id: null
+decision_flags:
+  - "Pointer store shape: one file per card vs a single append-only index. Affects merge conflicts across concurrent sessions."
+  - "Do the seven existing .tmp-arch/ cards get registered retroactively, or recorded as pre-standard and left alone?"
+source:
+  kind: "measurement"
+  detail: "2026-08-20 Conduct Card cluster scoping; 7 untracked cards on disk, emitConductCard.mjs:231 documents the ambiguity"
+created_at: "2026-08-20T00:00:00.000Z"

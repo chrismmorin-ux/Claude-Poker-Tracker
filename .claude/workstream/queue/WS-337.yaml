@@ -93,6 +93,7 @@ accept_criteria: |
   - POKER_THEORY gains a section stating the transitive/intransitive split and the
     intransitivity map, with the measurement cited.
 effort: "L"
+runs_on: "any"
 files_involved:
   - "scripts/research/build-equity-matrix.mjs"
   - "scripts/research/spectrum.py"

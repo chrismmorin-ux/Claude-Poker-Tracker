@@ -78,6 +78,7 @@ accept_criteria: |
   - REPORT WHETHER ANY OTHER READOUT USES THE SAME ANCHOR. The scale test was written into
     SCORED-READOUT-SPEC.md, which governs Views 1-7. If Views 1-6 inherit it, they inherit this.
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
   - "scripts/backtest/holeMap.mjs"

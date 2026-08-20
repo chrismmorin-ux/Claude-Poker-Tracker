@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1786800066013-6b9272aedf3e"
-generated_content_hash: "9f0fc384e6c12649249efcd563057e1ea9ada48856f0099b34b71dbc0fa51cbc"
-generated_at: "2026-08-15T13:21:06.449Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl", "2026-08-02.jsonl", "2026-08-03.jsonl", "2026-08-04.jsonl", "2026-08-05.jsonl", "2026-08-06.jsonl", "2026-08-07.jsonl", "2026-08-08.jsonl", "2026-08-12.jsonl", "2026-08-13.jsonl", "2026-08-14.jsonl", "2026-08-15.jsonl"]
-event_count: 2439
+generated_from_event: "ev-1787260605381-84413af54fd5"
+generated_content_hash: "5d98f644c2acfc2970fd36dbc6cabfdb565abd53dc2078c6b5d92971ed729af8"
+generated_at: "2026-08-20T21:16:45.455Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl", "2026-08-02.jsonl", "2026-08-03.jsonl", "2026-08-04.jsonl", "2026-08-05.jsonl", "2026-08-06.jsonl", "2026-08-07.jsonl", "2026-08-08.jsonl", "2026-08-12.jsonl", "2026-08-13.jsonl", "2026-08-14.jsonl", "2026-08-15.jsonl", "2026-08-16.jsonl", "2026-08-17.jsonl", "2026-08-18.jsonl", "2026-08-19.jsonl", "2026-08-20.jsonl"]
+event_count: 3120
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 1843
-- Events recorded: 2439
-- Source chunks: 32
+- Commands recorded: 2456
+- Events recorded: 3120
+- Source chunks: 37
 
 ## Command `auto:42416:1781030643103`
 
@@ -9691,394 +9691,1549 @@ path, not direct markdown edits.
 |---|------|-------|-----|---------|
 | 1 | 2026-07-31T20:31:23.587Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
 
-## Command `cmd-sprintapprove-ms9mphenb5ca049fc130`
+## Command `cmd-itemcreated-ms9na75t8fe7af9cc2c6`
 
-- Start: 2026-08-01T00:24:11.619Z
+- Start: 2026-08-01T00:40:18.131Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T00:40:18.131Z | T6:workstream | /next | item_id="WS-318", program="domain-correctness", +5 more |
+
+## Command `cmd-itemcreated-ms9og3sgb8f465306399`
+
+- Start: 2026-08-01T01:12:53.316Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:12:53.316Z | T6:workstream | /next | item_id="WS-319", program="design", +4 more |
+
+## Command `cmd-itemcreated-ms9og47w8d9ea1ab6552`
+
+- Start: 2026-08-01T01:12:53.854Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:12:53.854Z | T6:workstream | /next | item_id="WS-320", program="design", +4 more |
+
+## Command `cmd-itemcreated-ms9ohappf442804ea332`
+
+- Start: 2026-08-01T01:13:48.927Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:13:48.927Z | T6:workstream | /next | item_id="WS-321", program="domain-correctness", +4 more |
+
+## Command `cmd-sprintapprove-ms9pkqay32f7152094a6`
+
+- Start: 2026-08-01T01:44:28.717Z
 - Events: 1
 - Tracks: T6:workstream-rebalance
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T00:24:11.619Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-165", +8 more |
+| 1 | 2026-08-01T01:44:28.717Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-161", +8 more |
 
-## Command `auto:26964:1785563609860`
+## Command `cmd-sprintabandoned-ms9ppmng719b9920d8b2`
 
-- Start: 2026-08-01T05:53:29.860Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T05:53:29.860Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
-
-## Command `auto:10140:1785563610525`
-
-- Start: 2026-08-01T05:53:30.525Z
-- Events: 1
-- Tracks: T12:program-management
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T05:53:30.525Z | T12:program-management | engines-registry-synced | workstream_dir="C:/Users/chris/repos/claude-p"..., engines_count=32, +1 more |
-
-## Command `auto:9812:1785563610883`
-
-- Start: 2026-08-01T05:53:30.882Z
-- Events: 1
-- Tracks: T6:reconcile-index
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T05:53:30.882Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-
-## Command `auto:9812:1785563611346`
-
-- Start: 2026-08-01T05:53:31.346Z
-- Events: 1
-- Tracks: T6:reconcile-findings
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T05:53:31.346Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-
-## Command `auto:9812:1785563611379`
-
-- Start: 2026-08-01T05:53:31.379Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T05:53:31.379Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-
-## Command `auto:9812:1785563611512`
-
-- Start: 2026-08-01T05:53:31.512Z
-- Events: 1
-- Tracks: T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T05:53:31.512Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `auto:21264:1785564281504`
-
-- Start: 2026-08-01T06:04:41.504Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T06:04:41.504Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
-
-## Command `auto:10972:1785564282428`
-
-- Start: 2026-08-01T06:04:42.428Z
-- Events: 1
-- Tracks: T6:reconcile-index
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T06:04:42.428Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-
-## Command `auto:10972:1785564282998`
-
-- Start: 2026-08-01T06:04:42.998Z
-- Events: 1
-- Tracks: T6:reconcile-findings
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T06:04:42.998Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-
-## Command `auto:10972:1785564283070`
-
-- Start: 2026-08-01T06:04:43.070Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T06:04:43.070Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-
-## Command `auto:10972:1785564283301`
-
-- Start: 2026-08-01T06:04:43.301Z
-- Events: 1
-- Tracks: T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T06:04:43.301Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `cmd-itemclosed-ms9zyg5n6dea46b2ab7b`
-
-- Start: 2026-08-01T06:35:04.910Z
-- Events: 6
-- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T06:35:04.910Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-310", +3 more |
-| 2 | 2026-08-01T06:35:05.204Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-165", +4 more |
-| 3 | 2026-08-01T06:35:05.564Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-| 4 | 2026-08-01T06:35:06.040Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-| 5 | 2026-08-01T06:35:06.077Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-| 6 | 2026-08-01T06:35:06.206Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `auto:31040:1785568224079`
-
-- Start: 2026-08-01T07:10:24.078Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:10:24.078Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
-
-## Command `auto:7624:1785568224861`
-
-- Start: 2026-08-01T07:10:24.861Z
-- Events: 1
-- Tracks: T6:reconcile-index
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:10:24.861Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-
-## Command `auto:7624:1785568225270`
-
-- Start: 2026-08-01T07:10:25.270Z
-- Events: 1
-- Tracks: T6:reconcile-findings
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:10:25.270Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-
-## Command `auto:7624:1785568225303`
-
-- Start: 2026-08-01T07:10:25.303Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:10:25.303Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-
-## Command `auto:7624:1785568225452`
-
-- Start: 2026-08-01T07:10:25.452Z
-- Events: 1
-- Tracks: T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:10:25.452Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `auto:20724:1785568884219`
-
-- Start: 2026-08-01T07:21:24.219Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:21:24.219Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
-
-## Command `auto:20712:1785568885032`
-
-- Start: 2026-08-01T07:21:25.032Z
-- Events: 1
-- Tracks: T6:reconcile-index
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:21:25.032Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-
-## Command `auto:20712:1785568885432`
-
-- Start: 2026-08-01T07:21:25.432Z
-- Events: 1
-- Tracks: T6:reconcile-findings
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:21:25.432Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-
-## Command `auto:20712:1785568885462`
-
-- Start: 2026-08-01T07:21:25.462Z
-- Events: 1
-- Tracks: T6:workstream
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:21:25.462Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-
-## Command `auto:20712:1785568885608`
-
-- Start: 2026-08-01T07:21:25.608Z
-- Events: 1
-- Tracks: T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T07:21:25.608Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `cmd-sprintapprove-msam2jbsfa8d4cdd34b8`
-
-- Start: 2026-08-01T16:54:07.196Z
+- Start: 2026-08-01T01:48:17.263Z
 - Events: 1
 - Tracks: T6:workstream-rebalance
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T16:54:07.196Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-166", +8 more |
+| 1 | 2026-08-01T01:48:17.263Z | T6:workstream-rebalance | /next | sprint_id="SPR-161", reason="founder-directed anchor overr"..., +4 more |
 
-## Command `cmd-itemclosed-msanfc4te69c4292ba44`
+## Command `cmd-sprintapprove-ms9rxcwoac5931f2d7e9`
 
-- Start: 2026-08-01T17:32:04.017Z
-- Events: 6
-- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T17:32:04.017Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-312", +3 more |
-| 2 | 2026-08-01T17:32:04.287Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-166", +4 more |
-| 3 | 2026-08-01T17:32:04.575Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-| 4 | 2026-08-01T17:32:05.128Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-| 5 | 2026-08-01T17:32:05.179Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-| 6 | 2026-08-01T17:32:05.351Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `cmd-sprintapprove-msapd0k1ff01364146ac`
-
-- Start: 2026-08-01T18:26:14.932Z
+- Start: 2026-08-01T02:50:17.116Z
 - Events: 1
 - Tracks: T6:workstream-rebalance
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T18:26:14.932Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-167", +8 more |
+| 1 | 2026-08-01T02:50:17.116Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-162", +8 more |
 
-## Command `cmd-itemclosed-msaypbwuc59efc932858`
+## Command `cmd-itemcreated-ms9wmecne93624b45ceb`
 
-- Start: 2026-08-01T22:47:46.067Z
-- Events: 6
-- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+- Start: 2026-08-01T05:01:43.867Z
+- Events: 1
+- Tracks: T6:workstream
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:47:46.067Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-292", +3 more |
-| 2 | 2026-08-01T22:47:46.292Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-167", +4 more |
-| 3 | 2026-08-01T22:47:46.592Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-| 4 | 2026-08-01T22:47:47.113Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-| 5 | 2026-08-01T22:47:47.171Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-| 6 | 2026-08-01T22:47:47.379Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+| 1 | 2026-08-01T05:01:43.867Z | T6:workstream | /next | item_id="WS-322", program="design", +4 more |
 
-## Command `cmd-sprintdone-msayphvn3bbacef69b65`
+## Command `cmd-sprintdone-ms9wmes0a72ace9441bb`
 
-- Start: 2026-08-01T22:47:53.799Z
+- Start: 2026-08-01T05:01:44.402Z
 - Events: 5
 - Tracks: T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T6:workstream, T11:vital-signs
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:47:53.799Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-167", +4 more |
-| 2 | 2026-08-01T22:47:54.138Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-| 3 | 2026-08-01T22:47:54.556Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-| 4 | 2026-08-01T22:47:54.602Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
-| 5 | 2026-08-01T22:47:54.743Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+| 1 | 2026-08-01T05:01:44.402Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-162", +4 more |
+| 2 | 2026-08-01T05:01:44.665Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 3 | 2026-08-01T05:01:45.284Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-08-01T05:01:45.319Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-08-01T05:01:45.395Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
 
-## Command `auto:39996:1785624524333`
+## Command `cmd-itemcreated-ms9x43mh50e1cb1cb7aa`
 
-- Start: 2026-08-01T22:48:44.333Z
-- Events: 1
-- Tracks: T6:reconcile-index
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:48:44.333Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-
-## Command `auto:39996:1785624524684`
-
-- Start: 2026-08-01T22:48:44.684Z
-- Events: 1
-- Tracks: T6:reconcile-findings
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:48:44.684Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-
-## Command `auto:39996:1785624524732`
-
-- Start: 2026-08-01T22:48:44.732Z
+- Start: 2026-08-01T05:15:29.760Z
 - Events: 1
 - Tracks: T6:workstream
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:48:44.732Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 1 | 2026-08-01T05:15:29.760Z | T6:workstream | /decide | item_id="WS-323", program="domain-correctness", +4 more |
 
-## Command `auto:39996:1785624524809`
+## Command `cmd-itemcreated-ms9y7wid14b36d32bd69`
 
-- Start: 2026-08-01T22:48:44.809Z
-- Events: 1
-- Tracks: T11:vital-signs
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:48:44.809Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
-
-## Command `auto:41308:1785624701154`
-
-- Start: 2026-08-01T22:51:41.154Z
-- Events: 1
-- Tracks: T6:reconcile-index
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:51:41.154Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
-
-## Command `auto:41308:1785624701474`
-
-- Start: 2026-08-01T22:51:41.474Z
-- Events: 1
-- Tracks: T6:reconcile-findings
-
-| # | Time | Track | Tag | Summary |
-|---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:51:41.474Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
-
-## Command `auto:41308:1785624701513`
-
-- Start: 2026-08-01T22:51:41.513Z
+- Start: 2026-08-01T05:46:26.794Z
 - Events: 1
 - Tracks: T6:workstream
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:51:41.513Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 1 | 2026-08-01T05:46:26.794Z | T6:workstream | /decide | item_id="WS-324", program="domain-correctness", +5 more |
 
-## Command `auto:41308:1785624701582`
+## Command `auto:6752:1785566730306`
 
-- Start: 2026-08-01T22:51:41.582Z
+- Start: 2026-08-01T06:45:30.306Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.306Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:6752:1785566730572`
+
+- Start: 2026-08-01T06:45:30.572Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.572Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:6752:1785566730595`
+
+- Start: 2026-08-01T06:45:30.595Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.595Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:6752:1785566730647`
+
+- Start: 2026-08-01T06:45:30.647Z
 - Events: 1
 - Tracks: T11:vital-signs
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:51:41.582Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+| 1 | 2026-08-01T06:45:30.647Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
 
-## Command `cmd-commandcompleted-msayuk2998d657ca2cbf`
+## Command `auto:8308:1785566859979`
 
-- Start: 2026-08-01T22:51:49.909Z
+- Start: 2026-08-01T06:47:39.979Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:39.979Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860060`
+
+- Start: 2026-08-01T06:47:40.060Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.060Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860114`
+
+- Start: 2026-08-01T06:47:40.114Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.114Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860166`
+
+- Start: 2026-08-01T06:47:40.166Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.166Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860210`
+
+- Start: 2026-08-01T06:47:40.210Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.210Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860251`
+
+- Start: 2026-08-01T06:47:40.251Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.251Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860295`
+
+- Start: 2026-08-01T06:47:40.295Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.295Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860339`
+
+- Start: 2026-08-01T06:47:40.339Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.339Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860388`
+
+- Start: 2026-08-01T06:47:40.388Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.388Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860434`
+
+- Start: 2026-08-01T06:47:40.433Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.433Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860478`
+
+- Start: 2026-08-01T06:47:40.478Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.478Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860521`
+
+- Start: 2026-08-01T06:47:40.521Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.521Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860568`
+
+- Start: 2026-08-01T06:47:40.567Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.567Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860615`
+
+- Start: 2026-08-01T06:47:40.615Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.615Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860657`
+
+- Start: 2026-08-01T06:47:40.657Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.657Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860699`
+
+- Start: 2026-08-01T06:47:40.699Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.699Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860741`
+
+- Start: 2026-08-01T06:47:40.741Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.741Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860781`
+
+- Start: 2026-08-01T06:47:40.781Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.781Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860820`
+
+- Start: 2026-08-01T06:47:40.820Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.820Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860860`
+
+- Start: 2026-08-01T06:47:40.860Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.860Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860900`
+
+- Start: 2026-08-01T06:47:40.900Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.900Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860937`
+
+- Start: 2026-08-01T06:47:40.937Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.937Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860978`
+
+- Start: 2026-08-01T06:47:40.978Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.978Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861017`
+
+- Start: 2026-08-01T06:47:41.017Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.017Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861057`
+
+- Start: 2026-08-01T06:47:41.057Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.057Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861095`
+
+- Start: 2026-08-01T06:47:41.095Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.095Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861138`
+
+- Start: 2026-08-01T06:47:41.138Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.138Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861175`
+
+- Start: 2026-08-01T06:47:41.175Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.175Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861213`
+
+- Start: 2026-08-01T06:47:41.213Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.213Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861250`
+
+- Start: 2026-08-01T06:47:41.250Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.250Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861286`
+
+- Start: 2026-08-01T06:47:41.286Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.286Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861326`
+
+- Start: 2026-08-01T06:47:41.326Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.326Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861368`
+
+- Start: 2026-08-01T06:47:41.368Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.368Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861408`
+
+- Start: 2026-08-01T06:47:41.408Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.408Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861445`
+
+- Start: 2026-08-01T06:47:41.445Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.445Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861481`
+
+- Start: 2026-08-01T06:47:41.481Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.481Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861519`
+
+- Start: 2026-08-01T06:47:41.519Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.519Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861558`
+
+- Start: 2026-08-01T06:47:41.558Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.558Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861598`
+
+- Start: 2026-08-01T06:47:41.598Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.598Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861642`
+
+- Start: 2026-08-01T06:47:41.642Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.642Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861682`
+
+- Start: 2026-08-01T06:47:41.682Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.682Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861725`
+
+- Start: 2026-08-01T06:47:41.725Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.725Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861766`
+
+- Start: 2026-08-01T06:47:41.766Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.766Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861813`
+
+- Start: 2026-08-01T06:47:41.813Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.813Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861853`
+
+- Start: 2026-08-01T06:47:41.853Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.853Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861892`
+
+- Start: 2026-08-01T06:47:41.892Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.892Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861929`
+
+- Start: 2026-08-01T06:47:41.929Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.929Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861964`
+
+- Start: 2026-08-01T06:47:41.964Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.964Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861999`
+
+- Start: 2026-08-01T06:47:41.999Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.999Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862033`
+
+- Start: 2026-08-01T06:47:42.033Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.033Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862068`
+
+- Start: 2026-08-01T06:47:42.068Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.068Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862105`
+
+- Start: 2026-08-01T06:47:42.105Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.105Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862142`
+
+- Start: 2026-08-01T06:47:42.142Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.142Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862183`
+
+- Start: 2026-08-01T06:47:42.183Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.183Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862223`
+
+- Start: 2026-08-01T06:47:42.223Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.223Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862259`
+
+- Start: 2026-08-01T06:47:42.259Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.259Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862295`
+
+- Start: 2026-08-01T06:47:42.295Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.295Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862331`
+
+- Start: 2026-08-01T06:47:42.331Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.331Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862367`
+
+- Start: 2026-08-01T06:47:42.367Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.367Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862412`
+
+- Start: 2026-08-01T06:47:42.412Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.412Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862446`
+
+- Start: 2026-08-01T06:47:42.446Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.446Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862480`
+
+- Start: 2026-08-01T06:47:42.480Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.480Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862515`
+
+- Start: 2026-08-01T06:47:42.515Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.515Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862548`
+
+- Start: 2026-08-01T06:47:42.548Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.548Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862582`
+
+- Start: 2026-08-01T06:47:42.582Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.582Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862621`
+
+- Start: 2026-08-01T06:47:42.621Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.621Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862656`
+
+- Start: 2026-08-01T06:47:42.656Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.656Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862691`
+
+- Start: 2026-08-01T06:47:42.691Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.691Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862729`
+
+- Start: 2026-08-01T06:47:42.729Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.729Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862762`
+
+- Start: 2026-08-01T06:47:42.762Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.762Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862796`
+
+- Start: 2026-08-01T06:47:42.796Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.796Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862832`
+
+- Start: 2026-08-01T06:47:42.832Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.832Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862865`
+
+- Start: 2026-08-01T06:47:42.865Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.865Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862898`
+
+- Start: 2026-08-01T06:47:42.898Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.898Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862931`
+
+- Start: 2026-08-01T06:47:42.931Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.931Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862963`
+
+- Start: 2026-08-01T06:47:42.963Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.963Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862995`
+
+- Start: 2026-08-01T06:47:42.995Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.995Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863026`
+
+- Start: 2026-08-01T06:47:43.026Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.026Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863060`
+
+- Start: 2026-08-01T06:47:43.060Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.060Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863093`
+
+- Start: 2026-08-01T06:47:43.093Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.093Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863126`
+
+- Start: 2026-08-01T06:47:43.126Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.126Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863160`
+
+- Start: 2026-08-01T06:47:43.160Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.160Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863197`
+
+- Start: 2026-08-01T06:47:43.197Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.197Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863230`
+
+- Start: 2026-08-01T06:47:43.230Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.230Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863264`
+
+- Start: 2026-08-01T06:47:43.264Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.264Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863297`
+
+- Start: 2026-08-01T06:47:43.297Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.297Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863335`
+
+- Start: 2026-08-01T06:47:43.335Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.335Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863372`
+
+- Start: 2026-08-01T06:47:43.372Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.372Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863408`
+
+- Start: 2026-08-01T06:47:43.408Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.408Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863442`
+
+- Start: 2026-08-01T06:47:43.442Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.442Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863476`
+
+- Start: 2026-08-01T06:47:43.476Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.476Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863510`
+
+- Start: 2026-08-01T06:47:43.510Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.510Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863544`
+
+- Start: 2026-08-01T06:47:43.544Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.544Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863579`
+
+- Start: 2026-08-01T06:47:43.579Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.579Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863614`
+
+- Start: 2026-08-01T06:47:43.614Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.614Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863648`
+
+- Start: 2026-08-01T06:47:43.648Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.648Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863682`
+
+- Start: 2026-08-01T06:47:43.682Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.682Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863716`
+
+- Start: 2026-08-01T06:47:43.716Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.716Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863749`
+
+- Start: 2026-08-01T06:47:43.749Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.749Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863779`
+
+- Start: 2026-08-01T06:47:43.779Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.779Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863809`
+
+- Start: 2026-08-01T06:47:43.809Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.809Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863840`
+
+- Start: 2026-08-01T06:47:43.840Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.840Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863872`
+
+- Start: 2026-08-01T06:47:43.872Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.872Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863904`
+
+- Start: 2026-08-01T06:47:43.904Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.904Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863935`
+
+- Start: 2026-08-01T06:47:43.935Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.935Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863963`
+
+- Start: 2026-08-01T06:47:43.963Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.963Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863991`
+
+- Start: 2026-08-01T06:47:43.991Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.991Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864019`
+
+- Start: 2026-08-01T06:47:44.019Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.019Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864046`
+
+- Start: 2026-08-01T06:47:44.046Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.046Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864076`
+
+- Start: 2026-08-01T06:47:44.076Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.076Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864106`
+
+- Start: 2026-08-01T06:47:44.105Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.105Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864137`
+
+- Start: 2026-08-01T06:47:44.137Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.137Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864168`
+
+- Start: 2026-08-01T06:47:44.168Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.168Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864199`
+
+- Start: 2026-08-01T06:47:44.199Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.199Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864228`
+
+- Start: 2026-08-01T06:47:44.228Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.228Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864260`
+
+- Start: 2026-08-01T06:47:44.260Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.260Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864291`
+
+- Start: 2026-08-01T06:47:44.291Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.291Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864322`
+
+- Start: 2026-08-01T06:47:44.322Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.322Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864351`
+
+- Start: 2026-08-01T06:47:44.351Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.351Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864380`
+
+- Start: 2026-08-01T06:47:44.380Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.380Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864410`
+
+- Start: 2026-08-01T06:47:44.410Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.410Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864438`
+
+- Start: 2026-08-01T06:47:44.438Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.438Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864466`
+
+- Start: 2026-08-01T06:47:44.466Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.466Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864493`
+
+- Start: 2026-08-01T06:47:44.493Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.493Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864519`
+
+- Start: 2026-08-01T06:47:44.519Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.519Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864546`
+
+- Start: 2026-08-01T06:47:44.546Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.546Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864572`
+
+- Start: 2026-08-01T06:47:44.572Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.572Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864599`
+
+- Start: 2026-08-01T06:47:44.599Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.599Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864628`
+
+- Start: 2026-08-01T06:47:44.628Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.628Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864657`
+
+- Start: 2026-08-01T06:47:44.657Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.657Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864689`
+
+- Start: 2026-08-01T06:47:44.689Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.689Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864716`
+
+- Start: 2026-08-01T06:47:44.716Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.716Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864744`
+
+- Start: 2026-08-01T06:47:44.744Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.744Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `cmd-commandcompleted-msa0f573814d88553e9a`
+
+- Start: 2026-08-01T06:48:03.859Z
 - Events: 1
 - Tracks: T15:session-end
 
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
-| 1 | 2026-08-01T22:51:49.909Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+| 1 | 2026-08-01T06:48:03.859Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:16302:1785614296702`
+
+- Start: 2026-08-01T19:58:16.702Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T19:58:16.702Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:16302:1785614297214`
+
+- Start: 2026-08-01T19:58:17.214Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T19:58:17.214Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:16302:1785614297242`
+
+- Start: 2026-08-01T19:58:17.242Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T19:58:17.242Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:16302:1785614297289`
+
+- Start: 2026-08-01T19:58:17.289Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T19:58:17.289Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-msasnirr72813ba47ca9`
+
+- Start: 2026-08-01T19:58:23.949Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T19:58:23.949Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
 
 ## Command `auto:37524:1785656439811`
 
@@ -19043,3 +20198,5046 @@ path, not direct markdown edits.
 | 7 | 2026-08-15T13:21:03.794Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="3da5b07b478979605f4e63591b0dc"..., +1 more |
 | 8 | 2026-08-15T13:21:03.876Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
 | 9 | 2026-08-15T13:21:06.013Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:26912:1786800173890`
+
+- Start: 2026-08-15T13:22:53.890Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T13:22:53.890Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="/next gate resumed SPR-186 wi"..., +4 more |
+
+## Command `auto:33144:1786801683526`
+
+- Start: 2026-08-15T13:48:03.526Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T13:48:03.526Z | T15:session-end | session-abandoned | session_id="ses-20260815-0206-0ab1df9d", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `cmd-sprintapprove-msuh7y5c4c2aec5deb2c`
+
+- Start: 2026-08-15T14:33:45.123Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T14:33:45.123Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-187", +8 more |
+
+## Command `auto:8820:1786807082229`
+
+- Start: 2026-08-15T15:18:02.229Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T15:18:02.229Z | T15:session-end | session-abandoned | session_id="ses-20260815-1307-454852a2", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:11924:1786807303219`
+
+- Start: 2026-08-15T15:21:43.219Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T15:21:43.219Z | T15:session-end | session-registered | session_id="ses-20260815-1521-1f4de6c7", agent_session_id="1f4de6c7-96e3-4f67-95db-94066"... |
+
+## Command `auto:29864:1786808349715`
+
+- Start: 2026-08-15T15:39:09.715Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T15:39:09.715Z | T15:session-end | session-abandoned | session_id="ses-20260815-1521-1f4de6c7", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:29540:1786809951673`
+
+- Start: 2026-08-15T16:05:51.673Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T16:05:51.673Z | T15:session-end | session-registered | session_id="ses-20260815-1605-6b224507", agent_session_id="6b224507-3000-4d22-bc13-c3713"... |
+
+## Command `auto:5680:1786810107615`
+
+- Start: 2026-08-15T16:08:27.615Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T16:08:27.615Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="behavior-policy manifest reco"..., +4 more |
+
+## Command `auto:22240:1786810876387`
+
+- Start: 2026-08-15T16:21:16.387Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T16:21:16.387Z | T15:session-end | session-registered | session_id="ses-20260815-1621-c5dfb8f8", agent_session_id="c5dfb8f8-09c6-4a1c-a183-38e5f"... |
+
+## Command `auto:10384:1786812482372`
+
+- Start: 2026-08-15T16:48:02.372Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T16:48:02.372Z | T15:session-end | session-abandoned | session_id="ses-20260815-1307-454852a2", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:10384:1786812483008`
+
+- Start: 2026-08-15T16:48:03.008Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T16:48:03.008Z | T15:session-end | session-abandoned | session_id="ses-20260815-1605-6b224507", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:10384:1786812483334`
+
+- Start: 2026-08-15T16:48:03.334Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T16:48:03.334Z | T15:session-end | session-abandoned | session_id="ses-20260815-1621-c5dfb8f8", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:33168:1786829302925`
+
+- Start: 2026-08-15T21:28:22.925Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-15T21:28:22.925Z | T15:session-end | session-registered | session_id="ses-20260815-2128-24342cc6", agent_session_id="24342cc6-2fbe-4c5a-b17b-9d39b"... |
+
+## Command `auto:26704:1786851927932`
+
+- Start: 2026-08-16T03:45:27.932Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T03:45:27.932Z | T15:session-end | session-registered | session_id="ses-20260816-0345-85495652", agent_session_id="85495652-014c-41b9-a5d8-cb096"... |
+
+## Command `auto:29560:1786852035311`
+
+- Start: 2026-08-16T03:47:15.311Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T03:47:15.311Z | T15:session-end | session-abandoned | session_id="ses-20260815-2128-24342cc6", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:22428:1786854782054`
+
+- Start: 2026-08-16T04:33:02.054Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T04:33:02.054Z | T15:session-end | session-abandoned | session_id="ses-20260731-2246-ed04bf9c", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:22428:1786854782339`
+
+- Start: 2026-08-16T04:33:02.339Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T04:33:02.339Z | T15:session-end | session-abandoned | session_id="ses-20260802-0159-5d593853", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:22428:1786854782633`
+
+- Start: 2026-08-16T04:33:02.633Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T04:33:02.633Z | T15:session-end | session-abandoned | session_id="ses-20260804-0239-00449f7e", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:22428:1786854782892`
+
+- Start: 2026-08-16T04:33:02.892Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T04:33:02.892Z | T15:session-end | session-abandoned | session_id="ses-20260805-1801-ed38c311", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:38688:1786866483071`
+
+- Start: 2026-08-16T07:48:03.071Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T07:48:03.071Z | T15:session-end | session-abandoned | session_id="ses-20260816-0345-85495652", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:3680:1786868014515`
+
+- Start: 2026-08-16T08:13:34.515Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:13:34.515Z | T15:session-end | session-registered | session_id="ses-20260816-0813-1c308458", agent_session_id="1c308458-ac0f-4952-b2e0-7b054"... |
+
+## Command `auto:36700:1786868130355`
+
+- Start: 2026-08-16T08:15:30.355Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:15:30.355Z | T15:session-end | session-registered | session_id="ses-20260816-0815-03a61b53", agent_session_id="03a61b53-5bbc-48a8-8361-68178"... |
+
+## Command `auto:20412:1786868902516`
+
+- Start: 2026-08-16T08:28:22.516Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:28:22.516Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:20412:1786868903001`
+
+- Start: 2026-08-16T08:28:23.001Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:28:23.001Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:20412:1786868903283`
+
+- Start: 2026-08-16T08:28:23.283Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:28:23.283Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:20412:1786868903409`
+
+- Start: 2026-08-16T08:28:23.409Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:28:23.409Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:10580:1786869242478`
+
+- Start: 2026-08-16T08:34:02.478Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:34:02.478Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:10580:1786869243298`
+
+- Start: 2026-08-16T08:34:03.298Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:34:03.298Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:10580:1786869243719`
+
+- Start: 2026-08-16T08:34:03.719Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:34:03.719Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:10580:1786869244094`
+
+- Start: 2026-08-16T08:34:04.094Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:34:04.094Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:29016:1786870304551`
+
+- Start: 2026-08-16T08:51:44.551Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:51:44.551Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:29016:1786870305279`
+
+- Start: 2026-08-16T08:51:45.279Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:51:45.279Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:29016:1786870305518`
+
+- Start: 2026-08-16T08:51:45.518Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:51:45.518Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:29016:1786870305863`
+
+- Start: 2026-08-16T08:51:45.863Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T08:51:45.863Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:30024:1786871099323`
+
+- Start: 2026-08-16T09:04:59.323Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T09:04:59.323Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:30024:1786871100055`
+
+- Start: 2026-08-16T09:05:00.055Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T09:05:00.055Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:30024:1786871100299`
+
+- Start: 2026-08-16T09:05:00.299Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T09:05:00.299Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30024:1786871100620`
+
+- Start: 2026-08-16T09:05:00.620Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T09:05:00.620Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:12716:1786882683113`
+
+- Start: 2026-08-16T12:18:03.113Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T12:18:03.113Z | T15:session-end | session-abandoned | session_id="ses-20260815-1621-c5dfb8f8", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:38628:1786883582435`
+
+- Start: 2026-08-16T12:33:02.435Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T12:33:02.435Z | T15:session-end | session-abandoned | session_id="ses-20260816-0815-03a61b53", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:28020:1786890782542`
+
+- Start: 2026-08-16T14:33:02.542Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T14:33:02.542Z | T15:session-end | session-abandoned | session_id="ses-20260816-0813-1c308458", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:25364:1786896012031`
+
+- Start: 2026-08-16T16:00:12.031Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:00:12.031Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:25364:1786896012902`
+
+- Start: 2026-08-16T16:00:12.902Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:00:12.902Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:25364:1786896013161`
+
+- Start: 2026-08-16T16:00:13.161Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:00:13.161Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:25364:1786896013525`
+
+- Start: 2026-08-16T16:00:13.525Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:00:13.525Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:39560:1786896231712`
+
+- Start: 2026-08-16T16:03:51.712Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:03:51.712Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Games are matched by their ME"..., +4 more |
+
+## Command `auto:27980:1786896885059`
+
+- Start: 2026-08-16T16:14:45.059Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:14:45.059Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Build the limp-rate channel —"..., +4 more |
+
+## Command `auto:13068:1786897047782`
+
+- Start: 2026-08-16T16:17:27.782Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:17:27.782Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:13068:1786897048088`
+
+- Start: 2026-08-16T16:17:28.088Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:17:28.088Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:12868:1786897048268`
+
+- Start: 2026-08-16T16:17:28.268Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:17:28.268Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="14b684ed8f87027c11cffa719388f"..., +2 more |
+
+## Command `auto:12868:1786897048307`
+
+- Start: 2026-08-16T16:17:28.307Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:17:28.307Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="b7639e5e5fceb771960b648cf75d4"..., +2 more |
+
+## Command `auto:13068:1786897048340`
+
+- Start: 2026-08-16T16:17:28.340Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:17:28.340Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:13068:1786897048424`
+
+- Start: 2026-08-16T16:17:28.424Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:17:28.424Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:36960:1786897344428`
+
+- Start: 2026-08-16T16:22:24.428Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:22:24.428Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:36960:1786897344749`
+
+- Start: 2026-08-16T16:22:24.749Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:22:24.749Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:36960:1786897344944`
+
+- Start: 2026-08-16T16:22:24.944Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:22:24.944Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:36960:1786897345032`
+
+- Start: 2026-08-16T16:22:25.032Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:22:25.032Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:30580:1786897982360`
+
+- Start: 2026-08-16T16:33:02.360Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T16:33:02.360Z | T15:session-end | session-abandoned | session_id="ses-20260815-1621-c5dfb8f8", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:10504:1786901385506`
+
+- Start: 2026-08-16T17:29:45.506Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:29:45.506Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:10504:1786901386542`
+
+- Start: 2026-08-16T17:29:46.542Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:29:46.542Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:10504:1786901386882`
+
+- Start: 2026-08-16T17:29:46.882Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:29:46.882Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:10504:1786901387280`
+
+- Start: 2026-08-16T17:29:47.280Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:29:47.280Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:9928:1786901583007`
+
+- Start: 2026-08-16T17:33:03.007Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:33:03.007Z | T15:session-end | session-abandoned | session_id="ses-20260816-0813-1c308458", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:6524:1786901724914`
+
+- Start: 2026-08-16T17:35:24.914Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:35:24.914Z | T15:session-end | session-registered | session_id="ses-20260816-1735-4010b29f", agent_session_id="4010b29f-81a7-4695-8073-ba282"... |
+
+## Command `auto:27508:1786902598970`
+
+- Start: 2026-08-16T17:49:58.970Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:49:58.970Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="separabilityVerdict now decid"..., +4 more |
+
+## Command `auto:17304:1786902599112`
+
+- Start: 2026-08-16T17:49:59.112Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:49:59.112Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="cbetRate is verdicted against"..., +4 more |
+
+## Command `auto:37844:1786902599251`
+
+- Start: 2026-08-16T17:49:59.251Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T17:49:59.251Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="check-engine-version-bump tri"..., +4 more |
+
+## Command `auto:34108:1786905858487`
+
+- Start: 2026-08-16T18:44:18.487Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T18:44:18.487Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Aggregate nulls are non-termi"..., +4 more |
+
+## Command `auto:18444:1786905858620`
+
+- Start: 2026-08-16T18:44:18.620Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T18:44:18.620Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Player segmentation derives n"..., +4 more |
+
+## Command `auto:38368:1786906358204`
+
+- Start: 2026-08-16T18:52:38.204Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T18:52:38.204Z | T15:session-end | session-registered | session_id="ses-20260816-1852-48e79e5e", agent_session_id="48e79e5e-475b-4b88-ae29-03305"... |
+
+## Command `auto:35636:1786915981631`
+
+- Start: 2026-08-16T21:33:01.631Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T21:33:01.631Z | T15:session-end | session-abandoned | session_id="ses-20260816-0815-03a61b53", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:4848:1786920481640`
+
+- Start: 2026-08-16T22:48:01.640Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T22:48:01.640Z | T15:session-end | session-abandoned | session_id="ses-20260816-1735-4010b29f", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:35436:1786921381555`
+
+- Start: 2026-08-16T23:03:01.555Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-16T23:03:01.555Z | T15:session-end | session-abandoned | session_id="ses-20260816-1852-48e79e5e", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:39452:1786925554834`
+
+- Start: 2026-08-17T00:12:34.834Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T00:12:34.834Z | T15:session-end | session-registered | session_id="ses-20260817-0012-19846824", agent_session_id="19846824-bf75-4f2e-9b30-a765b"... |
+
+## Command `auto:39076:1786928122046`
+
+- Start: 2026-08-17T00:55:22.046Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T00:55:22.046Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="WS-445 label-ledger gate: --u"..., +4 more |
+
+## Command `auto:1260:1786928122442`
+
+- Start: 2026-08-17T00:55:22.442Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T00:55:22.442Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="WS-445 foundation status is a"..., +4 more |
+
+## Command `auto:40556:1786928151172`
+
+- Start: 2026-08-17T00:55:51.172Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T00:55:51.172Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="scripts/__tests__/compactTier"..., +4 more |
+
+## Command `auto:28336:1786928151569`
+
+- Start: 2026-08-17T00:55:51.569Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T00:55:51.569Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="scripts/check-required-equity"..., +4 more |
+
+## Command `auto:17908:1786928443883`
+
+- Start: 2026-08-17T01:00:43.883Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T01:00:43.883Z | T20:capture-buffer | feedback_recorded | type="feedback_recorded", feedback_text="In-the-moment table briefing "..., +3 more |
+
+## Command `auto:15552:1786928615140`
+
+- Start: 2026-08-17T01:03:35.140Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T01:03:35.140Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Realtime table briefing deliv"..., +4 more |
+
+## Command `auto:29148:1786928661527`
+
+- Start: 2026-08-17T01:04:21.527Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T01:04:21.527Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="PlayerFinderView.smoke.test.j"..., +4 more |
+
+## Command `auto:33976:1786929825878`
+
+- Start: 2026-08-17T01:23:45.878Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T01:23:45.878Z | T15:session-end | session-registered | session_id="ses-20260817-0123-09d1ac03", agent_session_id="09d1ac03-9348-4e37-a4d9-13233"... |
+
+## Command `auto:22408:1786933393118`
+
+- Start: 2026-08-17T02:23:13.118Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T02:23:13.118Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Guide slot rule: a word may l"..., +4 more |
+
+## Command `auto:33564:1786933393216`
+
+- Start: 2026-08-17T02:23:13.216Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T02:23:13.216Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A Guide cell with n=0 reports"..., +4 more |
+
+## Command `auto:2248:1786933393316`
+
+- Start: 2026-08-17T02:23:13.316Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T02:23:13.316Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Guide form gets a new program"..., +4 more |
+
+## Command `auto:36100:1786934505381`
+
+- Start: 2026-08-17T02:41:45.381Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T02:41:45.381Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Guide monitor treats INERTNES"..., +4 more |
+
+## Command `auto:38820:1786934505465`
+
+- Start: 2026-08-17T02:41:45.465Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T02:41:45.465Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="First draft of the AS-732 que"..., +4 more |
+
+## Command `auto:36664:1786935406343`
+
+- Start: 2026-08-17T02:56:46.343Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T02:56:46.343Z | T15:session-end | session-registered | session_id="ses-20260817-0256-5e443c3b", agent_session_id="5e443c3b-7b43-42d5-aecc-c08d5"... |
+
+## Command `auto:36120:1786936160910`
+
+- Start: 2026-08-17T03:09:20.910Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T03:09:20.910Z | T15:session-end | session-registered | session_id="ses-20260817-0309-nohook", agent_session_id=null |
+
+## Command `cmd-itemclosed-mswpr0ft73d39c3deb95`
+
+- Start: 2026-08-17T04:08:03.836Z
+- Events: 18
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T6:program-integrity, T20:capture-buffer, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T04:08:03.836Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-445", +3 more |
+| 2 | 2026-08-17T04:08:04.310Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-187", +4 more |
+| 3 | 2026-08-17T04:08:04.789Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+| 4 | 2026-08-17T04:08:05.640Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 5 | 2026-08-17T04:08:05.820Z | T6:program-integrity | program_cap_breach | program="data-provenance", work_items_open=7, +4 more |
+| 6 | 2026-08-17T04:08:05.972Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="33be46ee433c103d2cd0c4ab7fc60"..., +2 more |
+| 7 | 2026-08-17T04:08:06.028Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="590ee798020319c06a7c0d3c6cffb"..., +2 more |
+| 8 | 2026-08-17T04:08:06.076Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="209a2d0eefab74c1352bd20949962"..., +2 more |
+| 9 | 2026-08-17T04:08:06.112Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="fade81ececf462ccfc7f5ca79bfa8"..., +2 more |
+| 10 | 2026-08-17T04:08:06.144Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="89f4c865d2b2ab85137333a3d52f7"..., +2 more |
+| 11 | 2026-08-17T04:08:06.177Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="48bcd2d8c8c8b105221a22fb1b412"..., +2 more |
+| 12 | 2026-08-17T04:08:06.210Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="cb9c8c4524a3d75386f9c496caf7c"..., +2 more |
+| 13 | 2026-08-17T04:08:06.240Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="31ced83a27f43ad2b2f754d050ff9"..., +1 more |
+| 14 | 2026-08-17T04:08:06.272Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="2ba02b147e128ce4b6db6c2c90104"..., +1 more |
+| 15 | 2026-08-17T04:08:06.302Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="d33a8491dcc42efda6bdd19577172"..., +1 more |
+| 16 | 2026-08-17T04:08:06.332Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="eb8a40e0c09a2828b89805aec4ef6"..., +1 more |
+| 17 | 2026-08-17T04:08:06.373Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 18 | 2026-08-17T04:08:06.727Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:19712:1786940490682`
+
+- Start: 2026-08-17T04:21:30.682Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T04:21:30.682Z | T15:session-end | session-registered | session_id="ses-20260817-0421-0ff9f354", agent_session_id="0ff9f354-0434-4e0c-b1c4-a82db"... |
+
+## Command `cmd-sprintapprove-mswqknfu65f1a3b15692`
+
+- Start: 2026-08-17T04:31:06.669Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T04:31:06.669Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-188", +8 more |
+
+## Command `auto:21880:1786941181591`
+
+- Start: 2026-08-17T04:33:01.591Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T04:33:01.591Z | T15:session-end | session-abandoned | session_id="ses-20260817-0012-19846824", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:39448:1786941880415`
+
+- Start: 2026-08-17T04:44:40.415Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T04:44:40.415Z | T15:session-end | session-registered | session_id="ses-20260817-0444-5b55e72c", agent_session_id="5b55e72c-24ee-42cc-9c36-a7c30"... |
+
+## Command `cmd-itemclosed-mswrxrew75cbd52ec726`
+
+- Start: 2026-08-17T05:09:17.965Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:09:17.965Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-513", +3 more |
+| 2 | 2026-08-17T05:09:18.380Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-188", +4 more |
+| 3 | 2026-08-17T05:09:18.713Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+| 4 | 2026-08-17T05:09:19.260Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 5 | 2026-08-17T05:09:19.492Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-08-17T05:09:19.673Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:36904:1786943412733`
+
+- Start: 2026-08-17T05:10:12.733Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:12.733Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Stage behavior-policy.json as"..., +4 more |
+
+## Command `auto:18448:1786943418556`
+
+- Start: 2026-08-17T05:10:18.556Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:18.556Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="blocked_by now hard-gates com"..., +4 more |
+
+## Command `auto:24720:1786943429247`
+
+- Start: 2026-08-17T05:10:29.247Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:29.247Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-next.js compose has no i"..., +4 more |
+
+## Command `auto:35352:1786943434569`
+
+- Start: 2026-08-17T05:10:34.569Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:34.569Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-fleet-compute status rep"..., +4 more |
+
+## Command `auto:35476:1786943442729`
+
+- Start: 2026-08-17T05:10:42.729Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:42.729Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:35476:1786943443251`
+
+- Start: 2026-08-17T05:10:43.251Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.251Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:26632:1786943443474`
+
+- Start: 2026-08-17T05:10:43.474Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.474Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="eff2e1046d416fdef27d525336ca9"..., +2 more |
+
+## Command `auto:26632:1786943443517`
+
+- Start: 2026-08-17T05:10:43.517Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.517Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="9136d8a156e88f915379753cebaf7"..., +2 more |
+
+## Command `auto:26632:1786943443546`
+
+- Start: 2026-08-17T05:10:43.546Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.546Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="e3fe1311befe337b830793018c744"..., +1 more |
+
+## Command `auto:26632:1786943443575`
+
+- Start: 2026-08-17T05:10:43.575Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.575Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="cbf78146e00e7b28a7d7bbbbaaa71"..., +1 more |
+
+## Command `auto:35476:1786943443619`
+
+- Start: 2026-08-17T05:10:43.619Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.619Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:35476:1786943443816`
+
+- Start: 2026-08-17T05:10:43.816Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:10:43.816Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:30628:1786943531387`
+
+- Start: 2026-08-17T05:12:11.387Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:12:11.387Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:30628:1786943531919`
+
+- Start: 2026-08-17T05:12:11.919Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:12:11.919Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:30628:1786943532146`
+
+- Start: 2026-08-17T05:12:12.146Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:12:12.146Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30628:1786943532347`
+
+- Start: 2026-08-17T05:12:12.347Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:12:12.347Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-msws1i4kf45543c602db`
+
+- Start: 2026-08-17T05:12:12.552Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:12:12.552Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:16228:1786943648364`
+
+- Start: 2026-08-17T05:14:08.363Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:14:08.363Z | T15:session-end | session-registered | session_id="ses-20260817-0514-23279d72", agent_session_id="23279d72-fc52-4267-a7c4-5d7ec"... |
+
+## Command `cmd-sprintapprove-msws5o2h4abe4896d993`
+
+- Start: 2026-08-17T05:15:26.876Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:15:26.876Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-189", +8 more |
+
+## Command `auto:34476:1786943797363`
+
+- Start: 2026-08-17T05:16:37.363Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:16:37.363Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-next.js approve prints '"..., +4 more |
+
+## Command `auto:36528:1786943881566`
+
+- Start: 2026-08-17T05:18:01.566Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:18:01.566Z | T15:session-end | session-abandoned | session_id="ses-20260816-1852-48e79e5e", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:30644:1786944748747`
+
+- Start: 2026-08-17T05:32:28.747Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:32:28.747Z | T15:session-end | session-registered | session_id="ses-20260817-0532-f6141ba8", agent_session_id="f6141ba8-b2c8-4c94-ab27-258e6"... |
+
+## Command `auto:32152:1786944949699`
+
+- Start: 2026-08-17T05:35:49.699Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:35:49.699Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Two live sessions implemented"..., +4 more |
+
+## Command `auto:15228:1786945023584`
+
+- Start: 2026-08-17T05:37:03.584Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:37:03.584Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="WS-504 corpus/player cap samp"..., +4 more |
+
+## Command `auto:32548:1786946100541`
+
+- Start: 2026-08-17T05:55:00.541Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:55:00.541Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Facing a 3-bet is a THIRD ind"..., +4 more |
+
+## Command `auto:34644:1786946106601`
+
+- Start: 2026-08-17T05:55:06.601Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T05:55:06.601Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A seat that COLD-CALLS a 3-be"..., +4 more |
+
+## Command `auto:11304:1786947095810`
+
+- Start: 2026-08-17T06:11:35.810Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T06:11:35.810Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="WS-521 measured on corpus: th"..., +4 more |
+
+## Command `auto:39392:1786948150084`
+
+- Start: 2026-08-17T06:29:10.084Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T06:29:10.084Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="PlayerFinderView.smoke.test.j"..., +4 more |
+
+## Command `auto:34564:1786949281590`
+
+- Start: 2026-08-17T06:48:01.590Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T06:48:01.590Z | T15:session-end | session-abandoned | session_id="ses-20260817-0123-09d1ac03", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:33464:1786951082056`
+
+- Start: 2026-08-17T07:18:02.056Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T07:18:02.056Z | T15:session-end | session-abandoned | session_id="ses-20260817-0309-nohook", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:38856:1786954681871`
+
+- Start: 2026-08-17T08:18:01.871Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T08:18:01.871Z | T15:session-end | session-abandoned | session_id="ses-20260817-0256-5e443c3b", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:27552:1786958281761`
+
+- Start: 2026-08-17T09:18:01.761Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T09:18:01.761Z | T15:session-end | session-abandoned | session_id="ses-20260817-0514-23279d72", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:35376:1786960982247`
+
+- Start: 2026-08-17T10:03:02.247Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T10:03:02.247Z | T15:session-end | session-abandoned | session_id="ses-20260817-0532-f6141ba8", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:21568:1786963681993`
+
+- Start: 2026-08-17T10:48:01.993Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T10:48:01.993Z | T15:session-end | session-abandoned | session_id="ses-20260817-0444-5b55e72c", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:31068:1786985164876`
+
+- Start: 2026-08-17T16:46:04.876Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T16:46:04.876Z | T15:session-end | session-registered | session_id="ses-20260817-1646-d36c455e", agent_session_id="d36c455e-8fb5-4059-97b9-1deef"... |
+
+## Command `auto:26724:1786985343378`
+
+- Start: 2026-08-17T16:49:03.378Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T16:49:03.378Z | T15:session-end | session-registered | session_id="ses-20260817-1649-8093dc5b", agent_session_id="8093dc5b-c8d5-4237-ab04-1262d"... |
+
+## Command `auto:25460:1786986182606`
+
+- Start: 2026-08-17T17:03:02.606Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:03:02.606Z | T15:session-end | session-abandoned | session_id="ses-20260817-1646-d36c455e", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:30844:1786989381744`
+
+- Start: 2026-08-17T17:56:21.744Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:21.744Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:30844:1786989382060`
+
+- Start: 2026-08-17T17:56:22.060Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.060Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:22560:1786989382247`
+
+- Start: 2026-08-17T17:56:22.247Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.247Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="1803a1ebd12ac1e011021e329b8dd"..., +2 more |
+
+## Command `auto:22560:1786989382285`
+
+- Start: 2026-08-17T17:56:22.285Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.285Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="49844cf6b1e88ee524d752695e94d"..., +2 more |
+
+## Command `auto:22560:1786989382304`
+
+- Start: 2026-08-17T17:56:22.304Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.304Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="e2a1aea1894872777556c5347a4aa"..., +2 more |
+
+## Command `auto:22560:1786989382323`
+
+- Start: 2026-08-17T17:56:22.323Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.323Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="89f6e9fdd1d676319adb5209ec300"..., +2 more |
+
+## Command `auto:22560:1786989382343`
+
+- Start: 2026-08-17T17:56:22.343Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.343Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="1bd917382425015a8e86acec5d0ac"..., +1 more |
+
+## Command `auto:22560:1786989382361`
+
+- Start: 2026-08-17T17:56:22.361Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.361Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="7e824d290db98cc9a3e2cdcb8b941"..., +1 more |
+
+## Command `auto:22560:1786989382381`
+
+- Start: 2026-08-17T17:56:22.381Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.381Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="99082386800324814b943865beecb"..., +1 more |
+
+## Command `auto:30844:1786989382400`
+
+- Start: 2026-08-17T17:56:22.400Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.400Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30844:1786989382494`
+
+- Start: 2026-08-17T17:56:22.494Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T17:56:22.494Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:31452:1786992272500`
+
+- Start: 2026-08-17T18:44:32.500Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T18:44:32.500Z | T15:session-end | session-abandoned | session_id="ses-20260817-1649-8093dc5b", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:30084:1786998281573`
+
+- Start: 2026-08-17T20:24:41.573Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-17T20:24:41.573Z | T15:session-end | session-registered | session_id="ses-20260817-2024-74727ffa", agent_session_id="74727ffa-f421-4266-9891-8503c"... |
+
+## Command `auto:10300:1787015957278`
+
+- Start: 2026-08-18T01:19:17.278Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:17.278Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:10300:1787015957837`
+
+- Start: 2026-08-18T01:19:17.837Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:17.837Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:10300:1787015958151`
+
+- Start: 2026-08-18T01:19:18.151Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:18.151Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:10300:1787015958317`
+
+- Start: 2026-08-18T01:19:18.317Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:18.317Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:29068:1787015978503`
+
+- Start: 2026-08-18T01:19:38.503Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:38.503Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:29068:1787015978991`
+
+- Start: 2026-08-18T01:19:38.991Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:38.991Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:29068:1787015979234`
+
+- Start: 2026-08-18T01:19:39.234Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:39.234Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:29068:1787015979381`
+
+- Start: 2026-08-18T01:19:39.381Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:19:39.381Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:38148:1787016012899`
+
+- Start: 2026-08-18T01:20:12.899Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:20:12.899Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Villain rule-sets parameteris"..., +4 more |
+
+## Command `auto:32752:1787016018641`
+
+- Start: 2026-08-18T01:20:18.641Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:20:18.641Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The villain Strategy Card shi"..., +4 more |
+
+## Command `auto:10416:1787016018764`
+
+- Start: 2026-08-18T01:20:18.764Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T01:20:18.764Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Queue item schema has no docu"..., +4 more |
+
+## Command `auto:9528:1787026111654`
+
+- Start: 2026-08-18T04:08:31.654Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:31.654Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:9528:1787026112181`
+
+- Start: 2026-08-18T04:08:32.181Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:32.181Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:31700:1787026112418`
+
+- Start: 2026-08-18T04:08:32.418Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:32.418Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="392a1baad2ac4c3a94d582dd67975"..., +2 more |
+
+## Command `auto:31700:1787026112461`
+
+- Start: 2026-08-18T04:08:32.461Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:32.461Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="5758e9b1a91b8c6bd3485009bbd34"..., +2 more |
+
+## Command `auto:31700:1787026112491`
+
+- Start: 2026-08-18T04:08:32.491Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:32.491Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="070535bfb78dd876f72c9505eac6c"..., +1 more |
+
+## Command `auto:9528:1787026112527`
+
+- Start: 2026-08-18T04:08:32.527Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:32.527Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:9528:1787026112673`
+
+- Start: 2026-08-18T04:08:32.673Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:08:32.673Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:35232:1787026142363`
+
+- Start: 2026-08-18T04:09:02.363Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:09:02.363Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Identifiability is measured b"..., +4 more |
+
+## Command `auto:38896:1787026142500`
+
+- Start: 2026-08-18T04:09:02.500Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:09:02.500Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="EM converges on parameter cha"..., +4 more |
+
+## Command `auto:17156:1787026142612`
+
+- Start: 2026-08-18T04:09:02.612Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:09:02.612Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="WS-526 emits a structured cla"..., +4 more |
+
+## Command `auto:34148:1787026142737`
+
+- Start: 2026-08-18T04:09:02.737Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:09:02.737Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="eslint has no eslint.config.j"..., +4 more |
+
+## Command `auto:23440:1787027615433`
+
+- Start: 2026-08-18T04:33:35.433Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:35.433Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:23440:1787027615976`
+
+- Start: 2026-08-18T04:33:35.976Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:35.976Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:2300:1787027616261`
+
+- Start: 2026-08-18T04:33:36.261Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:36.261Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="6f75303f87e2c0762ae33893b5c92"..., +2 more |
+
+## Command `auto:2300:1787027616314`
+
+- Start: 2026-08-18T04:33:36.314Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:36.314Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="de2dfc8918bb8564fd1998e038c70"..., +2 more |
+
+## Command `auto:2300:1787027616351`
+
+- Start: 2026-08-18T04:33:36.351Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:36.351Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="fcf13aea115a157f3655ec2a53e03"..., +2 more |
+
+## Command `auto:2300:1787027616389`
+
+- Start: 2026-08-18T04:33:36.389Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:36.389Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="548e6d55ebd483d5fd1e453282dac"..., +1 more |
+
+## Command `auto:23440:1787027616438`
+
+- Start: 2026-08-18T04:33:36.438Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:36.438Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:23440:1787027616612`
+
+- Start: 2026-08-18T04:33:36.612Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:36.612Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:13268:1787027630274`
+
+- Start: 2026-08-18T04:33:50.274Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:50.274Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:13268:1787027630727`
+
+- Start: 2026-08-18T04:33:50.727Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:50.727Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:13268:1787027630995`
+
+- Start: 2026-08-18T04:33:50.995Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:50.995Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:13268:1787027631144`
+
+- Start: 2026-08-18T04:33:51.144Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:33:51.144Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:31636:1787027664932`
+
+- Start: 2026-08-18T04:34:24.932Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:34:24.932Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Villain rules are DERIVED fro"..., +4 more |
+
+## Command `auto:23048:1787027665043`
+
+- Start: 2026-08-18T04:34:25.043Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:34:25.043Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Every Villain Model Card carr"..., +4 more |
+
+## Command `auto:27324:1787027665143`
+
+- Start: 2026-08-18T04:34:25.143Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:34:25.143Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="metrics.villain-model-card sc"..., +4 more |
+
+## Command `auto:10828:1787028894283`
+
+- Start: 2026-08-18T04:54:54.283Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:54.283Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:10828:1787028894668`
+
+- Start: 2026-08-18T04:54:54.668Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:54.668Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:9676:1787028894855`
+
+- Start: 2026-08-18T04:54:54.855Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:54.855Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="a36dfe70223ff216eb13203c86649"..., +2 more |
+
+## Command `auto:9676:1787028894902`
+
+- Start: 2026-08-18T04:54:54.902Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:54.902Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="621845349c6ceae9cd415d178deda"..., +2 more |
+
+## Command `auto:9676:1787028894931`
+
+- Start: 2026-08-18T04:54:54.931Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:54.931Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="37c64183b69987524abb940e8cfe1"..., +2 more |
+
+## Command `auto:10828:1787028894970`
+
+- Start: 2026-08-18T04:54:54.970Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:54.970Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:10828:1787028895076`
+
+- Start: 2026-08-18T04:54:55.076Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:55.076Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:27948:1787028895443`
+
+- Start: 2026-08-18T04:54:55.443Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T04:54:55.443Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The villain rule ladder is sc"..., +4 more |
+
+## Command `auto:5480:1787030390325`
+
+- Start: 2026-08-18T05:19:50.325Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:19:50.325Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:5480:1787030390727`
+
+- Start: 2026-08-18T05:19:50.727Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:19:50.727Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:5480:1787030390837`
+
+- Start: 2026-08-18T05:19:50.837Z
+- Events: 1
+- Tracks: T6:program-integrity
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:19:50.837Z | T6:program-integrity | program_cap_breach | program="infrastructure", work_items_open=4, +4 more |
+
+## Command `auto:37860:1787030390971`
+
+- Start: 2026-08-18T05:19:50.971Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:19:50.971Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="74771d092fcf56c870bfe07856804"..., +2 more |
+
+## Command `auto:5480:1787030391026`
+
+- Start: 2026-08-18T05:19:51.026Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:19:51.026Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:5480:1787030391119`
+
+- Start: 2026-08-18T05:19:51.119Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:19:51.119Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:34216:1787030421008`
+
+- Start: 2026-08-18T05:20:21.008Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:20:21.008Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Ladder throughput is bounded "..., +4 more |
+
+## Command `auto:34936:1787030421136`
+
+- Start: 2026-08-18T05:20:21.136Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T05:20:21.136Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Strategy Card loader validate"..., +4 more |
+
+## Command `auto:29544:1787045582411`
+
+- Start: 2026-08-18T09:33:02.411Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T09:33:02.411Z | T15:session-end | session-abandoned | session_id="ses-20260817-2024-74727ffa", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:31092:1787065622710`
+
+- Start: 2026-08-18T15:07:02.710Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:07:02.710Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Strategy arms are excluded fr"..., +4 more |
+
+## Command `auto:5132:1787066315549`
+
+- Start: 2026-08-18T15:18:35.549Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:35.549Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The rule ladder's target is t"..., +4 more |
+
+## Command `auto:6364:1787066316273`
+
+- Start: 2026-08-18T15:18:36.273Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:36.273Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:6364:1787066317282`
+
+- Start: 2026-08-18T15:18:37.282Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:37.282Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:37708:1787066317677`
+
+- Start: 2026-08-18T15:18:37.677Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:37.677Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="3ad4d630a680f489a9ed5bf092bea"..., +2 more |
+
+## Command `auto:37708:1787066317731`
+
+- Start: 2026-08-18T15:18:37.731Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:37.731Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="4a51624ecf3f9de6b1ce0b6ad7f0b"..., +2 more |
+
+## Command `auto:37708:1787066317766`
+
+- Start: 2026-08-18T15:18:37.766Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:37.766Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="067460b2efa76d61f06c347a78b21"..., +2 more |
+
+## Command `auto:37708:1787066317802`
+
+- Start: 2026-08-18T15:18:37.802Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:37.802Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="ac0c166365645b6cbe550eb483403"..., +1 more |
+
+## Command `auto:6364:1787066317846`
+
+- Start: 2026-08-18T15:18:37.846Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:37.846Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:6364:1787066318253`
+
+- Start: 2026-08-18T15:18:38.253Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:18:38.253Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:30488:1787068085123`
+
+- Start: 2026-08-18T15:48:05.123Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:48:05.123Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="The first version of my rehyd"..., +4 more |
+
+## Command `auto:33028:1787068085261`
+
+- Start: 2026-08-18T15:48:05.260Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:48:05.260Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A transported artifact's inte"..., +4 more |
+
+## Command `auto:31824:1787068606598`
+
+- Start: 2026-08-18T15:56:46.598Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T15:56:46.598Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The pool prices by bet size b"..., +4 more |
+
+## Command `auto:25040:1787069344286`
+
+- Start: 2026-08-18T16:09:04.286Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:04.286Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="RETRACTED: 'this pool does no"..., +4 more |
+
+## Command `auto:36404:1787069344399`
+
+- Start: 2026-08-18T16:09:04.399Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:04.399Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Every CI the hero-EV harness "..., +4 more |
+
+## Command `auto:37832:1787069344897`
+
+- Start: 2026-08-18T16:09:04.897Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:04.897Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:37832:1787069345648`
+
+- Start: 2026-08-18T16:09:05.648Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:05.648Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:34876:1787069345894`
+
+- Start: 2026-08-18T16:09:05.894Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:05.894Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="005cc4abf2d3168eb071440cc1785"..., +2 more |
+
+## Command `auto:34876:1787069345938`
+
+- Start: 2026-08-18T16:09:05.938Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:05.938Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="487317e9075a74609a85f9008bb3d"..., +2 more |
+
+## Command `auto:34876:1787069345964`
+
+- Start: 2026-08-18T16:09:05.964Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:05.964Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="e0c828d62e231d3615c8d4d3943ec"..., +2 more |
+
+## Command `auto:34876:1787069345993`
+
+- Start: 2026-08-18T16:09:05.993Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:05.993Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="3256fa6255e0089a2191adaa39fd6"..., +1 more |
+
+## Command `auto:34876:1787069346021`
+
+- Start: 2026-08-18T16:09:06.021Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:06.021Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="2350ac43edfa1eb4faee0adea107b"..., +1 more |
+
+## Command `auto:37832:1787069346054`
+
+- Start: 2026-08-18T16:09:06.054Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:06.054Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:37832:1787069346462`
+
+- Start: 2026-08-18T16:09:06.462Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:09:06.462Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:38876:1787071970898`
+
+- Start: 2026-08-18T16:52:50.898Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:52:50.898Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="An IPS edge is unreliable bel"..., +4 more |
+
+## Command `auto:30704:1787071971046`
+
+- Start: 2026-08-18T16:52:51.046Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:52:51.046Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The 2.91-players-per-hand clu"..., +4 more |
+
+## Command `auto:35360:1787072023940`
+
+- Start: 2026-08-18T16:53:43.940Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:53:43.940Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:35360:1787072024868`
+
+- Start: 2026-08-18T16:53:44.868Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:53:44.868Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:29804:1787072025163`
+
+- Start: 2026-08-18T16:53:45.163Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:53:45.163Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="9cb7f04192166a74f80b128c7574a"..., +2 more |
+
+## Command `auto:29804:1787072025214`
+
+- Start: 2026-08-18T16:53:45.214Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:53:45.214Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="67c72a27bba9383f938fb7f950383"..., +2 more |
+
+## Command `auto:35360:1787072025264`
+
+- Start: 2026-08-18T16:53:45.264Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:53:45.264Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:35360:1787072025703`
+
+- Start: 2026-08-18T16:53:45.703Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T16:53:45.703Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:31124:1787072580024`
+
+- Start: 2026-08-18T17:03:00.024Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T17:03:00.024Z | T15:session-end | session-registered | session_id="ses-20260818-1703-0f827d81", agent_session_id="0f827d81-db39-426a-8300-02764"... |
+
+## Command `cmd-itemclosed-msz1tdasa9d65dde1e18`
+
+- Start: 2026-08-18T19:21:21.559Z
+- Events: 7
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T19:21:21.559Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-504", +3 more |
+| 2 | 2026-08-18T19:21:21.953Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-521", +3 more |
+| 3 | 2026-08-18T19:21:22.267Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-189", +4 more |
+| 4 | 2026-08-18T19:21:22.683Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+| 5 | 2026-08-18T19:21:23.478Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 6 | 2026-08-18T19:21:23.700Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 7 | 2026-08-18T19:21:24.021Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:1488:1787081900351`
+
+- Start: 2026-08-18T19:38:20.351Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T19:38:20.351Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Villain model: pooled per-dec"..., +4 more |
+
+## Command `auto:40620:1787086982443`
+
+- Start: 2026-08-18T21:03:02.443Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T21:03:02.443Z | T15:session-end | session-abandoned | session_id="ses-20260817-2024-74727ffa", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:22584:1787087868184`
+
+- Start: 2026-08-18T21:17:48.184Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T21:17:48.184Z | T15:session-end | session-registered | session_id="ses-20260818-2117-5f858df5", agent_session_id="5f858df5-7099-4bf3-91cc-34165"... |
+
+## Command `auto:30940:1787088354825`
+
+- Start: 2026-08-18T21:25:54.825Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T21:25:54.825Z | T15:session-end | session-registered | session_id="ses-20260818-2125-8171ee31", agent_session_id="8171ee31-f3d7-4564-a50d-78af7"... |
+
+## Command `auto:3052:1787088781948`
+
+- Start: 2026-08-18T21:33:01.948Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T21:33:01.948Z | T15:session-end | session-abandoned | session_id="ses-20260818-2117-5f858df5", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:25064:1787091480360`
+
+- Start: 2026-08-18T22:18:00.360Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-18T22:18:00.360Z | T15:session-end | session-registered | session_id="ses-20260818-2218-baf3c783", agent_session_id="baf3c783-74a0-4e23-9fea-ca6c4"... |
+
+## Command `auto:22648:1787103182390`
+
+- Start: 2026-08-19T01:33:02.390Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T01:33:02.390Z | T15:session-end | session-abandoned | session_id="ses-20260818-2125-8171ee31", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:36192:1787105881999`
+
+- Start: 2026-08-19T02:18:01.999Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T02:18:01.999Z | T15:session-end | session-abandoned | session_id="ses-20260818-1703-0f827d81", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:13288:1787113040794`
+
+- Start: 2026-08-19T04:17:20.794Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:17:20.794Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:13288:1787113041575`
+
+- Start: 2026-08-19T04:17:21.575Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:17:21.575Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:13288:1787113041934`
+
+- Start: 2026-08-19T04:17:21.934Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:17:21.934Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:13288:1787113042080`
+
+- Start: 2026-08-19T04:17:22.080Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:17:22.080Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:38804:1787113333622`
+
+- Start: 2026-08-19T04:22:13.621Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:22:13.621Z | T15:session-end | session-registered | session_id="ses-20260819-0422-d435e738", agent_session_id="d435e738-a7f7-4c87-9cfe-2cdd0"... |
+
+## Command `cmd-pulserun-mszl8lln3fc1c1115405`
+
+- Start: 2026-08-19T04:25:04.862Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:25:04.862Z | T11:vital-signs | /pulse | type="protocol_run_intent", program="launch", +4 more |
+
+## Command `auto:6188:1787113543432`
+
+- Start: 2026-08-19T04:25:43.432Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T04:25:43.432Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `cmd-pulserun-msznynnc1b58c2173936`
+
+- Start: 2026-08-19T05:41:19.804Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T05:41:19.804Z | T11:vital-signs | /pulse | type="protocol_run_completed", program="launch", +4 more |
+
+## Command `auto:27128:1787132882412`
+
+- Start: 2026-08-19T09:48:02.412Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T09:48:02.412Z | T15:session-end | session-abandoned | session_id="ses-20260819-0422-d435e738", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:35056:1787150452544`
+
+- Start: 2026-08-19T14:40:52.544Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T14:40:52.544Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:35056:1787150453102`
+
+- Start: 2026-08-19T14:40:53.102Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T14:40:53.102Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:35056:1787150453130`
+
+- Start: 2026-08-19T14:40:53.130Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T14:40:53.130Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:35056:1787150453494`
+
+- Start: 2026-08-19T14:40:53.494Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T14:40:53.494Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:35056:1787150453667`
+
+- Start: 2026-08-19T14:40:53.667Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T14:40:53.667Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-mt07gy42a56beaef977c`
+
+- Start: 2026-08-19T14:47:25.877Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T14:47:25.877Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-190", +8 more |
+
+## Command `auto:13844:1787152083123`
+
+- Start: 2026-08-19T15:08:03.123Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T15:08:03.123Z | T15:session-end | session-registered | session_id="ses-20260819-1508-d895a5d8", agent_session_id="d895a5d8-5d9b-40fa-b5ea-23c40"... |
+
+## Command `cmd-itemclosed-mt09nvdye601dc90dac4`
+
+- Start: 2026-08-19T15:48:48.171Z
+- Events: 8
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T15:48:48.171Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-565", +3 more |
+| 2 | 2026-08-19T15:48:48.394Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-556", +3 more |
+| 3 | 2026-08-19T15:48:48.594Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-563", +3 more |
+| 4 | 2026-08-19T15:48:48.780Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-190", +4 more |
+| 5 | 2026-08-19T15:48:49.163Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+| 6 | 2026-08-19T15:48:49.689Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 7 | 2026-08-19T15:48:50.012Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 8 | 2026-08-19T15:48:50.204Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintdone-mt09oahwc0e42f875d60`
+
+- Start: 2026-08-19T15:49:07.752Z
+- Events: 5
+- Tracks: T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T6:workstream, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T15:49:07.752Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-190", +4 more |
+| 2 | 2026-08-19T15:49:08.094Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+| 3 | 2026-08-19T15:49:08.567Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 4 | 2026-08-19T15:49:08.847Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-08-19T15:49:09.053Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:35652:1787156536893`
+
+- Start: 2026-08-19T16:22:16.893Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T16:22:16.893Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:35652:1787156537374`
+
+- Start: 2026-08-19T16:22:17.374Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T16:22:17.374Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:35652:1787156537690`
+
+- Start: 2026-08-19T16:22:17.690Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T16:22:17.690Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:35652:1787156537907`
+
+- Start: 2026-08-19T16:22:17.907Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T16:22:17.907Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:35372:1787157741447`
+
+- Start: 2026-08-19T16:42:21.447Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T16:42:21.447Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="secrets-scan hook blocks a co"..., +4 more |
+
+## Command `auto:14368:1787159542974`
+
+- Start: 2026-08-19T17:12:22.973Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T17:12:22.973Z | T15:session-end | session-registered | session_id="ses-20260819-1712-647c7955", agent_session_id="647c7955-f0a0-461d-b099-91830"... |
+
+## Command `auto:39376:1787168275569`
+
+- Start: 2026-08-19T19:37:55.569Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:37:55.569Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:39376:1787168276286`
+
+- Start: 2026-08-19T19:37:56.286Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:37:56.286Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:38752:1787168276619`
+
+- Start: 2026-08-19T19:37:56.619Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:37:56.619Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="931e2344c9b6fe392f55709532d3c"..., +1 more |
+
+## Command `auto:39376:1787168276687`
+
+- Start: 2026-08-19T19:37:56.687Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:37:56.687Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:39376:1787168276929`
+
+- Start: 2026-08-19T19:37:56.929Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:37:56.929Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-mt0hv5hi4be71e629eac`
+
+- Start: 2026-08-19T19:38:24.778Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:38:24.778Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-191", +8 more |
+
+## Command `auto:16980:1787169215941`
+
+- Start: 2026-08-19T19:53:35.941Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:53:35.941Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Compute dedupe keys on the tr"..., +4 more |
+
+## Command `auto:28356:1787169222704`
+
+- Start: 2026-08-19T19:53:42.704Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T19:53:42.704Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="The documented workaround for"..., +4 more |
+
+## Command `auto:23384:1787170710918`
+
+- Start: 2026-08-19T20:18:30.917Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T20:18:30.917Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Eval pool is sharded by salte"..., +4 more |
+
+## Command `auto:6588:1787170711052`
+
+- Start: 2026-08-19T20:18:31.052Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T20:18:31.052Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Range-calibration stat accumu"..., +4 more |
+
+## Command `auto:13176:1787171171170`
+
+- Start: 2026-08-19T20:26:11.170Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T20:26:11.170Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="3-bet rate earns NO channel a"..., +4 more |
+
+## Command `auto:10876:1787171919149`
+
+- Start: 2026-08-19T20:38:39.149Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T20:38:39.149Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The optimism probe cannot mea"..., +4 more |
+
+## Command `auto:13536:1787173381628`
+
+- Start: 2026-08-19T21:03:01.628Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:03:01.628Z | T15:session-end | session-abandoned | session_id="ses-20260819-0422-d435e738", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `cmd-itemclosed-mt0mtwo7b65c686d24bd`
+
+- Start: 2026-08-19T21:57:24.778Z
+- Events: 16
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T20:capture-buffer, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:57:24.778Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-572", +3 more |
+| 2 | 2026-08-19T21:57:25.257Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-512", +3 more |
+| 3 | 2026-08-19T21:57:25.633Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-547", +3 more |
+| 4 | 2026-08-19T21:57:26.079Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-497", +3 more |
+| 5 | 2026-08-19T21:57:26.540Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-496", +3 more |
+| 6 | 2026-08-19T21:57:26.980Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-191", +4 more |
+| 7 | 2026-08-19T21:57:27.400Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+| 8 | 2026-08-19T21:57:28.276Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 9 | 2026-08-19T21:57:28.582Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="1dcb0a102626518c0acc0a3b4173c"..., +2 more |
+| 10 | 2026-08-19T21:57:28.637Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="a84a7d5068f887302177b0cbe2cfc"..., +2 more |
+| 11 | 2026-08-19T21:57:28.669Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="a54f4ff23dedbf072466c9f9bc3cc"..., +2 more |
+| 12 | 2026-08-19T21:57:28.701Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="8f93c0238b1a95a81cc90e46bf5a4"..., +2 more |
+| 13 | 2026-08-19T21:57:28.734Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="f316c8a7d3d5de0a56c0ebb886a4e"..., +2 more |
+| 14 | 2026-08-19T21:57:28.764Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="889cfd0540e8b0289a80023a0155b"..., +1 more |
+| 15 | 2026-08-19T21:57:28.810Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 16 | 2026-08-19T21:57:29.248Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemtransition-mt0mvm8ddd1e69e86190`
+
+- Start: 2026-08-19T21:58:44.561Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:58:44.561Z | T6:workstream | item_transitioned | type="item_transitioned", ws_id="WS-505", +6 more |
+
+## Command `cmd-itemtransition-mt0mvrv9e737c8748994`
+
+- Start: 2026-08-19T21:58:51.865Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:58:51.865Z | T6:workstream | item_transitioned | type="item_transitioned", ws_id="WS-502", +6 more |
+
+## Command `auto:30768:1787176744717`
+
+- Start: 2026-08-19T21:59:04.717Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:59:04.717Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:30768:1787176745709`
+
+- Start: 2026-08-19T21:59:05.709Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:59:05.709Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:30768:1787176745993`
+
+- Start: 2026-08-19T21:59:05.993Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:59:05.993Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30768:1787176746446`
+
+- Start: 2026-08-19T21:59:06.446Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:59:06.446Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mt0mw3ap17f9c0c83f51`
+
+- Start: 2026-08-19T21:59:06.677Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T21:59:06.677Z | T6:workstream | /workstream | command="/workstream", type="command_completed", +1 more |
+
+## Command `auto:41756:1787176931894`
+
+- Start: 2026-08-19T22:02:11.894Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T22:02:11.894Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="depth-2plus's stated EV overs"..., +4 more |
+
+## Command `auto:35368:1787178954944`
+
+- Start: 2026-08-19T22:35:54.944Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T22:35:54.944Z | T20:capture-buffer | friction_declined | type="friction_declined", source_hashes={2 keys}, +4 more |
+
+## Command `auto:4304:1787178966153`
+
+- Start: 2026-08-19T22:36:06.153Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T22:36:06.153Z | T20:capture-buffer | friction_declined | type="friction_declined", source_hashes={2 keys}, +4 more |
+
+## Command `auto:26468:1787179813656`
+
+- Start: 2026-08-19T22:50:13.656Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T22:50:13.656Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Concurrent session committed "..., +4 more |
+
+## Command `auto:14500:1787179846507`
+
+- Start: 2026-08-19T22:50:46.507Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T22:50:46.507Z | T15:session-end | session-registered | session_id="ses-20260819-2250-874c0089", agent_session_id="874c0089-fb7a-414d-b243-5d2eb"... |
+
+## Command `auto:26660:1787181223627`
+
+- Start: 2026-08-19T23:13:43.627Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T23:13:43.627Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The founder's 'better simulat"..., +4 more |
+
+## Command `auto:8480:1787181223750`
+
+- Start: 2026-08-19T23:13:43.750Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-19T23:13:43.750Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Completing depth-2 raises her"..., +4 more |
+
+## Command `auto:26664:1787188681655`
+
+- Start: 2026-08-20T01:18:01.655Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T01:18:01.655Z | T15:session-end | session-abandoned | session_id="ses-20260819-1712-647c7955", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `cmd-commandcompleted-mt0vqg225e8806194233`
+
+- Start: 2026-08-20T02:06:39.822Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:06:39.822Z | T6:workstream | /workstream | command="/workstream", op="create", +3 more |
+
+## Command `auto:27628:1787191951545`
+
+- Start: 2026-08-20T02:12:31.545Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:31.545Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="vitest --reporter=basic is no"..., +4 more |
+
+## Command `auto:30468:1787191951708`
+
+- Start: 2026-08-20T02:12:31.708Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:31.708Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="shell-embedded node -e with r"..., +4 more |
+
+## Command `auto:38428:1787191975030`
+
+- Start: 2026-08-20T02:12:55.030Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:55.030Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A gate that passes on an empt"..., +4 more |
+
+## Command `auto:41240:1787191975138`
+
+- Start: 2026-08-20T02:12:55.138Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:55.138Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A known-answer check must IMP"..., +4 more |
+
+## Command `auto:4708:1787191975267`
+
+- Start: 2026-08-20T02:12:55.267Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:55.267Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="str_basis moved from the situ"..., +4 more |
+
+## Command `auto:28016:1787191975387`
+
+- Start: 2026-08-20T02:12:55.387Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:55.387Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Rule identity is a hash of th"..., +4 more |
+
+## Command `auto:37688:1787191975554`
+
+- Start: 2026-08-20T02:12:55.554Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:12:55.554Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Orthogonality is a scoring cr"..., +4 more |
+
+## Command `auto:22212:1787191990804`
+
+- Start: 2026-08-20T02:13:10.804Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:10.804Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:22212:1787191991357`
+
+- Start: 2026-08-20T02:13:11.357Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.357Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:22212:1787191991560`
+
+- Start: 2026-08-20T02:13:11.560Z
+- Events: 1
+- Tracks: T6:program-integrity
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.560Z | T6:program-integrity | program_cap_breach | program="methodology-integrity", work_items_open=22, +4 more |
+
+## Command `auto:13188:1787191991738`
+
+- Start: 2026-08-20T02:13:11.738Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.738Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="b5661d3d42343d4b6ce76fab4a939"..., +2 more |
+
+## Command `auto:13188:1787191991799`
+
+- Start: 2026-08-20T02:13:11.799Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.799Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="2bfc6da231030f7a46614f44a0df1"..., +2 more |
+
+## Command `auto:13188:1787191991831`
+
+- Start: 2026-08-20T02:13:11.831Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.831Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="dba52e7915dbd52fb74f6ba4db9b6"..., +2 more |
+
+## Command `auto:13188:1787191991863`
+
+- Start: 2026-08-20T02:13:11.863Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.863Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="961560851125a49f750cf867d9ebb"..., +2 more |
+
+## Command `auto:13188:1787191991896`
+
+- Start: 2026-08-20T02:13:11.896Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.896Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="0f8be39c6ea9fec6ad3570ddb8e2a"..., +2 more |
+
+## Command `auto:13188:1787191991927`
+
+- Start: 2026-08-20T02:13:11.927Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.927Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="ed169de68327f8a0a034e0858d069"..., +1 more |
+
+## Command `auto:13188:1787191991958`
+
+- Start: 2026-08-20T02:13:11.958Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.958Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="0efdd07c04e71ed2451aee7bd22f2"..., +1 more |
+
+## Command `auto:22212:1787191991999`
+
+- Start: 2026-08-20T02:13:11.999Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:11.999Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:22212:1787191992179`
+
+- Start: 2026-08-20T02:13:12.179Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:13:12.179Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mt0w42fz5c1289bb6f76`
+
+- Start: 2026-08-20T02:17:15.363Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:17:15.363Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:11500:1787192475535`
+
+- Start: 2026-08-20T02:21:15.535Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:21:15.535Z | T15:session-end | session-registered | session_id="ses-20260820-0221-ac5295b8", agent_session_id="ac5295b8-8fd6-4a2d-a978-7b339"... |
+
+## Command `auto:36664:1787192484725`
+
+- Start: 2026-08-20T02:21:24.725Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:21:24.725Z | T15:session-end | session-registered | session_id="ses-20260820-0221-10a55c6c", agent_session_id="10a55c6c-a399-4913-a94c-afb5a"... |
+
+## Command `cmd-sprintapprove-mt0why5nc0c8dc1dc760`
+
+- Start: 2026-08-20T02:28:02.991Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:28:02.991Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-192", +8 more |
+
+## Command `auto:38944:1787193181597`
+
+- Start: 2026-08-20T02:33:01.597Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:33:01.597Z | T15:session-end | session-abandoned | session_id="ses-20260819-1508-d895a5d8", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:38944:1787193181850`
+
+- Start: 2026-08-20T02:33:01.850Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:33:01.850Z | T15:session-end | session-abandoned | session_id="ses-20260820-0221-ac5295b8", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:39740:1787193321281`
+
+- Start: 2026-08-20T02:35:21.281Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T02:35:21.281Z | T15:session-end | session-registered | session_id="ses-20260820-0235-8b91db30", agent_session_id="8b91db30-9fd1-46f9-9367-524ba"... |
+
+## Command `auto:14404:1787194930521`
+
+- Start: 2026-08-20T03:02:10.521Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:10.521Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:14404:1787194931079`
+
+- Start: 2026-08-20T03:02:11.079Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:11.079Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:14404:1787194931448`
+
+- Start: 2026-08-20T03:02:11.448Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:11.448Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:14404:1787194931599`
+
+- Start: 2026-08-20T03:02:11.599Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:11.599Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:39140:1787194954774`
+
+- Start: 2026-08-20T03:02:34.774Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:34.774Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-index.js exits 0 with no"..., +4 more |
+
+## Command `auto:39724:1787194969660`
+
+- Start: 2026-08-20T03:02:49.660Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:49.660Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A Lesson (session-locked off-"..., +4 more |
+
+## Command `auto:36136:1787194969783`
+
+- Start: 2026-08-20T03:02:49.783Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:02:49.783Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="CLAUDE.md Purpose sentence re"..., +4 more |
+
+## Command `auto:22512:1787198177320`
+
+- Start: 2026-08-20T03:56:17.320Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:17.320Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=11, +1 more |
+
+## Command `auto:22512:1787198177989`
+
+- Start: 2026-08-20T03:56:17.989Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:17.989Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:36520:1787198178262`
+
+- Start: 2026-08-20T03:56:18.262Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:18.262Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="1ba2c6f4034fba6fd8bb594fc5386"..., +2 more |
+
+## Command `auto:36520:1787198178309`
+
+- Start: 2026-08-20T03:56:18.309Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:18.309Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="0cc59fee945ecdce468c0d3ba9810"..., +2 more |
+
+## Command `auto:36520:1787198178330`
+
+- Start: 2026-08-20T03:56:18.330Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:18.330Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="7aa90907a15519c65636d895ce7df"..., +1 more |
+
+## Command `auto:22512:1787198178381`
+
+- Start: 2026-08-20T03:56:18.381Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:18.381Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:22512:1787198178529`
+
+- Start: 2026-08-20T03:56:18.529Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T03:56:18.529Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:3824:1787198466647`
+
+- Start: 2026-08-20T04:01:06.647Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:01:06.647Z | T15:session-end | session-registered | session_id="ses-20260820-0401-a924eff4", agent_session_id="a924eff4-1f38-463a-b72d-d44d7"... |
+
+## Command `auto:14128:1787198983382`
+
+- Start: 2026-08-20T04:09:43.382Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:09:43.382Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:14128:1787198983972`
+
+- Start: 2026-08-20T04:09:43.972Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:09:43.972Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:14128:1787198984297`
+
+- Start: 2026-08-20T04:09:44.296Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:09:44.296Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:14128:1787198984430`
+
+- Start: 2026-08-20T04:09:44.430Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:09:44.430Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:30596:1787199223747`
+
+- Start: 2026-08-20T04:13:43.747Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:13:43.747Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:30596:1787199224249`
+
+- Start: 2026-08-20T04:13:44.249Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:13:44.249Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:30596:1787199224541`
+
+- Start: 2026-08-20T04:13:44.541Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:13:44.541Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30596:1787199224683`
+
+- Start: 2026-08-20T04:13:44.683Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:13:44.683Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:29704:1787199283687`
+
+- Start: 2026-08-20T04:14:43.687Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:14:43.687Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:29704:1787199284256`
+
+- Start: 2026-08-20T04:14:44.256Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:14:44.256Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:29704:1787199284536`
+
+- Start: 2026-08-20T04:14:44.536Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:14:44.536Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:29704:1787199284659`
+
+- Start: 2026-08-20T04:14:44.659Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:14:44.659Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:31404:1787199284838`
+
+- Start: 2026-08-20T04:14:44.838Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:14:44.838Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Regex/YAML round-trip editing"..., +4 more |
+
+## Command `auto:36180:1787200382238`
+
+- Start: 2026-08-20T04:33:02.238Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:33:02.238Z | T15:session-end | session-abandoned | session_id="ses-20260820-0235-8b91db30", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:27772:1787201471807`
+
+- Start: 2026-08-20T04:51:11.807Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:51:11.807Z | T15:session-end | session-registered | session_id="ses-20260820-0451-a16466b3", agent_session_id="a16466b3-98d0-437a-a778-14cd2"... |
+
+## Command `cmd-commandcompleted-mt11oz3hc85d7a9da6a1`
+
+- Start: 2026-08-20T04:53:28.885Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T04:53:28.885Z | T10:compose-sprint | /next | command="/next", type="command_completed", +1 more |
+
+## Command `auto:30776:1787202061438`
+
+- Start: 2026-08-20T05:01:01.438Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:01.438Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=4, +1 more |
+
+## Command `auto:30776:1787202062943`
+
+- Start: 2026-08-20T05:01:02.943Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:02.943Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:3976:1787202063273`
+
+- Start: 2026-08-20T05:01:03.273Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:03.273Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="d8f2409cbe0bc33f1da1b42210f64"..., +1 more |
+
+## Command `auto:30776:1787202063353`
+
+- Start: 2026-08-20T05:01:03.353Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:03.353Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30776:1787202063976`
+
+- Start: 2026-08-20T05:01:03.976Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:03.976Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:6172:1787202087263`
+
+- Start: 2026-08-20T05:01:27.263Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:27.263Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:6172:1787202088583`
+
+- Start: 2026-08-20T05:01:28.583Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:28.583Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:6172:1787202088919`
+
+- Start: 2026-08-20T05:01:28.919Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:28.919Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:6172:1787202089518`
+
+- Start: 2026-08-20T05:01:29.518Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:29.518Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mt11zm72649d13d8c445`
+
+- Start: 2026-08-20T05:01:45.378Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:45.378Z | T6:workstream | /workstream | command="/workstream", subcommand="done", +3 more |
+
+## Command `auto:22136:1787202106177`
+
+- Start: 2026-08-20T05:01:46.177Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:01:46.177Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Ignition capture converts wir"..., +4 more |
+
+## Command `auto:36304:1787202121342`
+
+- Start: 2026-08-20T05:02:01.342Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:02:01.342Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A persisted hand record adapt"..., +4 more |
+
+## Command `auto:5544:1787202121467`
+
+- Start: 2026-08-20T05:02:01.467Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:02:01.467Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="The villainArchetype known-an"..., +4 more |
+
+## Command `cmd-sprintapproveoverrideactive-mt12nddud46d0f0f222d`
+
+- Start: 2026-08-20T05:20:13.704Z
+- Events: 2
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:20:13.704Z | T6:workstream-rebalance | /next | type="duplicate_sprint_acknowledged", open_sprint_id="SPR-192", +4 more |
+| 2 | 2026-08-20T05:20:13.909Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-193", +8 more |
+
+## Command `auto:4580:1787203397134`
+
+- Start: 2026-08-20T05:23:17.134Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:23:17.134Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Fixing the Ignition amount co"..., +4 more |
+
+## Command `auto:41864:1787204084041`
+
+- Start: 2026-08-20T05:34:44.040Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:34:44.040Z | T15:session-end | session-registered | session_id="ses-20260820-0534-d557cd27", agent_session_id="d557cd27-4bf9-434d-bc1e-e6eee"... |
+
+## Command `auto:24884:1787204240204`
+
+- Start: 2026-08-20T05:37:20.204Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:20.204Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:24884:1787204241608`
+
+- Start: 2026-08-20T05:37:21.608Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:21.608Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:27984:1787204241972`
+
+- Start: 2026-08-20T05:37:21.972Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:21.972Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="91db5d647592dfb125490f453b725"..., +2 more |
+
+## Command `auto:27984:1787204242047`
+
+- Start: 2026-08-20T05:37:22.047Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:22.047Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="b878195dac8fcd5d91d60437da818"..., +2 more |
+
+## Command `auto:27984:1787204242106`
+
+- Start: 2026-08-20T05:37:22.106Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:22.106Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="2ae1792796546a64e5f7e538d5ec2"..., +1 more |
+
+## Command `auto:27984:1787204242151`
+
+- Start: 2026-08-20T05:37:22.151Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:22.151Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="79fe1846ce1e8e440b4b3d70fcf0f"..., +1 more |
+
+## Command `auto:24884:1787204242213`
+
+- Start: 2026-08-20T05:37:22.213Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:22.213Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:24884:1787204242892`
+
+- Start: 2026-08-20T05:37:22.892Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:37:22.892Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:12412:1787204883534`
+
+- Start: 2026-08-20T05:48:03.534Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T05:48:03.534Z | T15:session-end | session-abandoned | session_id="ses-20260820-0534-d557cd27", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:9732:1787208118066`
+
+- Start: 2026-08-20T06:41:58.066Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T06:41:58.066Z | T15:session-end | session-registered | session_id="ses-20260820-0641-f11d5a92", agent_session_id="f11d5a92-480a-42a4-aff5-fd476"... |
+
+## Command `cmd-sprintapproveoverrideactive-mt16b14xe404ded0397c`
+
+- Start: 2026-08-20T07:02:36.425Z
+- Events: 2
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T07:02:36.425Z | T6:workstream-rebalance | /next | type="duplicate_sprint_acknowledged", open_sprint_id="SPR-193", +4 more |
+| 2 | 2026-08-20T07:02:36.494Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-194", +8 more |
+
+## Command `auto:12412:1787210246402`
+
+- Start: 2026-08-20T07:17:26.402Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T07:17:26.402Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:12412:1787210247046`
+
+- Start: 2026-08-20T07:17:27.046Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T07:17:27.046Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:12412:1787210247416`
+
+- Start: 2026-08-20T07:17:27.416Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T07:17:27.416Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:12412:1787210247673`
+
+- Start: 2026-08-20T07:17:27.673Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T07:17:27.673Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:9872:1787213774981`
+
+- Start: 2026-08-20T08:16:14.981Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T08:16:14.981Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="depth-3 refinement may not ou"..., +4 more |
+
+## Command `auto:15276:1787213786568`
+
+- Start: 2026-08-20T08:16:26.568Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T08:16:26.568Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="smart-test-runner is blocked "..., +4 more |
+
+## Command `auto:516:1787213786690`
+
+- Start: 2026-08-20T08:16:26.690Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T08:16:26.690Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-fleet-compute cuts node1"..., +4 more |
+
+## Command `auto:25140:1787218382811`
+
+- Start: 2026-08-20T09:33:02.811Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T09:33:02.811Z | T15:session-end | session-abandoned | session_id="ses-20260820-0401-a924eff4", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:10524:1787218437469`
+
+- Start: 2026-08-20T09:33:57.468Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T09:33:57.468Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="PlayerFinderView.smoke.test.j"..., +4 more |
+
+## Command `auto:25288:1787223781928`
+
+- Start: 2026-08-20T11:03:01.928Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T11:03:01.928Z | T15:session-end | session-abandoned | session_id="ses-20260820-0221-10a55c6c", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:25100:1787225581998`
+
+- Start: 2026-08-20T11:33:01.998Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T11:33:01.998Z | T15:session-end | session-abandoned | session_id="ses-20260820-0641-f11d5a92", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:31420:1787233681845`
+
+- Start: 2026-08-20T13:48:01.845Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T13:48:01.845Z | T15:session-end | session-abandoned | session_id="ses-20260820-0451-a16466b3", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:35304:1787240614177`
+
+- Start: 2026-08-20T15:43:34.177Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T15:43:34.177Z | T15:session-end | session-registered | session_id="ses-20260820-1543-063e78fa", agent_session_id="063e78fa-fec5-4be0-a754-8c218"... |
+
+## Command `cmd-itemclosed-mt1q08on17c8906ee169`
+
+- Start: 2026-08-20T16:14:05.307Z
+- Events: 12
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T20:capture-buffer, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:14:05.307Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-592", +3 more |
+| 2 | 2026-08-20T16:14:05.864Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-593", +3 more |
+| 3 | 2026-08-20T16:14:06.334Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-546", +3 more |
+| 4 | 2026-08-20T16:14:06.863Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-194", +4 more |
+| 5 | 2026-08-20T16:14:07.483Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+| 6 | 2026-08-20T16:14:08.576Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 7 | 2026-08-20T16:14:08.908Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="f53e3cef382aaa3d5a810ff62ad97"..., +2 more |
+| 8 | 2026-08-20T16:14:08.976Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="3282d505523931178d8a4bed32431"..., +1 more |
+| 9 | 2026-08-20T16:14:09.015Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="1e585de218197166e8e432b94c986"..., +1 more |
+| 10 | 2026-08-20T16:14:09.059Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="90a18b11bd2b0309ea0899df69dd9"..., +1 more |
+| 11 | 2026-08-20T16:14:09.106Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 12 | 2026-08-20T16:14:09.613Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintdone-mt1q0nzn690e41c02daf`
+
+- Start: 2026-08-20T16:14:25.143Z
+- Events: 5
+- Tracks: T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T6:workstream, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:14:25.143Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-194", +4 more |
+| 2 | 2026-08-20T16:14:25.725Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+| 3 | 2026-08-20T16:14:26.782Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 4 | 2026-08-20T16:14:27.076Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-08-20T16:14:27.604Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:29724:1787242702473`
+
+- Start: 2026-08-20T16:18:22.473Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:18:22.473Z | T15:session-end | session-registered | session_id="ses-20260820-1618-80f6de17", agent_session_id="80f6de17-fd5c-4ef7-8b8d-67cd4"... |
+
+## Command `cmd-itemtransition-mt1q97w393a8572737b2`
+
+- Start: 2026-08-20T16:21:04.183Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:21:04.183Z | T6:workstream | item_transitioned | type="item_transitioned", ws_id="WS-595", +6 more |
+
+## Command `auto:23100:1787242876638`
+
+- Start: 2026-08-20T16:21:16.638Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:21:16.638Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:23100:1787242877162`
+
+- Start: 2026-08-20T16:21:17.162Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:21:17.162Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:23100:1787242877423`
+
+- Start: 2026-08-20T16:21:17.423Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:21:17.423Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:23100:1787242877609`
+
+- Start: 2026-08-20T16:21:17.609Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:21:17.609Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:34884:1787242988113`
+
+- Start: 2026-08-20T16:23:08.113Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:23:08.113Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="smart-test-runner's check-lab"..., +4 more |
+
+## Command `auto:27364:1787242988243`
+
+- Start: 2026-08-20T16:23:08.243Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T16:23:08.243Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Fault register entry named fo"..., +4 more |
+
+## Command `cmd-sprintapproveoverrideactive-mt1s30hyaaae2543f905`
+
+- Start: 2026-08-20T17:12:13.897Z
+- Events: 2
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:12:13.897Z | T6:workstream-rebalance | /next | type="duplicate_sprint_acknowledged", open_sprint_id="SPR-193", +4 more |
+| 2 | 2026-08-20T17:12:13.937Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-195", +8 more |
+
+## Command `auto:25136:1787245948833`
+
+- Start: 2026-08-20T17:12:28.833Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:12:28.833Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-next compose anchored on"..., +4 more |
+
+## Command `auto:39428:1787245973011`
+
+- Start: 2026-08-20T17:12:53.011Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:12:53.011Z | T15:session-end | session-registered | session_id="ses-20260820-1712-119aa927", agent_session_id="119aa927-eaa0-43d6-bef1-8207d"... |
+
+## Command `auto:38872:1787246472565`
+
+- Start: 2026-08-20T17:21:12.565Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:21:12.565Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="cwos-next compose anchors on "..., +4 more |
+
+## Command `cmd-sprintapproveoverrideactive-mt1sexos8162f5bb8a28`
+
+- Start: 2026-08-20T17:21:30.127Z
+- Events: 2
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:21:30.127Z | T6:workstream-rebalance | /next | type="duplicate_sprint_acknowledged", open_sprint_id="SPR-195", +4 more |
+| 2 | 2026-08-20T17:21:30.165Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-196", +8 more |
+
+## Command `cmd-itemclosed-mt1sfju8e7cca4c13ed0`
+
+- Start: 2026-08-20T17:21:58.835Z
+- Events: 10
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T20:capture-buffer, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:21:58.835Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-595", +3 more |
+| 2 | 2026-08-20T17:21:59.052Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-195", +4 more |
+| 3 | 2026-08-20T17:21:59.381Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+| 4 | 2026-08-20T17:21:59.809Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+| 5 | 2026-08-20T17:22:00.047Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="8450eef89544faf19e45cc0beab0c"..., +2 more |
+| 6 | 2026-08-20T17:22:00.092Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="41e38f1d743d3cf996863789fc504"..., +1 more |
+| 7 | 2026-08-20T17:22:00.122Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="94c2a7888f2d5bdcad16c1d013016"..., +1 more |
+| 8 | 2026-08-20T17:22:00.152Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="9e38f493d6f042fdb3331ac116502"..., +1 more |
+| 9 | 2026-08-20T17:22:00.187Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 10 | 2026-08-20T17:22:00.341Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:10348:1787246757589`
+
+- Start: 2026-08-20T17:25:57.589Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:25:57.589Z | T15:session-end | session-registered | session_id="ses-20260820-1725-6b9677a0", agent_session_id="6b9677a0-7c3f-479a-8dcc-118ce"... |
+
+## Command `auto:29592:1787246801638`
+
+- Start: 2026-08-20T17:26:41.638Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:26:41.638Z | T15:session-end | session-registered | session_id="ses-20260820-1726-68b3e45d", agent_session_id="68b3e45d-c578-4492-a70c-d65c1"... |
+
+## Command `auto:23176:1787246984337`
+
+- Start: 2026-08-20T17:29:44.337Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:29:44.337Z | T15:session-end | session-registered | session_id="ses-20260820-1729-393476c9", agent_session_id="393476c9-0b3d-4dc0-8927-7dad5"... |
+
+## Command `auto:27884:1787247191201`
+
+- Start: 2026-08-20T17:33:11.201Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:33:11.201Z | T15:session-end | session-abandoned | session_id="ses-20260820-0641-f11d5a92", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:27884:1787247192271`
+
+- Start: 2026-08-20T17:33:12.271Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:33:12.271Z | T15:session-end | session-abandoned | session_id="ses-20260820-1618-80f6de17", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:27884:1787247193268`
+
+- Start: 2026-08-20T17:33:13.268Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:33:13.268Z | T15:session-end | session-abandoned | session_id="ses-20260820-1725-6b9677a0", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `cmd-sprintapproveoverrideactive-mt1swl1x25aab422503b`
+
+- Start: 2026-08-20T17:35:13.562Z
+- Events: 2
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:35:13.562Z | T6:workstream-rebalance | /next | type="duplicate_sprint_acknowledged", open_sprint_id="SPR-196", +4 more |
+| 2 | 2026-08-20T17:35:13.621Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-197", +8 more |
+
+## Command `auto:40352:1787247346302`
+
+- Start: 2026-08-20T17:35:46.302Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:35:46.302Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="FOUR_BET_FREQUENCIES marked v"..., +4 more |
+
+## Command `auto:12132:1787248029412`
+
+- Start: 2026-08-20T17:47:09.412Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:47:09.412Z | T15:session-end | session-registered | session_id="ses-20260820-1747-e53d9810", agent_session_id="e53d9810-a990-4d53-a94f-d6796"... |
+
+## Command `auto:7476:1787248623650`
+
+- Start: 2026-08-20T17:57:03.650Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:57:03.650Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="WS-596's stated mechanism (SN"..., +4 more |
+
+## Command `auto:6560:1787248742813`
+
+- Start: 2026-08-20T17:59:02.813Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:59:02.813Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:6560:1787248743256`
+
+- Start: 2026-08-20T17:59:03.256Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:59:03.256Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:30692:1787248743474`
+
+- Start: 2026-08-20T17:59:03.474Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:59:03.474Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="6dbf0e816248fee03b44e0d799781"..., +2 more |
+
+## Command `auto:30692:1787248743521`
+
+- Start: 2026-08-20T17:59:03.521Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:59:03.521Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="64266c29e1e1bb1d18eec8d2c3c62"..., +2 more |
+
+## Command `auto:6560:1787248743559`
+
+- Start: 2026-08-20T17:59:03.559Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:59:03.559Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:6560:1787248743679`
+
+- Start: 2026-08-20T17:59:03.679Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T17:59:03.679Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:37020:1787248880997`
+
+- Start: 2026-08-20T18:01:20.997Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T18:01:20.997Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="sizeBucketFor receives pot IN"..., +4 more |
+
+## Command `auto:22676:1787251879011`
+
+- Start: 2026-08-20T18:51:19.011Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T18:51:19.011Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="strengthBand in rangeCalibrat"..., +4 more |
+
+## Command `auto:30124:1787252477059`
+
+- Start: 2026-08-20T19:01:17.059Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T19:01:17.059Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="computeDepth2Plan.test.js fla"..., +4 more |
+
+## Command `auto:40568:1787252555289`
+
+- Start: 2026-08-20T19:02:35.289Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T19:02:35.289Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="A subagent ran 'git checkout "..., +4 more |
+
+## Command `auto:24768:1787253506400`
+
+- Start: 2026-08-20T19:18:26.400Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T19:18:26.400Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="SECOND clobber of the same fi"..., +4 more |
+
+## Command `auto:27868:1787255282265`
+
+- Start: 2026-08-20T19:48:02.265Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T19:48:02.265Z | T15:session-end | session-abandoned | session_id="ses-20260820-0221-10a55c6c", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `auto:10752:1787257658470`
+
+- Start: 2026-08-20T20:27:38.470Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:27:38.470Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Holding-confounding CONFIRMED"..., +4 more |
+
+## Command `auto:35704:1787258584415`
+
+- Start: 2026-08-20T20:43:04.415Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:04.415Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text=".current-session pointed at a"..., +4 more |
+
+## Command `auto:2624:1787258584747`
+
+- Start: 2026-08-20T20:43:04.747Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:04.747Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="The shared git index already "..., +4 more |
+
+## Command `auto:4908:1787258584983`
+
+- Start: 2026-08-20T20:43:04.983Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:04.983Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="npx eslint fails at repo root"..., +4 more |
+
+## Command `auto:18876:1787258601329`
+
+- Start: 2026-08-20T20:43:21.329Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:21.329Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The reusable artifact for lad"..., +4 more |
+
+## Command `auto:8772:1787258601526`
+
+- Start: 2026-08-20T20:43:21.526Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:21.526Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The shared combo sample cross"..., +4 more |
+
+## Command `auto:37336:1787258601702`
+
+- Start: 2026-08-20T20:43:21.702Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:21.702Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Both refuted cost predictions"..., +4 more |
+
+## Command `auto:11292:1787258622945`
+
+- Start: 2026-08-20T20:43:42.945Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:42.945Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:11292:1787258625159`
+
+- Start: 2026-08-20T20:43:45.159Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:45.159Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:37476:1787258625866`
+
+- Start: 2026-08-20T20:43:45.866Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:45.866Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="be03d8b1a811e9e11b169d08e7ee6"..., +2 more |
+
+## Command `auto:37476:1787258625979`
+
+- Start: 2026-08-20T20:43:45.979Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:45.979Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="cea556cc797542de0dcc7bbcc6660"..., +2 more |
+
+## Command `auto:37476:1787258626056`
+
+- Start: 2026-08-20T20:43:46.056Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.056Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="31c11034e6d3c5336939d9d17b5b4"..., +2 more |
+
+## Command `auto:37476:1787258626132`
+
+- Start: 2026-08-20T20:43:46.132Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.132Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="44dd6d62a6f834f297017b7d22dc1"..., +2 more |
+
+## Command `auto:37476:1787258626208`
+
+- Start: 2026-08-20T20:43:46.208Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.208Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="57f6ecf0424c5de449642ca4718b9"..., +1 more |
+
+## Command `auto:37476:1787258626280`
+
+- Start: 2026-08-20T20:43:46.280Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.280Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="acc0000a0b1306093ccc1cfc24cdf"..., +1 more |
+
+## Command `auto:37476:1787258626358`
+
+- Start: 2026-08-20T20:43:46.358Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.358Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="fcde1658f2de7740c3ba8d292cba8"..., +1 more |
+
+## Command `auto:37476:1787258626437`
+
+- Start: 2026-08-20T20:43:46.437Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.437Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="473de5484248fe72a7405918d6e7e"..., +1 more |
+
+## Command `auto:37476:1787258626513`
+
+- Start: 2026-08-20T20:43:46.513Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.513Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="becf7f1cd082eb0572b02a5ceb5ec"..., +1 more |
+
+## Command `auto:37476:1787258626589`
+
+- Start: 2026-08-20T20:43:46.589Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.589Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="ff6dc7151e206c11e99fb7722e48a"..., +1 more |
+
+## Command `auto:37476:1787258626664`
+
+- Start: 2026-08-20T20:43:46.664Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.664Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="ace8141c434c650cf12fd1a965bff"..., +1 more |
+
+## Command `auto:37476:1787258626739`
+
+- Start: 2026-08-20T20:43:46.739Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.739Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="cd864a8962449482d9f358d528f67"..., +1 more |
+
+## Command `auto:11292:1787258626830`
+
+- Start: 2026-08-20T20:43:46.830Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:46.830Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:11292:1787258627838`
+
+- Start: 2026-08-20T20:43:47.838Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:43:47.838Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:27968:1787258713829`
+
+- Start: 2026-08-20T20:45:13.829Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:45:13.829Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Editing a queue YAML with Pyt"..., +4 more |
+
+## Command `auto:13684:1787258766502`
+
+- Start: 2026-08-20T20:46:06.501Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:06.501Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:13684:1787258767270`
+
+- Start: 2026-08-20T20:46:07.270Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:07.270Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:35204:1787258767531`
+
+- Start: 2026-08-20T20:46:07.531Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:07.531Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="c51db35130b9153580cf1bd1754af"..., +1 more |
+
+## Command `auto:13684:1787258767592`
+
+- Start: 2026-08-20T20:46:07.592Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:07.592Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:13684:1787258767843`
+
+- Start: 2026-08-20T20:46:07.843Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:07.843Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:14520:1787258796729`
+
+- Start: 2026-08-20T20:46:36.729Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:36.729Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:14520:1787258797196`
+
+- Start: 2026-08-20T20:46:37.196Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:37.196Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:14520:1787258797452`
+
+- Start: 2026-08-20T20:46:37.452Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:37.452Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:14520:1787258797615`
+
+- Start: 2026-08-20T20:46:37.615Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:37.615Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:23480:1787258811188`
+
+- Start: 2026-08-20T20:46:51.188Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:46:51.188Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Asserted a work-implying clai"..., +4 more |
+
+## Command `auto:11512:1787258882277`
+
+- Start: 2026-08-20T20:48:02.277Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:02.277Z | T15:session-end | session-abandoned | session_id="ses-20260820-0451-a16466b3", path=".claude/workstream/sessions/s"..., +2 more |
+
+## Command `cmd-commandcompleted-mt1zt0089d3160feac35`
+
+- Start: 2026-08-20T20:48:23.628Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:23.628Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:412:1787258912787`
+
+- Start: 2026-08-20T20:48:32.787Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:32.787Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:412:1787258913620`
+
+- Start: 2026-08-20T20:48:33.620Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:33.620Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:9340:1787258914035`
+
+- Start: 2026-08-20T20:48:34.035Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:34.035Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="985e960fefe47441348275a3599be"..., +1 more |
+
+## Command `auto:412:1787258914131`
+
+- Start: 2026-08-20T20:48:34.131Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:34.131Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:412:1787258914413`
+
+- Start: 2026-08-20T20:48:34.413Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:34.413Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mt1ztbfs2092c463fc8f`
+
+- Start: 2026-08-20T20:48:38.455Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:48:38.455Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:8448:1787259118218`
+
+- Start: 2026-08-20T20:51:58.218Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T20:51:58.218Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="WS-ID ALLOCATOR COLLIDED ACRO"..., +4 more |
+
+## Command `auto:39964:1787260382066`
+
+- Start: 2026-08-20T21:13:02.066Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:02.066Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Conduct Card sizing uses band"..., +4 more |
+
+## Command `auto:34652:1787260382194`
+
+- Start: 2026-08-20T21:13:02.194Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:02.194Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="S2 preflop tail split at 11.7"..., +4 more |
+
+## Command `auto:28720:1787260382307`
+
+- Start: 2026-08-20T21:13:02.307Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:02.307Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Sizing shrinkage is applied U"..., +4 more |
+
+## Command `auto:36068:1787260382423`
+
+- Start: 2026-08-20T21:13:02.423Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:02.423Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A sizing cell is keyed (regim"..., +4 more |
+
+## Command `auto:39000:1787260386465`
+
+- Start: 2026-08-20T21:13:06.465Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:06.465Z | T15:session-end | session-registered | session_id="ses-20260820-2113-f548def6", agent_session_id="f548def6-dbbb-405a-9aaa-9341b"... |
+
+## Command `auto:18152:1787260403878`
+
+- Start: 2026-08-20T21:13:23.878Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:23.878Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Sizing induction is a SECOND "..., +4 more |
+
+## Command `auto:12248:1787260403993`
+
+- Start: 2026-08-20T21:13:23.993Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:23.993Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Conduct Card pointers are one"..., +4 more |
+
+## Command `auto:39672:1787260404109`
+
+- Start: 2026-08-20T21:13:24.109Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:24.109Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="The seven legacy .tmp-arch/ C"..., +4 more |
+
+## Command `auto:26280:1787260404241`
+
+- Start: 2026-08-20T21:13:24.241Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:13:24.241Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="A Result Card carrying a NET "..., +4 more |
+
+## Command `auto:30880:1787260510957`
+
+- Start: 2026-08-20T21:15:10.957Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:10.957Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=3, +1 more |
+
+## Command `auto:30880:1787260511474`
+
+- Start: 2026-08-20T21:15:11.474Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.474Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="count_mismatch", +6 more |
+
+## Command `auto:37720:1787260511735`
+
+- Start: 2026-08-20T21:15:11.735Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.735Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="35f7e7743180b59a632598ad753f6"..., +2 more |
+
+## Command `auto:37720:1787260511786`
+
+- Start: 2026-08-20T21:15:11.786Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.786Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="f4ffe4228750231534fe89db54cca"..., +2 more |
+
+## Command `auto:37720:1787260511818`
+
+- Start: 2026-08-20T21:15:11.818Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.818Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="83f03a7dd088c4a7beef31f3ffb6e"..., +2 more |
+
+## Command `auto:37720:1787260511854`
+
+- Start: 2026-08-20T21:15:11.854Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.854Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="cd9fdd19b899df10f84b35aff6ef3"..., +2 more |
+
+## Command `auto:37720:1787260511899`
+
+- Start: 2026-08-20T21:15:11.899Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.899Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="6cb8af6aa8d9dbd935e65b11ca78c"..., +2 more |
+
+## Command `auto:37720:1787260511934`
+
+- Start: 2026-08-20T21:15:11.934Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.934Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="ee2d9ff6f07429896928cd884f9bf"..., +2 more |
+
+## Command `auto:37720:1787260511964`
+
+- Start: 2026-08-20T21:15:11.964Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.964Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="0199f7488d1834a8ba0a96a703135"..., +2 more |
+
+## Command `auto:37720:1787260511996`
+
+- Start: 2026-08-20T21:15:11.996Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:11.996Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="b82aa5de614f547f8525c3dca9633"..., +2 more |
+
+## Command `auto:37720:1787260512026`
+
+- Start: 2026-08-20T21:15:12.026Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:12.026Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="01d108aca05bb7ee24a1882b32ace"..., +1 more |
+
+## Command `auto:30880:1787260512065`
+
+- Start: 2026-08-20T21:15:12.065Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:12.065Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:30880:1787260512230`
+
+- Start: 2026-08-20T21:15:12.230Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:15:12.230Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mt20th358c619330b3b9`
+
+- Start: 2026-08-20T21:16:45.381Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-20T21:16:45.381Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |

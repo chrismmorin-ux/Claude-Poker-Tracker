@@ -2,12 +2,12 @@ id: "WS-504"
 title: "`--max-files` slices a SORTED list, so every capped multi-stake run is silently stake-biased — add stratified corpus selection"
 legacy_id: ""
 type: defect
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-18T19:21:21.533Z"
+completion_commit: 56ef5909
 priority_score: 76.0
 priority_label: "P1"
 category: "domain-correctness"
@@ -144,3 +144,4 @@ status_note: |
     - verify-ws433-determinism.mjs discovers with NO site/stake filter and N_FILES defaults
       to 3, so on cm-node1's 27 directories it reports collapsed on 24 of 27. Separate item.
     - The k>=679 hero-EV question: WS-503, unblocked by this ticket.
+closed_by_event: ev-1787080881559-4149221b5e3b

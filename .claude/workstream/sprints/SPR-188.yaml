@@ -1,0 +1,41 @@
+id: "SPR-188"
+title: "Unblock node1's compute pipeline — three of four runs produced no answer; fix each cause so the job "
+status: done
+approved_at: "2026-08-17T04:31:06.595Z"
+completed_at: "2026-08-17T05:09:17.922Z"
+completed_by_commit: "6f4cf7db"
+program_focus: "domain-correctness"
+
+goal: |
+  Unblock node1's compute pipeline — three of four runs produced no answer; fix each cause so the job hashes re-key and the feeder picks the compute back up
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-17T04:31:06.595Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-503 selected (88 × no damping = 88).
+  Program cap-breach: data-provenance, data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-421 16→20 (+3 more).
+  Cap usage: 2 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-513"
+    title: "WS-503 FAILED on cm-node1 — Error: ENOENT: no such file or directory, open"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-17T05:09:17.922Z"
+  - id: "WS-512"
+    title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory"
+    mode: execute
+    effort: S
+    status: skipped
+  - id: "WS-496"
+    title: "Review the WS-295 run — 6× UNDERPOWERED — the run answered NOTHING, check the instrument before re-running"
+    mode: plan-first
+    effort: S
+    status: skipped
+
+created_at: "2026-08-17T04:31:06.595Z"

@@ -113,6 +113,7 @@ accept_criteria: |
     `weightConsumed` — so a reader can see whether the remaining stages got more accurate. WS-403
     is the ticket that reduces this confound; it does not eliminate it.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/heroEvRunner.mjs"
   - "scripts/backtest/heroPolicy.mjs"

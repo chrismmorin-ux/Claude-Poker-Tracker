@@ -109,6 +109,7 @@ accept_criteria: |
     heroLearning / villainIntel over a real hand set. This is INFORMATION about a term that
     has been silently 0, not a keep/delete verdict.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/handAnalysis/replayAnalysis.js"
   - "src/utils/handAnalysis/handSignificance.js"

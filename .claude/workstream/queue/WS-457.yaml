@@ -27,4 +27,5 @@ accept_criteria: |
   - Plain English: for a villain we've seen play but not in this exact spot, the app uses what
     this specific hand is worth, not one average number for all hands.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

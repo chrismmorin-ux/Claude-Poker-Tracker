@@ -30,4 +30,5 @@ accept_criteria: |
   - Plain English: import a backup while signed in, then sign out — none of the imported
     players or sessions are still visible.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

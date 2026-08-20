@@ -192,6 +192,7 @@ accept_criteria: |
     return a third answer — that the instrument could not resolve an effect of this size — and must
     say which of the three it is returning. The negative control is what licenses that distinction.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/rangeEngine/bayesianUpdater.js"
   - "src/utils/rangeEngine/index.js"

@@ -124,6 +124,7 @@ accept_criteria: |
     got. WS-379 measured desktop and phone disagreeing on identical inputs; that must not become the
     live experience.
 effort: "XL"
+runs_on: "g16"
 files_involved:
   - "src/reducers/gameReducer.js"
   - "src/contexts/OnlineAnalysisContext.jsx"

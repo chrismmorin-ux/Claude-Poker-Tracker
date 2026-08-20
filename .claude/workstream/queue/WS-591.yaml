@@ -1,0 +1,73 @@
+id: "WS-591"
+title: "Four queue tickets contain raw control bytes and fail every standard YAML parser — one carries an ANSI escape sequence"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 62
+priority_label: "P2"
+category: "infrastructure"
+capability: "core"
+program: "self-compliance"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 during a full-queue parse sweep (574 files checked, 4 failures). All four are
+  pre-existing at HEAD and were not touched by the session that found them - verified by
+  re-parsing `git show HEAD:<path>` for each.
+
+    WS-018  deferred   0x91  (Windows-1252 left single quote, written as a raw byte)
+    WS-029  deferred   0x97  (Windows-1252 em dash)
+    WS-097  deferred   0x97
+    WS-502  dismissed  0x1b  <- ESC. An ANSI terminal escape sequence is inside a ticket file.
+
+  WHY 0x1b IS THE ALARMING ONE. ESC means terminal output - colour codes, cursor moves - was
+  captured and written into a work item, almost certainly by piping a command's stdout into a
+  ticket field without stripping control characters. Wherever that path is, it is still there,
+  and the next ticket it writes will be unparseable too. Find the writer, not just the four files.
+
+  THE SILENT PART. `cwos-reconcile` reports 394 items and `Integrity: OK (0 violations)` with
+  these four in the tree, so whatever parser it uses is lenient enough to swallow them. That
+  means the repo's own tooling reports a clean state over files that a standard parser refuses.
+  Any future script written with `yaml.safe_load` - the obvious thing to reach for - silently
+  sees a different queue than reconcile does. Two views of the queue that disagree, with nothing
+  forcing them onto the same axis; the mechanism is familiar.
+
+  LOW BLAST RADIUS TODAY, BY LUCK. All four are `deferred` or `dismissed`, so no active work is
+  currently invisible. That is not a reason to leave it: the defect is in the write path, and the
+  next occurrence could land on an open P0.
+
+  ALSO NOTE the encoding origin. 0x91 and 0x97 are Windows-1252 code points that are NOT valid
+  UTF-8 - they are what you get when cp1252 text is written to a file declared as UTF-8. This is
+  the same platform hazard `.cwos-onboarding.yaml` already warns about on Windows.
+accept_criteria: |
+  - The four files are repaired: control bytes replaced with their intended characters, content
+    otherwise unchanged, verified by diffing the parsed content against the intended text.
+  - The WRITE PATH that produced the 0x1b escape is found and fixed - stdout captured into a
+    ticket field is stripped of control characters at the point of capture.
+  - A check refuses to write any queue YAML containing a control byte outside tab/newline, and
+    runs on the write path rather than as a later sweep.
+  - A full-queue strict-parse check (`yaml.safe_load` over every WS-*.yaml, archive included)
+    runs in CI or reconcile, and a failure is a named error rather than a silent skip.
+  - Reconcile's lenient parse is reconciled with strict parse: either it also refuses, or it
+    reports the divergence. Two views of the queue that disagree is the defect, not the symptom.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - ".claude/workstream/queue/WS-018.yaml"
+  - ".claude/workstream/queue/WS-029.yaml"
+  - ".claude/workstream/queue/WS-097.yaml"
+  - ".claude/workstream/queue/WS-502.yaml"
+  - "kit/scripts/cwos-reconcile.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-20 full-queue parse sweep during the dead-gate and runs_on backfill"
+created_at: "2026-08-20T00:00:00.000Z"

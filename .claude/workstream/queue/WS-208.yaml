@@ -48,8 +48,7 @@ runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/design/surfaces/postflop-drills.md (potentially modified — mobile-portrait Range Lab section)"
   - "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"
-blocked_by:
-  - "WS-055"
+blocked_by: []
 blocked_by_legacy: []
 blocked_by_note: "Sequenced after WS-055 (landscape v1 Gate 4 surface spec) so mobile variant reflows a stable base. Could parallelize if owner prefers, at cost of double-revision."
 enables: []
@@ -64,3 +63,10 @@ source:
   audit_doc: "docs/design/audits/2026-05-20-blindspot-range-lab.md"
 created_at: "2026-05-20"
 status_note: "AUTHORED 2026-05-20 SPR-093 Gate 2 follow-up. Source: 2026-05-20-blindspot-range-lab.md Q4 mobile scope resolution + Stage C C-A1 implicit. P3 because deferred behind landscape v1 ship. Mirrors PSD WS-200 pattern."
+gate_resolution: |
+  2026-08-20: gate cleared. Root cause was not this ticket — the dependency resolver
+  builds its done-set from the LIVE queue only, so a blocker that was completed and then
+  ARCHIVED is invisible to it and its dependents are permanently unselectable. Verified
+  empirically: .claude/workstream/state/queue.json holds 393 items and WS-055/199/428/184
+  are all ABSENT from it while sitting in queue/archive/ with status done. Filed as WS-590.
+  WS-055 (landscape v1 Gate 4 surface spec) is done.

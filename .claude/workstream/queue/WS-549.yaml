@@ -1,0 +1,58 @@
+id: "WS-549"
+title: "The exploit card verdicts a quarter of a decision - price the call branch or emit no verdict"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 93
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  An opening raise is not a bluff, and the card prices it as one.
+  
+  It computes only the branch where everyone folds, stops at the exact moment the hand begins,
+  and then claims the omission is CONSERVATIVE. That banks the credit and disclaims the debit.
+  
+  TWO STRUCTURAL CONSEQUENCES.
+  
+  1. IT CAN ONLY EVER RECOMMEND THE MINIMUM SIZE. With P held constant, dEV/drisk = -(1-P) < 0
+     always. Verified: for a 60% folder, a 78% folder and a 99% folder the argmax is 2bb in all
+     three cases. "The cheapest steal is best" was a theorem of the model, not a finding about
+     the subject.
+  
+  2. THE SAFETY MARGIN SHRINKS AS THE HEADLINE GROWS. A player who folds 88% has, by
+     construction, a narrow and strong CONTINUING range. So the higher the fold rate, the worse
+     hero's equity in the branch the card claims as conservative. The two headline facts point
+     in opposite directions and the card reads only one.
+  
+  This repo's binding rule is: classify a bet by its callBranchEV. The card refuses to.
+  
+  Also unnamed anywhere on the card and named by POKER_THEORY as a first-class determinant:
+  STACK DEPTH. The corpus is 80bb+ only; a live 1/2 table runs 40bb-300bb, and SPR governs the
+  "you only lose risk" loss cap the whole instrument rests on.
+accept_criteria: |
+  - Every priced line reports a callBranchEV alongside the fold branch, or emits NO verdict.
+  - The verdict vocabulary distinguishes "fold branch positive" from "line positive" - they are
+    different claims and the card currently conflates them.
+  - SPR / effective stack is a required input, not absent.
+  - Demonstrate the instrument can prefer a LARGER size for some subject. If it cannot, the
+    call branch is not actually entering the decision.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/exploitCard.mjs"
+blocked_by: ["WS-548"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

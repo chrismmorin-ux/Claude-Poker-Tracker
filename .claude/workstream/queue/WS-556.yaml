@@ -1,0 +1,146 @@
+id: "WS-556"
+title: "The save has no light: surface `lastSavedAt` and the auto-save catch, and flush the pending write on `pagehide`"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-19T15:48:48.144Z"
+completion_commit: 32d968a4
+priority_score: 90.0
+priority_label: "P0"
+category: "data-integrity"
+capability: "core"
+program: "data-quality"
+runs_on: g16
+effort: M
+finding_id: ""
+description: |
+  TOP FINDING of the 2026-08-19 launch sweep. NEW - not among FIND-097..110.
+
+  THE DEFECT. `src/hooks/usePersistence.js:211` is the ONLY production `saveHand` call site in the
+  app (verified: grep saveHand across src/ excluding tests). Its catch at `:214-216` calls
+  `logError`, which terminates at `console.error` (`src/utils/errorHandler.js:187-199`). The hook
+  computes and returns `lastSavedAt` (`:241-244`); its sole production caller
+  `src/hooks/useAppState.js:85-93` invokes it as a bare statement and captures nothing. Grep for
+  lastSavedAt across src/ (non-test) returns three hits, all inside the hook itself.
+
+  So every hand the founder records live passes through one debounced write (`DEBOUNCE_DELAY =
+  1500`, `:26`) whose failure is invisible, and the value that would make it visible is computed,
+  returned, TESTED (`usePersistence.test.js:283-299`) and dropped on the floor.
+
+  SECOND HALF, same fix. The cleanup at `:226-233` flushes `pendingSaveRef` on React unmount only.
+  Repo-wide grep for visibilitychange/pagehide/beforeunload in src/ (non-test) hits only
+  `useSpeechCapture.js` and `useBuildVersion.js`. Phone lock, OS eviction of a backgrounded tab, or
+  battery death mid-hand discards up to 1.5s of the most recent action - a river shove - with not
+  even the console line, because the closure never runs. On the target device this is the most
+  likely trigger of the whole class.
+
+  time_to_detect: UNBOUNDED. recoverability: NONE. Per feedback_income_hand_specificity, the unit
+  of reality is the specific hand that happened.
+
+  Also instance #1 of three shipped-but-inert capabilities found in one audit - see WS-464.
+accept_criteria:
+  - "TableView renders a persistent save-state indicator driven by lastSavedAt, visible during live play at the S22 profile - verified by devshot, not by class string"
+  - "A forced saveHand rejection (quota stub / blocked DB) produces a visible in-app failure state, not only a console line"
+  - "visibilitychange->hidden and pagehide each force-flush pendingSaveRef synchronously; unit-tested with fake timers AND manually verified by locking the phone mid-hand and reloading"
+  - "No new production path swallows a persistence error without a UI-observable consequence"
+files_involved:
+  - "src/hooks/usePersistence.js"
+  - "src/hooks/useAppState.js"
+  - "src/components/views/TableView"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-data-integrity-src-hooks-usePersistence.js-211-244"
+  facilitator_ref: "A"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  DONE 2026-08-19. Verified in the browser and by anchored tests. Two corrections to the
+  ticket as I wrote it, and one additional silent-loss defect found while writing the tests.
+
+  CORRECTION 1 — THE PREMISE OF WS-557 IS FALSE, AND I CONFIRMED IT WRONGLY.
+  The sweep's F2 said "no error sink exists anywhere in src/", and I verified it by re-running
+  the cross-critic's grep for Sentry|captureException|window.onerror|unhandledrejection. Those
+  are REMOTE/GLOBAL handlers. This repo already has a LOCAL one, which is the correct design
+  for a local-first app and is essentially what WS-557 proposed building:
+    - `src/utils/errorLog.js` — persisted on-device log (localStorage, 50 entries FIFO,
+      BUILD_SHA-stamped), exportable.
+    - `src/components/ui/HealthIndicator.jsx` — mounted app-root (`PokerTracker.jsx:156`),
+      visible on EVERY view, silent when healthy.
+    - `src/components/views/SettingsView/ErrorLogPanel.jsx` — view / clear / export.
+    - `ErrorBoundary` + `ViewErrorBoundary` both feed it.
+  I checked the claim instead of deriving the answer — the exact failure the cross-critic
+  caught the phase-1 experts making on H2. WS-557 must be rewritten from "build a sink" to
+  "wire the existing sink to the write paths and add the global handlers", which is far
+  smaller. Its priority should drop accordingly.
+
+  CORRECTION 2 — MY OWN ACCEPT CRITERION CONTRADICTED REPO DOCTRINE.
+  I wrote "TableView renders a persistent save-state indicator". `HealthIndicator.jsx`'s own
+  docblock cites `navigation-ia.md`: an operator/health signal EXTENDS HealthIndicator rather
+  than growing a per-view widget, because "a per-view warning is invisible from the table,
+  which is the one place it matters". I followed the doctrine instead of my criterion.
+
+  WHAT THE DEFECT ACTUALLY WAS. The channel already existed and was wired ONLY to INIT
+  failures (`usePersistence.js:115,122`). `HealthIndicator`'s HIGHEST-priority fault is
+  already `'Not saving — data at risk'`, with the comment "Save failure outranks everything
+  else... not saving costs you the session you are playing right now, and you would not find
+  out until it was gone." Someone designed for precisely this defect. The auto-save catch just
+  never called the function. A fourth shipped-but-inert instance, and the most pointed one.
+
+  SECOND SILENT-LOSS DEFECT, FOUND BY WRITING THE TEST — not in the sweep, not in FIND-097..110.
+  The save closure ended with an unconditional `pendingSaveRef.current = null`, on a ref shared
+  across effect runs:
+    1. state A changes            -> pendingSaveRef = saveA, timer_A(1500)
+    2. state B changes before 1500 -> cleanup clears timer_A and calls saveA() (starts, awaits);
+                                      new effect sets pendingSaveRef = saveB, timer_B(1500)
+    3. saveA's awaits resolve; saveA nulls the ref, CLOBBERING saveB
+    4. timer_B fires -> `pendingSaveRef.current?.()` is null -> NOTHING RUNS
+  State B is never written, with no error and no log line, until some later change happens to
+  save it. If B was the last action of the hand, that hand's final state is simply gone. Fixed
+  by having the closure clear the ref only if it still owns it. The backgrounding test could
+  not observe a pending write at all, which is how this surfaced.
+
+  CHANGES
+    - `src/hooks/usePersistence.js` — catch now calls `reportPersistenceFailure('hands', error)`
+      + `logErrorObject(error, ERROR_CODES.SAVE_FAILED, ...)`; success calls
+      `reportPersistenceHealthy('hands')`; `visibilitychange`->hidden and `pagehide` flush the
+      pending write; pending-save ref clobber fixed.
+    - `src/utils/persistenceHealth.js` — added `subscribePersistenceHealth`. The indicator
+      polled at 60s, which was fine for INIT failures (they land at boot) and is not fine for
+      WRITE failures: a minute at a live table is several decisions. Polling stays as backstop.
+    - `src/components/ui/HealthIndicator.jsx` — subscribes for immediate update.
+    - `src/components/ui/__tests__/HealthIndicator.test.jsx` — mock updated for the new export.
+
+  VERIFICATION (measured)
+    - 4 new anchored tests. EACH was confirmed to FAIL against the unfixed code and pass with
+      it: reverting only the reporting lines fails the 2 reporting tests; reverting only the
+      listeners fails the 2 flush tests. A test that passes both ways proves nothing.
+    - Browser, live: driving `reportPersistenceFailure` on the app's own module instance made
+      the pill read "Not saving — data at risk" within 400ms, against a 60s poll. Rendered
+      184x36 CSS px. Screenshot `ws-556-not-saving-indicator.png`.
+    - 2,370 tests pass across 126 files (hooks, ui, persistence, SettingsView). Build clean.
+
+  TEST-HARNESS FINDING, worth knowing before trusting this file's older tests: the shared
+  `createHook()` captures its params ONCE, so `rerender()` re-renders with the same objects and
+  reassigning the outer `gameState` afterwards is invisible to the hook. The pre-existing test
+  "auto-saves after debounce delay when state changes" therefore passes on the INITIAL save,
+  not on any state change — it does not test what its name claims. My tests use a
+  props-driven harness instead. Not fixed here (out of scope); flagged for whoever touches it.
+
+  FALSE ALARM I RAISED AND RESOLVED, recorded so nobody re-runs it: driving the module by a
+  bare dynamic import appeared to show the indicator NOT reacting. Cause was mine — Vite dev
+  serves the module as `persistenceHealth.js?t=<hmr-stamp>`, so a bare-URL import is a
+  SEPARATE instance with its own Map. `errorLog` masked it by reading localStorage, which is
+  global. Importing the exact URL the app loaded showed correct behaviour. Dev-server artifact,
+  not a defect; production bundles one instance.
+
+  STILL OPEN, and it is the whole reason WS-565 exists: run the WS-565 check on the S22. It
+  decides whether this fix was urgent or preventive.
+closed_by_event: ev-1787154528394-8413329bfb5f

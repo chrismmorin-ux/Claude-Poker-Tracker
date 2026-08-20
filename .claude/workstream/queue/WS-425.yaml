@@ -162,6 +162,7 @@ accept_criteria: |
     strategy-arm-derived value passed as `equilibrium`. See decision_flags[1] for why this is not
     optional.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/strategyArm.mjs"
   - "scripts/backtest/run-strategy-arms.mjs"

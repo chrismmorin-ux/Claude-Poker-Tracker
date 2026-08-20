@@ -30,4 +30,5 @@ accept_criteria: |
   - The U-5 stored-hand scan result is reported: how many times, if ever, an illegal size was
     offered.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"

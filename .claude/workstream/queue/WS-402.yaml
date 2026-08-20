@@ -122,6 +122,7 @@ accept_criteria: |
     villain decisions derive from equity, pot odds, SPR, and players remaining. If the fold estimate
     is wrong, it is wrong as a function of those, and it is repaired as a function of those.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/gameTreeEquity.js"

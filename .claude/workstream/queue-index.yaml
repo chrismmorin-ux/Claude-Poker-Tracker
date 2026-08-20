@@ -2,14 +2,14 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 296
+total_items: 409
 by_status:
   decomposed: 1
-  done: 59
+  done: 77
   in_progress: 4
   deferred: 46
-  backlog: 162
-  dismissed: 3
+  backlog: 255
+  dismissed: 5
   completed: 7
   review: 1
   blocked: 10
@@ -17,27 +17,28 @@ by_status:
   claimed: 1
 
 by_category:
-  architecture: 11
+  architecture: 16
   compliance: 1
-  correctness: 19
-  data-integrity: 7
+  correctness: 20
+  data-integrity: 20
   data-isolation: 1
-  data-quality: 4
-  design: 5
+  data-quality: 5
+  design: 7
   design-comprehension: 4
   documentation: 2
-  domain-correctness: 111
-  engine: 15
-  engine-accuracy: 2
-  engineering: 2
+  domain-correctness: 155
+  engine: 20
+  engine-accuracy: 3
+  engineering: 3
   exploit-anchor-library: 5
   hero-state-primitive: 2
-  infrastructure: 3
+  infrastructure: 17
   input-ux: 2
   kit-quality: 2
   line-study-slice-widening: 10
-  measurement: 3
-  methodology: 16
+  measurement: 4
+  methodology: 17
+  methodology-integrity: 4
   monetization-and-pmf: 8
   performance: 1
   played-hand-review-protocol: 6
@@ -57,11 +58,12 @@ by_category:
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 2
-  strategy-of-record: 1
+  strategy: 1
+  strategy-of-record: 17
   table-view: 1
   test-reliability: 1
-  testing: 2
-  ux: 6
+  testing: 3
+  ux: 8
 
 items:
   - id: "WS-008"
@@ -744,7 +746,6 @@ items:
     category: table-view
     effort: L
     type: "feature"
-    blocked_by: ["refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks all feature work until Item 4 (decision-system extraction) completes. Bug fixes are exempt; this is not a bug."]
     program: design
     capability: core
 
@@ -755,7 +756,6 @@ items:
     category: player-identification
     effort: M
     type: "feature"
-    blocked_by: ["WS-184 (camera capture silent-fail) — photo path must actually attach and render before inverting avatar priority", "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks feature work until Item 4 completes"]
     decision_flags: ["\"Visual-mirror scope confirmed at Gate 4 — does it include EVERY view"]
     program: design
     capability: core
@@ -788,7 +788,6 @@ items:
     category: pre-session-drill
     effort: M
     type: "improvement"
-    blocked_by: ["WS-199"]
     decision_flags: ["In-line in postflop-drills.md vs separate surfaces/postflop-drills-mobile.md"]
     program: design
     capability: core
@@ -811,7 +810,6 @@ items:
     category: range-lab
     effort: M
     type: "improvement"
-    blocked_by: ["WS-055"]
     decision_flags: ["Grid-zoom modal vs row-paint modal vs other reflow strategy", "In-line in postflop-drills.md vs separate surfaces/postflop-drills-mobile.md"]
     program: design
     capability: core
@@ -1169,7 +1167,7 @@ items:
     category: domain-correctness
     effort: L
     type: "improvement"
-    decision_flags: ["Decay form and half-life — measured via WS-273, or founder estimate with follow-up?", "Does regime detection adjust the model, or only raise a flag to the founder in v1? (Flag-only is the conservative first step and is independently valuable.)", "Which regime triggers ship in v1 — stack-vs-buy-in and hands-since-big-loss are the cheapest; session duration and VPIP drift need more plumbing."]
+    decision_flags: ["Does regime detection adjust the model, or only raise a flag to the founder in v1? (Flag-only is the conservative first step and is independently valuable.)", "Which regime triggers ship in v1 — stack-vs-buy-in and hands-since-big-loss are the cheapest; session duration and VPIP drift need more plumbing."]
     program: domain-correctness
     capability: core
 
@@ -1234,7 +1232,6 @@ items:
     category: domain-correctness
     effort: M
     type: "improvement"
-    decision_flags: ["Refit the fold curve globally from the corpus, or keep the founder-estimate shape and correct only the online segments? The corpus is online-only and live/online separation is RATIFIED (WS-259)."]
     program: domain-correctness
     capability: core
 
@@ -1312,7 +1309,6 @@ items:
     effort: L
     type: "feature"
     blocked_by: ["WS-289"]
-    decision_flags: ["Does founder-vs-model divergence feed back into the model as live evidence? It is the only live data source available to challenge an online-corpus-derived model — but a model that learns from the founder's play will drift toward agreeing with them, which is the one bias it must not have."]
     program: domain-correctness
     capability: core
 
@@ -1518,7 +1514,7 @@ items:
 
   - id: "WS-310"
     title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
-    status: backlog
+    status: done
     priority_score: 29
     category: domain-correctness
     effort: M
@@ -1599,7 +1595,7 @@ items:
     category: domain-correctness
     effort: M
     type: "improvement"
-    decision_flags: ["Is this analysis-only or a live surface? A live path needs it fast enough for the table; an analysis primitive can be slow. The answer changes the implementation, so measure the cost before choosing.", "What is ε for the neutral zone — an absolute bb threshold, or a fraction of the pot? Pot-relative is more transportable across stack depths; absolute is easier to explain. This is a product decision about what 'close enough to indifferent' means."]
+    decision_flags: ["What is ε for the neutral zone — an absolute bb threshold, or a fraction of the pot? Pot-relative is more transportable across stack depths; absolute is easier to explain. This is a product decision about what 'close enough to indifferent' means."]
     program: domain-correctness
     capability: core
 
@@ -1703,7 +1699,6 @@ items:
     effort: M
     type: "improvement"
     blocked_by: ["WS-322"]
-    decision_flags: ["Where do atoms physically live? Local disk outside the repo is simplest and matches the existing C:/Users/chris/data/phh-mining pattern, but is not backed up and is invisible to other fleet nodes. A content-addressed store that can be synced is more durable and more work. Recommend local-first with the hash recorded, so relocation later does not invalidate any Result Card."]
     program: strategy-of-record
     capability: core
 
@@ -2112,7 +2107,7 @@ items:
     category: domain-correctness
     effort: M
     type: "bug"
-    decision_flags: ["|"]
+    decision_flags: ["'OPEN — WHETHER THE OTHER FIVE MEASURABLE PRIORS MOVE IN THIS TICKET OR A SUCCESSOR."]
     program: domain-correctness
     capability: core
 
@@ -2221,7 +2216,7 @@ items:
     category: correctness
     effort: M
     type: "bug"
-    blocked_by: ["WS-389"]
+    blocked_by: ["WS-432"]
     decision_flags: ["|"]
     finding_id: "FIND-045"
     program: domain-correctness
@@ -2234,7 +2229,7 @@ items:
     category: correctness
     effort: L
     type: "bug"
-    blocked_by: ["WS-389"]
+    blocked_by: ["WS-432"]
     decision_flags: ["|"]
     program: domain-correctness
     capability: core
@@ -2258,8 +2253,7 @@ items:
     category: methodology
     effort: S
     type: "task"
-    blocked_by: ["WS-389"]
-    decision_flags: ["|"]
+    blocked_by: ["WS-432"]
     finding_id: "FIND-053"
     program: methodology-integrity
     capability: core
@@ -2271,7 +2265,7 @@ items:
     category: correctness
     effort: M
     type: "bug"
-    blocked_by: ["WS-389"]
+    blocked_by: ["WS-432"]
     decision_flags: ["|"]
     finding_id: "FIND-047"
     program: domain-correctness
@@ -2380,7 +2374,7 @@ items:
     category: correctness
     effort: M
     type: "bug"
-    blocked_by: ["WS-389"]
+    blocked_by: ["WS-432"]
     decision_flags: ["|"]
     program: domain-correctness
     capability: core
@@ -2496,7 +2490,6 @@ items:
     category: measurement
     effort: XL
     type: "feature"
-    blocked_by: ["WS-428", "WS-431", "WS-432", "WS-433"]
     decision_flags: ["|"]
     program: domain-correctness
     capability: core
@@ -2803,7 +2796,7 @@ items:
 
   - id: "WS-445"
     title: "The Label & Foundation Ledger — every label-shaped input and its data foundation listed exhaustively in one artifact, each entry ranked by estimated absolute-EV impact; adopted as a standing repo standard"
-    status: backlog
+    status: done
     priority_score: 40
     category: strategy-of-record
     effort: L
@@ -3313,5 +3306,1203 @@ items:
     claimed_by: "ses-20260815-0620-63500894"
     decision_flags: ["Scope: re-mine everything at full corpus, or stage by downstream consumer?"]
     program: methodology-integrity
+    capability: core
+
+  - id: "WS-493"
+    title: "Keep cm-node1 fed with the most important node1 work — the compute supply chain"
+    status: done
+    priority_score: 24
+    category: infrastructure
+    effort: M
+    type: "task"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-494"
+    title: "The optimizer's-curse corpus arm does not exist — shapeReport is wired to nothing but a synthetic probe"
+    status: backlog
+    priority_score: 22
+    category: domain-correctness
+    effort: M
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-495"
+    title: "node1's claude-poker-tracker clone is in no pull list — nothing refreshes it on a cadence"
+    status: backlog
+    priority_score: 18
+    category: infrastructure
+    effort: S
+    type: "bug"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-496"
+    title: "Review the WS-295 run — 6× UNDERPOWERED — the run answered NOTHING, check the instrument before re-running"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-497"
+    title: "Review the WS-320 run — RC-study-ladder-d908f09d admissible, 1 warning(s)"
+    status: done
+    priority_score: 28
+    category: domain-correctness
+    effort: S
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-498"
+    title: "Realized equity ignores how many players are in the pot — the one number the multiway limped-pot strategy rests on"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: L
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-499"
+    title: "Multiway limped pots — an airtight line, with the decision node at the first villain aggressor"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
+    effort: XL
+    type: "feature"
+    blocked_by: ["WS-498"]
+    decision_flags: ["Escape vs maximize threshold: what field size / SPR / price flips the recommendation, and is that fitted from the corpus or declared by the founder?"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-500"
+    title: "Cold 4-bet does not exist in the engine — one of the three named escape tools is simply absent"
+    status: backlog
+    priority_score: 24
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-501"
+    title: "Is limping conditional? Measure limp rate against field size and price, and pick the metric-matched slice to fit on"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: M
+    type: "research"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-502"
+    title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory"
+    status: dismissed
+    priority_score: 26
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-503"
+    title: "C3 continuation — take the hero-EV re-baseline from 308 to 1200 player-clusters on the SAME population"
+    status: backlog
+    priority_score: 88
+    category: domain-correctness
+    effort: M
+    type: "measurement"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-504"
+    title: "`--max-files` slices a SORTED list, so every capped multi-stake run is silently stake-biased — add stratified corpus selection"
+    status: done
+    priority_score: 76
+    category: domain-correctness
+    effort: S
+    type: "defect"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-505"
+    title: "Review the WS-320 run — RC-study-ladder-d908f09d admissible, 1 warning(s)"
+    status: dismissed
+    priority_score: 28
+    category: domain-correctness
+    effort: S
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-506"
+    title: "Per-hand net won, derived from the hand's own accounting and validated against sum = −rake — the corpus has no usable winnings field"
+    status: backlog
+    priority_score: 46
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-507"
+    title: "Is 'winning player' even a measurable trait here? Split-half reliability of the win-rate label — the gate that can end the segmentation program"
+    status: backlog
+    priority_score: 45
+    category: domain-correctness
+    effort: S
+    type: "task"
+    blocked_by: ["WS-506"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-508"
+    title: "Which behaviors predict winning, out of sample — invert the question so the noise sits on the outcome, not on the label"
+    status: backlog
+    priority_score: 43
+    category: domain-correctness
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-507"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-509"
+    title: "Re-read every engine EV claim per villain segment — the pooled number averages a competent half and an exploitable half and hides both"
+    status: backlog
+    priority_score: 42
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-508"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-510"
+    title: "Table composition — does a seat's EV depend on how many exploitable players are at it, and on sitting to an aggressor's left? Power measured BEFORE the run"
+    status: backlog
+    priority_score: 40
+    category: domain-correctness
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-509"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-511"
+    title: "Decompose c-bet: texture-conditional rate, range composition, and the trap-vs-give-up split that a frequency deficit alone CANNOT make"
+    status: backlog
+    priority_score: 41
+    category: domain-correctness
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-320"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-512"
+    title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory"
+    status: done
+    priority_score: 26
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-513"
+    title: "WS-503 FAILED on cm-node1 — Error: ENOENT: no such file or directory, open"
+    status: done
+    priority_score: 88
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-514"
+    title: "`buildHandForRelay` whitelists away `captureId`, so the app can never ACK — the journal never prunes, dedup never runs, and every app page load re-inserts the same hands into IndexedDB"
+    status: backlog
+    priority_score: 60
+    category: data-integrity
+    effort: M
+    type: "bug"
+    finding_id: "FIND-083"
+    program: data-provenance
+    capability: extension
+
+  - id: "WS-515"
+    title: "The hand journal fills against a 10MB quota at ~3,576 hands — well before `MAX_JOURNAL = 5000` — and the quota throw is caught into a report that never increments `dropped`, so `enqueueHand` returns `success: true` while the hand is permanently gone"
+    status: backlog
+    priority_score: 55
+    category: data-integrity
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-provenance
+    capability: extension
+
+  - id: "WS-516"
+    title: "Silence detection permanently disarms after the first game message — `ignition-capture.js:520` early-returns on a cumulative counter that is never reset, so the escalating thresholds and the recovery banner can only fire for a capture that never started"
+    status: backlog
+    priority_score: 45
+    category: data-integrity
+    effort: M
+    type: "bug"
+    program: data-provenance
+    capability: extension
+
+  - id: "WS-517"
+    title: "A dead capture is visually identical to a live one — `buildStatusBar` returns LIVE on a cumulative hand count with no recency term, the 30s escalation is hard-gated on `handCount === 0`, and the panel's only freshness readout is hidden the instant hands exist"
+    status: backlog
+    priority_score: 45
+    category: data-integrity
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-provenance
+    capability: extension
+
+  - id: "WS-518"
+    title: "The capture keeps ONE running stack map and snapshots it once at hand end, so only final stacks reach the record — starting and per-street stacks are never written, and SPR at every decision is reconstruction rather than data"
+    status: backlog
+    priority_score: 40
+    category: data-integrity
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-provenance
+    capability: extension
+
+  - id: "WS-519"
+    title: "Emit the first derived Guide — the guide form has zero instances, and a standard with zero instances passes every conformance check while printing a green tick"
+    status: backlog
+    priority_score: 55
+    category: strategy
+    effort: L
+    type: "feature"
+    program: guide-authority
+    capability: analysis
+
+  - id: "WS-520"
+    title: "A preflop indifference criterion — Resolution is undefined before the flop, so a Guide cannot say which preflop decisions are forced and which are genuinely live"
+    status: backlog
+    priority_score: 48
+    category: engine-accuracy
+    effort: L
+    type: "feature"
+    program: guide-authority
+    capability: analysis
+
+  - id: "WS-521"
+    title: "The opener's response to a 3-bet is emitted NOWHERE — derivePreflopDecisions guards its second emission on `if (seatLimped)`, so open-then-4bet produces exactly one record and the most common aggressive preflop trajectory is invisible to the range model"
+    status: done
+    priority_score: 62
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["Overlaps WS-270 (the 4-bet tree). Decide whether this is folded into WS-270 or shipped first as the narrower emission fix — the emission hole is real independently of whether a 4-bet SUBCLASS taxonomy exists."]
+    program: domain-correctness
+    capability: analysis
+
+  - id: "WS-522"
+    title: "`overCall` — calling behind an existing caller is not modelled, and it was riding invisibly on WS-270"
+    status: backlog
+    priority_score: 38
+    category: domain-correctness
+    effort: M
+    type: "gap"
+    decision_flags: ["Is the split binary (first-in vs over-call), or does it scale with the NUMBER of callers already in? The number changes both pot odds and equity realisation, and they pull opposite ways."]
+    program: domain-correctness
+    capability: analysis
+
+  - id: "WS-523"
+    title: "Five report families still cannot see a collapsed sample — thread `fileSelection` into their stamps and adopt `sampleAdmissibility`"
+    status: backlog
+    priority_score: 64
+    category: domain-correctness
+    effort: M
+    type: "defect"
+    decision_flags: ["Whether `--file-selection` becomes a shared flag across runners, or stays hero-EV-only with the others pinned to the default. Shared parsing does not exist today — each runner hand-rolls its own."]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-524"
+    title: "The determinism verifier discovers with NO site/stake filter and a default cap of 3 — on cm-node1 it checks determinism over an arbitrary cross-stake slice"
+    status: backlog
+    priority_score: 41
+    category: domain-correctness
+    effort: S
+    type: "defect"
+    decision_flags: ["Which population the verifier should pin to. 50NLH matches every other baseline, but a determinism check arguably WANTS breadth — in which case the fix is a larger N_FILES, not a filter."]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-525"
+    title: "Re-run the three cards built on `handhq-allsites-50NLH-1c560bcc` — a Deal Book that is 300 of 300 Full Tilt files under an `allsites` name"
+    status: backlog
+    priority_score: 58
+    category: domain-correctness
+    effort: M
+    type: "task"
+    blocked_by: ["WS-523"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-526"
+    title: "F1 — synthetic recovery harness: can EM recover a known villain policy INCLUDING its fold branch?"
+    status: done
+    priority_score: 92
+    category: domain-correctness
+    effort: M
+    type: "research"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-527"
+    title: "Latent-holding EM fitter — recover pi(a | s, h) over the corpus, folds included"
+    status: backlog
+    priority_score: 90
+    category: domain-correctness
+    effort: XL
+    type: "feature"
+    blocked_by: ["WS-526"]
+    decision_flags: ["heavy-design"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-528"
+    title: "F2 — re-run BOTH per-villain refutations at power on EM-recovered holdings"
+    status: backlog
+    priority_score: 86
+    category: domain-correctness
+    effort: M
+    type: "research"
+    blocked_by: ["WS-527"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-529"
+    title: "Rule-basis parameterisation + legibility ladder — beat A3's 53-55% recovery"
+    status: backlog
+    priority_score: 84
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-527"]
+    decision_flags: ["heavy-design"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-530"
+    title: "F3 — permutation control: is cross-villain commonality real, or an artifact of the vocabulary?"
+    status: backlog
+    priority_score: 83
+    category: methodology-integrity
+    effort: M
+    type: "research"
+    blocked_by: ["WS-529"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-531"
+    title: "F4 — derived Stratum group level, to catch the 17% of decisions falling to the global prior"
+    status: backlog
+    priority_score: 85
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-527"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-532"
+    title: "teachable-arms figures have no Result Card — emit one"
+    status: backlog
+    priority_score: 74
+    category: strategy-of-record
+    effort: S
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-533"
+    title: "How well does hero know this villain — live hand census + drill surface Gate 1"
+    status: backlog
+    priority_score: 78
+    category: design
+    effort: M
+    type: "feature"
+    decision_flags: ["design-gate"]
+    program: design
+    capability: core
+
+  - id: "WS-534"
+    title: "Villain Model Card — emit the metrics kind that tracks the rule-evolution objective"
+    status: backlog
+    priority_score: 87
+    category: strategy-of-record
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-535"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-535"
+    title: "Derived villain rules with SHAPE FREEDOM — the villain's model need not look like ours"
+    status: backlog
+    priority_score: 89
+    category: domain-correctness
+    effort: L
+    type: "research"
+    blocked_by: ["WS-527"]
+    decision_flags: ["heavy-design"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-536"
+    title: "Incremental strategy ladder — one rule at a time, scored against the corpus pool"
+    status: backlog
+    priority_score: 88
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-537", "WS-540", "WS-541"]
+    decision_flags: ["heavy-design"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-537"
+    title: "Change ledger is defined in the register but NOT implemented — build it"
+    status: backlog
+    priority_score: 86
+    category: strategy-of-record
+    effort: M
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-538"
+    title: "The lower pier post does not exist — no equilibrium, so exploitation premium is unanswerable"
+    status: backlog
+    priority_score: 72
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    decision_flags: ["heavy-design"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-539"
+    title: "The Lesson — every read-warrant compiles to a drill item, full axis coverage"
+    status: backlog
+    priority_score: 82
+    category: design
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-536"]
+    decision_flags: ["design-gate"]
+    program: design
+    capability: core
+
+  - id: "WS-540"
+    title: "Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box"
+    status: backlog
+    priority_score: 90
+    category: infrastructure
+    effort: M
+    type: "bug"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-541"
+    title: "How losing IS the pool? Measure the field's realised winrate with the correct denominator"
+    status: backlog
+    priority_score: 89
+    category: strategy-of-record
+    effort: M
+    type: "research"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-542"
+    title: "Stratify the ladder to the MOST COMMON villain — the 76.7% pole, not the blend"
+    status: backlog
+    priority_score: 87
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-531"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-543"
+    title: "Dominated-event calibration arms — rulesets whose sign is known before the run"
+    status: backlog
+    priority_score: 91
+    category: methodology-integrity
+    effort: M
+    type: "research"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-544"
+    title: "WHERE does SPR enter, not WHETHER — per-situation axis probe, and the proxy question"
+    status: backlog
+    priority_score: 88
+    category: domain-correctness
+    effort: L
+    type: "research"
+    blocked_by: ["WS-537"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-545"
+    title: "The villain's EV distribution — which hands does he lose with, and how much?"
+    status: backlog
+    priority_score: 86
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-546"
+    title: "Remove the narrow-support bias — an ESS gate warns, it does not fix"
+    status: done
+    priority_score: 92
+    category: methodology-integrity
+    effort: M
+    type: "bug"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-547"
+    title: "WS-503 FAILED on cm-node1 — no error captured in the step log"
+    status: done
+    priority_score: 88
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-548"
+    title: "Exploit card prices a 2bb open with a fold rate measured against 3-4bb raises - condition every seat on size"
+    status: backlog
+    priority_score: 94
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-549"
+    title: "The exploit card verdicts a quarter of a decision - price the call branch or emit no verdict"
+    status: backlog
+    priority_score: 93
+    category: domain-correctness
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-548"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-550"
+    title: "Every MIX verdict is provisional - the separator search only ever looks one feature at a time"
+    status: backlog
+    priority_score: 90
+    category: domain-correctness
+    effort: L
+    type: "feature"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-551"
+    title: "Two Conduct Cards cannot compete - there is no held-out score, only in-sample fit"
+    status: backlog
+    priority_score: 91
+    category: strategy-of-record
+    effort: M
+    type: "feature"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-552"
+    title: "The induction predicts WHICH action and never HOW BIG - the sharpest rule on the card is invisible to it"
+    status: backlog
+    priority_score: 86
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-553"
+    title: "Range charts are ordered by a realization-blind table - POKER_THEORY named the falsifier before the charts used it"
+    status: backlog
+    priority_score: 84
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-554"
+    title: "Archetype torsion needs a rebase discipline - you cannot measure drift in the player if the instrument also drifts"
+    status: backlog
+    priority_score: 80
+    category: strategy-of-record
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-551"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-556"
+    title: "The save has no light: surface `lastSavedAt` and the auto-save catch, and flush the pending write on `pagehide`"
+    status: done
+    priority_score: 90
+    category: data-integrity
+    effort: M
+    type: "bug"
+    program: data-quality
+    capability: core
+
+  - id: "WS-557"
+    title: "Give the product an error sink - nothing in src/ can tell the founder that anything failed"
+    status: backlog
+    priority_score: 60
+    category: infrastructure
+    effort: M
+    type: "infrastructure"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-558"
+    title: "Land the deploy gate now - FIND-098's blocker is cleared, and CI and deploy still fire in parallel on every push to main"
+    status: backlog
+    priority_score: 72
+    category: infrastructure
+    effort: M
+    type: "infrastructure"
+    finding_id: "FIND-097"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-559"
+    title: "Build the recovery floor: backup captures 3 of 25 stores and reports success, and restore begins by clearing everything"
+    status: backlog
+    priority_score: 55
+    category: data-integrity
+    effort: L
+    type: "bug"
+    finding_id: "FIND-101"
+    program: data-quality
+    capability: core
+
+  - id: "WS-560"
+    title: "Guard the v23/v24 concurrent cursor walk on players, and put an executable assertion behind MUST STAY LAST"
+    status: backlog
+    priority_score: 45
+    category: data-integrity
+    effort: M
+    type: "bug"
+    finding_id: "FIND-104"
+    program: data-quality
+    capability: core
+
+  - id: "WS-561"
+    title: "Check event.origin on the app-side postMessage listeners - the extension's own casino-page listener already does"
+    status: backlog
+    priority_score: 50
+    category: data-integrity
+    effort: S
+    type: "bug"
+    finding_id: "FIND-083"
+    program: security
+    capability: extension
+
+  - id: "WS-562"
+    title: "Account deletion purges nothing - the toast says Account deleted while every hand, physical description and photo blob stays on disk"
+    status: backlog
+    priority_score: 40
+    category: data-integrity
+    effort: M
+    type: "bug"
+    finding_id: "FIND-100"
+    program: security
+    capability: core
+
+  - id: "WS-563"
+    title: "Confirmation on Reset Hand - the only irreversible control in the app is one unconfirmed tap beside a near-identical safe one"
+    status: done
+    priority_score: 38
+    category: ux
+    effort: S
+    type: "bug"
+    program: design
+    capability: core
+
+  - id: "WS-564"
+    title: "The touch-floor gate measures one container and fixmes the state that matters - card slots and the nav rail are invisible to it"
+    status: backlog
+    priority_score: 35
+    category: ux
+    effort: M
+    type: "bug"
+    program: design
+    capability: core
+
+  - id: "WS-565"
+    title: "Ask the founder's device: has a hand already been silently lost, and what DB version is it on?"
+    status: done
+    priority_score: 65
+    category: measurement
+    effort: S
+    type: "task"
+    program: data-quality
+    capability: core
+
+  - id: "WS-566"
+    title: "FOUNDER DECISION - does the launch program have a referent? intention.md never says launch, and OQ-001 is still the unedited template placeholder"
+    status: backlog
+    priority_score: 58
+    category: methodology
+    effort: S
+    type: "decision"
+    program: launch
+    capability: governance
+
+  - id: "WS-567"
+    title: "Run the tests before the ledger gates - an untracked backtest file blocks 100% of local test signal today"
+    status: backlog
+    priority_score: 30
+    category: infrastructure
+    effort: S
+    type: "bug"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-568"
+    title: "Settle whether the 14 npm advisories reach the browser bundle before deciding anything about a CI gate"
+    status: backlog
+    priority_score: 22
+    category: infrastructure
+    effort: S
+    type: "task"
+    program: security
+    capability: core
+
+  - id: "WS-569"
+    title: "`/next compose` proposes node1-bound items as ordinary G16 sprint work, against its own documented rule"
+    status: backlog
+    priority_score: 48
+    category: infrastructure
+    effort: S
+    type: "bug"
+    program: infrastructure
+    capability: governance
+
+  - id: "WS-570"
+    title: "Undoing Next Hand still advances the stack ledger and the hand counter — decide whether undo should roll back settlement"
+    status: backlog
+    priority_score: 36
+    category: data-integrity
+    effort: M
+    type: "decision"
+    decision_flags: ["Ledger rollback semantics vs deliberate monotonicity — INV-STK-01 is load-bearing"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-571"
+    title: "PlayerFinderView smoke test fails under parallel load and passes alone — a 10s timeout on a dynamic-import test with no headroom"
+    status: backlog
+    priority_score: 34
+    category: infrastructure
+    effort: S
+    type: "bug"
+    program: engineering
+    capability: core
+
+  - id: "WS-572"
+    title: "A code fix never re-opens the compute job it invalidated — the already-ran fingerprint omits the engine commit"
+    status: done
+    priority_score: 86
+    category: infrastructure
+    effort: S
+    type: "bug"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-573"
+    title: "Two backtest-integrity defects: a vacuous rehydration hash check, and a hero-EV CI whose own header says its independence assumption is false"
+    status: backlog
+    priority_score: 70
+    category: correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["Defect 2 has two honest fixes with different costs: correct the bootstrap, or stop emitting a CI. Emitting a known-wrong interval is the one option that should be off the table."]
+    program: infrastructure
+    capability: core
+
+  - id: "WS-574"
+    title: "Depth-2 has never once finished: 38% runout coverage, 2 of 6 stages never run — because WS-334's fast path was never wired"
+    status: backlog
+    priority_score: 93
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["Latency: what is the acceptable time-to-REFINED advice at the table, given first advice is instant?"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-575"
+    title: "Completing depth-2 pushes hero to raise 98% of the time — the truncation was MASKING an aggression bias, not causing one"
+    status: backlog
+    priority_score: 95
+    category: domain-correctness
+    effort: L
+    type: "bug"
+    blocked_by: ["WS-574"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-576"
+    title: "Relational seat coordinates — every positional column is button-relative, so a funnel defined by where hero sits relative to the AGGRESSION is not expressible and therefore cannot be found"
+    status: backlog
+    priority_score: 72
+    category: architecture
+    effort: M
+    type: "improvement"
+    decision_flags: ["Domain: what axis defines 'aggressive' — preflop raise frequency, postflop aggression frequency, or a composite. The choice changes which funnels are findable."]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-577"
+    title: "The pulse — an orbit clock, seat turnover and sit-down stacks, so waiting cost becomes orbits-until-available and held-out lift becomes bb/orbit"
+    status: backlog
+    priority_score: 66
+    category: architecture
+    effort: L
+    type: "improvement"
+    blocked_by: ["WS-576"]
+    decision_flags: ["Domain: does an orbit end on the button passing a fixed seat, or on every seat having acted once? They differ whenever a player sits out mid-orbit."]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-578"
+    title: "Sizing on the action — `my_raise_to_bb` is populated on 1,167 of 1,167 raises and reaches the Conduct Card on zero rules, so no environment can be stepped"
+    status: backlog
+    priority_score: 70
+    category: data-integrity
+    effort: M
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-579"
+    title: "Nine-handed Conduct Cards — ~180k nine-handed hands sit in the local corpus and both profiled villains are six-max by SELECTION ARTIFACT, so the format caveat on every published page is removable"
+    status: backlog
+    priority_score: 74
+    category: data-integrity
+    effort: M
+    type: "task"
+    program: data-provenance
+    capability: core
+
+  - id: "WS-580"
+    title: "Hand-conditional policy by iterative proportional fitting — a Conduct Card is a MARGINAL policy, so simulating from it directly gives every villain identical play with every holding and puts nobody's cards on the table"
+    status: backlog
+    priority_score: 68
+    category: architecture
+    effort: L
+    type: "improvement"
+    blocked_by: ["WS-578"]
+    decision_flags: ["Domain: what is a holding CLASS for this purpose — the made/draw taxonomy, comboStrengthPercentile bands, or a joint. Too fine and every cell starves; too coarse and the conditional cannot express the thing that matters."]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-581"
+    title: "Policy-space rank test — if the villain policy matrix is effectively rank 1 then every table is a ladder and no configuration can ever surprise; engine-free, and it names which villains form the interesting combinations"
+    status: backlog
+    priority_score: 76
+    category: architecture
+    effort: L
+    type: "task"
+    decision_flags: ["Method: what defines the common lattice — a hand-specified cell set, or the union of the top-n rules across subjects. The choice decides what shape differences are even visible."]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-582"
+    title: "Configuration sweep and funnel discovery — search table composition x hero seat for EV per orbit, and require a NON-MONOTONE effect in seat count as proof the simulator escaped the product-of-marginals regime"
+    status: backlog
+    priority_score: 64
+    category: architecture
+    effort: L
+    type: "improvement"
+    blocked_by: ["WS-576", "WS-577", "WS-578", "WS-580", "WS-581"]
+    decision_flags: ["Strategy: what is hero's policy during the sweep — a fixed reasonable baseline, or a best response re-solved per configuration. The second is the real question and is far more expensive."]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-583"
+    title: "Synthetic round-trip validation — generate a corpus, re-induce Conduct Cards from it, and require they reproduce the source cards; that is the falsifier for 'synthetic at corpus quality'"
+    status: backlog
+    priority_score: 62
+    category: testing
+    effort: L
+    type: "task"
+    blocked_by: ["WS-580"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-584"
+    title: "Hero's own play has no card — heroSelfObservation ships observations nothing expresses as a Conduct Card, so hero cannot be measured by the machinery built for villains"
+    status: backlog
+    priority_score: 88
+    category: strategy-of-record
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-551"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-585"
+    title: "The Read is named and empty — the second-argument rule defines conduct-conditioned-on-hero and only the argument-less object was built"
+    status: backlog
+    priority_score: 84
+    category: strategy-of-record
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-551"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-586"
+    title: "The register lags the code — `realization` is load-bearing in 67 files and has zero entries in the register built to stop two numbers from evading each other"
+    status: backlog
+    priority_score: 86
+    category: strategy-of-record
+    effort: M
+    type: "improvement"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-587"
+    title: "The Lesson — a session-locked prescription naming the most valuable OFF-TABLE activity, pre-registered with its own falsifier so the advice is scoreable"
+    status: backlog
+    priority_score: 90
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-584"]
+    decision_flags: ["surface-bearing: a founder-facing Lesson view triggers design Gates 1/2/4 - the OBJECT here is engine-internal, the surface splits out"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-588"
+    title: "Recovery — score whether a Lesson actually closed its leak, or the Ledger is a pile of unfalsified advice"
+    status: backlog
+    priority_score: 87
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-587", "WS-554"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-589"
+    title: "Data admissibility standard — what counts as a usable observation, and when a session's capture is complete enough to rely on"
+    status: backlog
+    priority_score: 89
+    category: data-quality
+    effort: M
+    type: "feature"
+    program: data-quality
+    capability: core
+
+  - id: "WS-590"
+    title: "The dependency resolver can never clear an archived or superseded blocker — ten items were permanently unselectable, one of them P0"
+    status: backlog
+    priority_score: 85
+    category: infrastructure
+    effort: M
+    type: "bug"
+    program: self-compliance
+    capability: core
+
+  - id: "WS-591"
+    title: "Four queue tickets contain raw control bytes and fail every standard YAML parser — one carries an ANSI escape sequence"
+    status: backlog
+    priority_score: 62
+    category: infrastructure
+    effort: S
+    type: "bug"
+    program: self-compliance
+    capability: core
+
+  - id: "WS-592"
+    title: "WS-295 FAILED on cm-node1 — the runner recorded no detail and the step log has no error — the job died before its first step"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-593"
+    title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory"
+    status: done
+    priority_score: 26
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-594"
+    title: "Depth-2 budget sweep on cm-node1 — the coverage curve WS-574's default is chosen from"
+    status: backlog
+    priority_score: 92
+    category: domain-correctness
+    effort: S
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-595"
+    title: "WS-594 FAILED on cm-node1 — Error: Cannot find module 'C:\\\\cj\\\\ws-594-4de0a32e99b8\\\\scripts\\\\backtest\\\\probe-depth2-coverag"
+    status: done
+    priority_score: 92
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-596"
+    title: "The estimator's bias is a function of ESS, not of the policy — r = -0.95 across 8 arms"
+    status: backlog
+    priority_score: 94
+    category: methodology-integrity
+    effort: L
+    type: "bug"
+    decision_flags: ["What the outcome model is fitted on, and the partition that keeps it out of the decisions the IPS arm scores."]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-597"
+    title: "cold4Bet is not narrower than its parent — the narrowest range in the preflop tree is a copy of the aggregate"
+    status: backlog
+    priority_score: 88
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["Measure the cold-4-bet range SHAPE on the corpus, or ship both arms with the delta? The frequency (1.56%, k=48/n=3,083) is already measured; the shape is not."]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-598"
+    title: "The facing-3-bet fallback hard-codes its own source as literals, and two more scars the WS-521 fix left behind"
+    status: backlog
+    priority_score: 62
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-599"
+    title: "A Conduct Card is written to a scratch directory and its pointer is discarded — seven cards exist and none is authoritative"
+    status: backlog
+    priority_score: 87
+    category: infrastructure
+    effort: M
+    type: "bug"
+    decision_flags: ["Pointer store shape: one file per card vs a single append-only index. Affects merge conflicts across concurrent sessions.", "Do the seven existing .tmp-arch/ cards get registered retroactively, or recorded as pre-standard and left alone?"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-600"
+    title: "A manifest can name an engineCommit that does not contain the emitter — measured 4 of 5 on real cards, and nothing checks it"
+    status: backlog
+    priority_score: 79
+    category: infrastructure
+    effort: S
+    type: "bug"
+    decision_flags: ["Refuse at build time, or stamp a verified:false flag and refuse only at publish? Refusing at build blocks a legitimate exploratory run from producing any artifact."]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-601"
+    title: "All-in is inferred from bet SIZE because the decision record drops the flag the labeller already computes — the proxy silently breaks at any other stack depth"
+    status: backlog
+    priority_score: 76
+    category: engine
+    effort: S
+    type: "bug"
+    decision_flags: ["Does removing the >=79 band require a SIZING_SCHEME_VERSIONS.S2 bump to v3? It changes band membership, so stored v2 cards would be re-based silently without one."]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-602"
+    title: "An emitted card drops `predicate` and keeps English `when` — so two stored Conduct Cards can never compete, and rankCards can only see in-process objects"
+    status: backlog
+    priority_score: 84
+    category: engine
+    effort: S
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-603"
+    title: "`enrichDecisions` fits entry widths over held-out hands, so 27 situation columns saw the eval fold — measured delta zero on one subject, which is not a clearance"
+    status: backlog
+    priority_score: 77
+    category: engine
+    effort: M
+    type: "bug"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-604"
+    title: "A band-valued sizing target cannot express a PARAMETRIC rule — villain 1's `+1bb per limper` straddles band edges, so the sharpest measured rule on the corpus is unreachable by construction"
+    status: backlog
+    priority_score: 83
+    category: engine
+    effort: L
+    type: "feature"
+    decision_flags: ["Which quantitative target: raw bb, log-bb, or pot-fraction? They imply different error structures and different notions of 'close'.", "Does a parametric rule need its own MIX verdict, or is it a third rule KIND beside always/mix?"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-605"
+    title: "The repo cannot run its own test suite deterministically — two identical runs gave different failure sets, and the quarantine that fixes it was built but never extended"
+    status: backlog
+    priority_score: 90
+    category: engineering
+    effort: M
+    type: "bug"
+    decision_flags: ["Serialize the slow files into slow-unit (preserves current semantics, suite stays ~50 min), or make the runner shardable/resumable so a full verification can complete inside a session? The first is a smaller change; the second is what makes the suite usable as a gate again."]
+    program: engineering
+    capability: core
+
+  - id: "WS-606"
+    title: "Sizing sub-rules ride on the card unvalidated and unscored — `sizingProblems` checks only `bands`, and the held-out score still measures action lift alone"
+    status: backlog
+    priority_score: 74
+    category: engine
+    effort: M
+    type: "bug"
+    program: strategy-of-record
     capability: core
 

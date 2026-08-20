@@ -1,0 +1,40 @@
+id: "SPR-194"
+title: "Unblock the compute node: fix the two silent job failures, then remove the narrow-support bias"
+status: done
+approved_at: "2026-08-20T07:02:36.339Z"
+completed_at: "2026-08-20T16:14:25.109Z"
+completed_by_commit: "b5e54400"
+program_focus: "domain-correctness"
+
+goal: |
+  Unblock the compute node: fix the two silent job failures, then remove the narrow-support bias
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-20T07:02:36.339Z"
+  matches: []
+
+composition_notes: |
+  Founder chose option 2: fix the compute pipeline before the item that depends on it. WS-592/WS-593 are harvested node1 job failures (runs_on: any, S). WS-546 follows as the anchor item.
+
+items:
+  - id: "WS-592"
+    title: "WS-295 FAILED on cm-node1 â€” the runner recorded no detail and the step log has no error â€” the job died before its first step"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-20T16:14:05.274Z"
+  - id: "WS-593"
+    title: "WS-293 FAILED on cm-node1 â€” JavaScript heap out of memory"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-20T16:14:05.274Z"
+  - id: "WS-546"
+    title: "Remove the narrow-support bias â€” an ESS gate warns, it does not fix"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-08-20T16:14:05.274Z"
+
+created_at: "2026-08-20T07:02:36.339Z"

@@ -32,4 +32,5 @@ accept_criteria: |
   - Plain English: the architecture document either matches the code, or the test run says out
     loud that it doesn't.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"

@@ -67,6 +67,7 @@ accept_criteria: |
     (3) The surface spec states the label's own measurement: k=2, silhouette 0.343,
     21.1% Unknown fallthrough.
 effort: "L"
+runs_on: "g16"
 files_involved:
   - "docs/design/audits/2026-08-08-entry-villain-categorization-greenfield.md"
   - "docs/design/ROUNDTABLES.md"

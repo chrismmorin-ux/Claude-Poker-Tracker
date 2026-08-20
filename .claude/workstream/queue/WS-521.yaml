@@ -1,0 +1,107 @@
+id: "WS-521"
+title: "The opener's response to a 3-bet is emitted NOWHERE — derivePreflopDecisions guards its second emission on `if (seatLimped)`, so open-then-4bet produces exactly one record and the most common aggressive preflop trajectory is invisible to the range model"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-18T19:21:21.533Z"
+completion_commit: 56ef5909
+priority_score: 62.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "analysis"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-16 while analysing preflop structure for the guide form. Every claim below was
+  verified against HEAD in-session, not recalled.
+
+  THE DEFECT. `rangeEngine/lineTaxonomy.js` `derivePreflopDecisions` emits a seat's first
+  voluntary action, then emits a SECOND decision only under `if (seatLimped)` (`:223`). So a
+  seat that OPENS, faces a 3-bet, and then folds / calls / 4-bets produces exactly ONE record:
+  `open`. The response to the 3-bet is never emitted as a decision point at all.
+
+  IT IS NOT CAPTURED ANYWHERE ELSE, and this is the part that makes it a hole rather than a
+  design choice:
+
+  - `rangeEngine/subActionExtractor.js` has NO notion of `open`. Grepped at HEAD for
+    `open|OPEN|foldTo3Bet|fourBet|4bet` — zero matches. Sub-actions are limp-only (limp-fold,
+    limp-call, limp-reraise), exactly as `rangeEngine/CLAUDE.md` describes them: "What happens
+    AFTER a limp reveals information ABOUT the limp range."
+  - The 4-bet tree does not exist. `lineTaxonomy.js:21-26` states it plainly: "facing a 3-bet
+    (the 4-bet tree) is a THIRD scenario that does not exist yet — see POKER_THEORY §2.5.5 and
+    WS-270."
+
+  The `lineTaxonomy.js:21-26` note covers a DIFFERENT case from this one and the distinction is
+  load-bearing: it describes a seat whose FIRST voluntary action is a raise over two or more
+  prior raises (a cold 4-bet), which lands in the `threeBet` parent with `subAction: null`.
+  That seat at least produces a record. The OPENER who later 4-bets produces none, because the
+  `seatLimped` guard never lets the code reach a second emission. This gap is not the documented
+  residual; it is undocumented.
+
+  WHAT IT COSTS. `foldTo3Bet` is one of the six stats with a measured pseudocount cap in
+  POKER_THEORY §6.5a (`foldTo3Bet 10`) — the model treats it as a real, estimable per-villain
+  quantity, and the extractor never produces an observation for it from the opener's seat.
+  Every 3-bet a villain faces as the opener is a decision the range model does not see.
+
+  THE RAW RECORD IS FINE. `hand.gameState.actionSequence` carries the full ordered timeline and
+  `exploitEngine/decisionAccumulator.js:79` reads it for pot geometry. The information is
+  present and is discarded at the taxonomy step, which means this is recoverable from stored
+  hands rather than only from hands captured after the fix.
+
+  SECOND, SEPARABLE SCOPE — line-shape aggregation. Even with the emission fixed, nothing
+  aggregates preflop decisions BY TRAJECTORY. The taxonomy folds one step of path context into
+  each node label (`squeeze` = a caller came between; `isoRaise` = over a limper; `limpReraise`
+  = this seat limped earlier) and then aggregates each labelled node independently —
+  `rangeEngine/CLAUDE.md` §4 states the independence as doctrine. That is correct for
+  ESTIMATING a villain's range, which needs marginals. It cannot express "this hand tends to
+  raise-raise-shove", which is a claim about a path. Terminal line-shape keys, carved from the
+  existing parents/subclasses rather than built beside them (DEC-025 Amd 1), are what §1
+  Occupancy in the guide form is a measure over.
+
+  Split this ticket if the second half is large. The emission hole should not wait for it.
+accept_criteria: |
+  - A seat that opens and then acts again facing a raise emits a SECOND decision record.
+  - The existing `limp` + `limpReraise` double emission is unchanged — it is load-bearing
+    (`lineTaxonomy.js:135-141`) and dropping it would make the limp range read as capped.
+  - Parent aggregates `open` / `threeBet` / `coldCall` / `limp` remain bit-identical for every
+    hand that does not exercise the new path, asserted by test.
+  - A regression test on the exact sequence: seat opens, villain 3-bets, seat 4-bets.
+  - The `foldTo3Bet` opportunity count changes measurably on a corpus replay, and the delta is
+    reported — if it does not change, the fix did not reach the consumer.
+  - Any new subclass grid is CARVED from its parent, never built independently, and shrinks
+    toward the parent (DEC-025 Amd 1).
+effort: M
+runs_on: any
+files_involved:
+  - "src/utils/rangeEngine/lineTaxonomy.js"
+  - "src/utils/rangeEngine/subActionExtractor.js"
+  - "src/utils/rangeEngine/actionExtractor.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: ""
+enables:
+  - "WS-519"
+sprint_id: null
+decision_flags:
+  - "Overlaps WS-270 (the 4-bet tree). Decide whether this is folded into WS-270 or shipped first as the narrower emission fix — the emission hole is real independently of whether a 4-bet SUBCLASS taxonomy exists."
+source: "session-analysis"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  READ `.claude/context/POKER_THEORY.md` AND `src/utils/rangeEngine/CLAUDE.md` BEFORE EDITING —
+  mandatory guardrail for this directory.
+
+  RELATIONSHIP TO WS-270: WS-270 is the 4-bet TREE (a third scenario with its own subclasses).
+  This is narrower and prior — the decision point is not emitted at all, so even parent-level
+  `threeBet` / `coldCall` / `fold` counts from the opener's seat are missing. Fixing emission
+  does not require the tree to exist. Cross-reference both ways before starting.
+
+  PRIORITY ARGUMENT: filed P0 because it is a silent data gap on a stat the model already
+  treats as estimable (`foldTo3Bet`, pseudocount cap 10, POKER_THEORY §6.5a). Unlike a wrong
+  number, a missing observation produces no symptom — the range model simply never learns from
+  those decisions, and nothing anywhere reports the absence.
+closed_by_event: ev-1787080881953-aae738619db1

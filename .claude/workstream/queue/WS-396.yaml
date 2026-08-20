@@ -95,6 +95,7 @@ accept_criteria: |
     surface, the resolution is progressive disclosure, not removal — and the decision must be
     recorded, because the standing rule exists precisely because removal is the tempting answer here.
 effort: "S"
+runs_on: "g16"
 files_involved:
   - "src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx"
   - "src/utils/postflopDrillContent/drillModeEngine.js"

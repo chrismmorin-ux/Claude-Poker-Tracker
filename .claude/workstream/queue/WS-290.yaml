@@ -69,8 +69,7 @@ blocked_by:
 blocked_by_legacy: []
 enables: []
 sprint_id: null
-decision_flags:
-  - "Does founder-vs-model divergence feed back into the model as live evidence? It is the only live data source available to challenge an online-corpus-derived model — but a model that learns from the founder's play will drift toward agreeing with them, which is the one bias it must not have."
+decision_flags: []
 source:
   type: founder-directive
   created_by: founder
@@ -86,3 +85,5 @@ status_note: |
   read as improving accuracy while actually just learning to agree. If divergences do
   feed back, they need the same leave-one-out discipline POKER_THEORY 6.5a already
   requires of pool baselines.
+resolved_by_rule: ".claude/rules/founder-read-detects-site-not-direction.md"
+resolved_on: "2026-08-20"

@@ -36,4 +36,5 @@ accept_criteria: |
     by test).
   - The backtest's logical gating is bit-identical before/after (determinism gate re-run green).
 effort: "L"
+runs_on: "any"
 created_at: "2026-08-13"

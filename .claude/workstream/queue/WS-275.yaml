@@ -102,7 +102,6 @@ blocked_by_legacy: []
 enables: []
 sprint_id: null
 decision_flags:
-  - "Decay form and half-life — measured via WS-273, or founder estimate with follow-up?"
   - "Does regime detection adjust the model, or only raise a flag to the founder in v1? (Flag-only is the conservative first step and is independently valuable.)"
   - "Which regime triggers ship in v1 — stack-vs-buy-in and hands-since-big-loss are the cheapest; session duration and VPIP drift need more plumbing."
 source:
@@ -115,3 +114,5 @@ status_note: |
   Filed 2026-07-26. Verified by direct grep of bayesianUpdater.js — zero recency
   handling present. Distinct from the shipped emotionalState/ module (within-hand,
   board-driven); this is across-hand regime change.
+resolved_by_rule: ".claude/rules/unmeasured-constants.md"
+resolved_on: "2026-08-20"

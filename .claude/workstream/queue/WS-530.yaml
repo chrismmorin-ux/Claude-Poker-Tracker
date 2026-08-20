@@ -1,0 +1,62 @@
+id: "WS-530"
+title: "F3 — permutation control: is cross-villain commonality real, or an artifact of the vocabulary?"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 83
+priority_label: "P1"
+category: "methodology-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  Design record: docs/research/villain-strategy-inference-2026-08-17.md §6 (F3).
+
+  THE FOUNDER'S CLAIM UNDER TEST (2026-08-17): "forcing it into these words will yield more
+  commonalities in the dataset when many villains are compared to each other in this way."
+
+  THE FAILURE THIS EXISTS TO STOP, stated as the correction rather than as the claim:
+  if the rule vocabulary is fixed before you look, cross-villain commonality is GUARANTEED
+  BY CONSTRUCTION — you have projected every villain onto a low-dimensional basis you chose,
+  and the shared structure is a property of the projection, not of the villains. This is the
+  same circularity separability.mjs was built to prevent ("selecting the tail and reporting
+  its mean is circular and looks convincing").
+
+  It is also the failure with precedent here. The last time villains were forced into a shared
+  vocabulary — the six authored classifyStyle archetypes — the words DESTROYED commonality:
+  cluster purity 0.63/0.44, TAG spanning both poles at 54% of the pool, 21% unlabelable, the
+  natural loose group shattered across four labels. Those thresholds were "authored, never
+  derived". WS-529 derives them, which is the opposite procedure — but derivation does not by
+  itself make the commonality real.
+
+  METHOD. Shuffle hands among FAKE villains (preserving per-villain hand counts) and run the
+  IDENTICAL induction pipeline. Compare the commonality statistic on real vs permuted
+  assignment. Multiple permutation draws, so the null has a distribution rather than a point.
+
+  MUST BE DECLARED BEFORE THE FIRST INDUCTION RUN, not after a promising one. This is the
+  falsifier most likely to be skipped and most likely to produce a false success if it is.
+accept_criteria: |
+  - Commonality statistic defined and pre-registered BEFORE WS-529's first induction run.
+  - Permutation null built from >= 100 draws with the real value placed against its distribution.
+  - Per-villain hand counts preserved under permutation, so the null differs from the real
+    assignment in villain IDENTITY only.
+  - If permuted villains show comparable commonality: recorded as F3 FAILED, and the finding is
+    that the vocabulary is doing the work. Do not reinterpret it as a weaker positive.
+  - Result Card.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/separability.mjs"
+blocked_by: ["WS-529"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 villain strategy inference, turn 3"
+created_at: "2026-08-17T00:00:00.000Z"

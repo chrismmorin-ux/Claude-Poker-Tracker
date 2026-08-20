@@ -49,6 +49,7 @@ accept_criteria: |
     a non-throwing guard.isEvalPlayer so filter and assertion share one source.
   - playerId carried on the river-flip replicate row (no string parsing of cluster identity).
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/ipsEstimator.mjs"
   - "scripts/backtest/depthAblationReport.mjs"

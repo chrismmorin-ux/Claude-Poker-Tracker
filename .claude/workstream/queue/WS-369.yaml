@@ -110,6 +110,7 @@ accept_criteria: |
     Field." That is a statement about what a card DEPENDS ON. The matcher should implement that
     sentence; today it implements "any card that mentions live play".
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/standardOfRecord/faultRegister.js"
   - "src/utils/standardOfRecord/__tests__/faultRegister.test.js"

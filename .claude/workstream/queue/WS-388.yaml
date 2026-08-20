@@ -100,13 +100,14 @@ accept_criteria: |
     the live table is separately argued and separately gated (it also needs multiway threading and a
     rake config). This ticket records the data and unblocks the measurement. It does not ship advice.
 effort: "L"
+runs_on: "any"
 files_involved:
   - "src/reducers/gameReducer.js"
   - "src/utils/assumptionEngine/__backtest__/handStateReconstructor.js"
   - "src/utils/assumptionEngine/__tests__/handStateReconstructor.test.js"
   - "src/utils/standardOfRecord/"
 blocked_by:
-  - "WS-389"
+  - "WS-432"
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -179,3 +180,8 @@ status_note: |
        is the one the ticket is written on. Propagating "SPR is a constant" would have been a false
        premise that any reader could refute in one line, and refuting it would have discredited a
        finding that is real.
+gate_resolution: |
+  2026-08-20: gate re-pointed. WS-389 is status=dismissed with superseded_by: WS-432,
+  and WS-432 is done — the reproducibility work this item waited on SHIPPED. The resolver
+  only clears a blocker on status=='done', so a dismissed-and-superseded blocker never
+  resolves and its dependents stall forever. Second resolver gap, filed as WS-590.

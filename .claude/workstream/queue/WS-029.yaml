@@ -32,4 +32,4 @@ source:
 created_at: "2026-05-01"
 updated_at: "2026-06-13"
 deferred_at: "2026-06-13"
-deferred_reason: "Ignition-mode surface design; PAUSED-INDEFINITELY (SPR-071)  Phase 1 explicitly excludes Ignition-mode scope; conditional on Q3 re-verdict + Q7 legal scoping (WS-027). Reclaim at P=15 when both prerequisites land."
+deferred_reason: "Ignition-mode surface design; PAUSED-INDEFINITELY (SPR-071) — Phase 1 explicitly excludes Ignition-mode scope; conditional on Q3 re-verdict + Q7 legal scoping (WS-027). Reclaim at P=15 when both prerequisites land."

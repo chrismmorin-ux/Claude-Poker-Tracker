@@ -204,6 +204,7 @@ accept_criteria: |
     heavy tier is canonical for every claim, the light tier is canonical for nothing and is a
     projection of it. A conflict then resolves the same way every time and is never a judgement.
 effort: "L"
+runs_on: "any"
 files_involved:
   - "docs/context-architecture.md"
   - ".claude/context/POKER_THEORY.md"

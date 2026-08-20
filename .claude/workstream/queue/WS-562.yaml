@@ -1,0 +1,59 @@
+id: "WS-562"
+title: "Account deletion purges nothing - the toast says Account deleted while every hand, physical description and photo blob stays on disk"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "core"
+program: "security"
+runs_on: g16
+effort: M
+finding_id: "FIND-100"
+description: |
+  FIND-100, filed 2026-08-07, CRITICAL, open TWELVE DAYS, NO WORK ITEM. This item is the
+  conversion, not a re-discovery.
+
+  `src/contexts/AuthContext.jsx:294-296` calls only deleteUser(auth.currentUser). `clearAllData` has
+  zero non-test callers outside `exportUtils.js:205` (import replace-mode). Re-read at HEAD by the
+  security engineer (lines 260-303) and again by the cross-critic: no purge call exists in that
+  function.
+
+  Every IndexedDB store survives indefinitely - hands, sessions, players, ethnicity and physical-
+  description fields, and unencrypted photo blobs used for table identification. The stronger
+  facilitator finding from 08-07, re-confirmed: NO user-invocable purge path exists ANYWHERE in the
+  product, even outside the deletion flow.
+
+  time_to_detect: NEVER - nothing ever contradicts the toast. recoverability: YES, trivially - the
+  data is still there; that is precisely the defect. This is a TRUST defect: a partner, a store
+  reviewer, or one of the described players would read it as a data-protection failure on sight, and
+  the physical-description fields make that reading worse.
+
+  SEQUENCE AFTER WS-559 - the purge must enumerate from the same schema registry, or it will purge 3
+  of 25 stores exactly as the backup does.
+accept_criteria:
+  - "deleteAccount purges every user-scoped store (including playerPhotos blobs) before calling deleteUser, ordered so a failed purge aborts the deletion"
+  - "The confirm modal offers export-first"
+  - "A user-invocable delete-all-my-data path exists independent of account deletion"
+  - "The toast copy matches what actually happened in every branch"
+files_involved:
+  - "src/contexts/AuthContext.jsx"
+  - "src/components/ui/AccountSection.jsx"
+  - "src/utils/exportUtils.js"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-data-integrity-src-contexts-AuthContext.jsx-276-304"
+  facilitator_ref: "G"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

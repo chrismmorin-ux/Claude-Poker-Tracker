@@ -76,6 +76,7 @@ accept_criteria: |
   - The same declaration template is shown to work for a second Field surface (SRC-005 or
     SRC-014), even if that audit is not completed here.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/handhqReferencePool.js"
   - "src/utils/exploitEngine/poolBaseline.js"

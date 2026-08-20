@@ -1,0 +1,41 @@
+id: "ses-20260820-0641-f11d5a92"
+status: "abandoned"
+revived_at: "2026-08-20T16:16:49.489Z"
+started_at: "2026-08-20T06:41:58.043Z"
+ended_at: "2026-08-20T17:33:11Z"
+mode: auto
+last_heartbeat: "2026-08-20T16:16:49.491Z"
+pid: 41616
+pid_recorded_at: "2026-08-20T16:16:49.491Z"
+host: MorinComputer
+agent_session_id: "f11d5a92-480a-42a4-aff5-fd4761c2f5dc"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-592"
+  - "WS-593"
+  - "WS-546"
+
+files_locked:
+  - "scripts/__tests__/ipsSupportMatched.test.js"
+  - ".claude/workstream/queue/WS-596.yaml"
+  - "docs/research/ws546-support-matched-2026-08-20.md"
+
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-20.
+  Original start: 2026-08-20T06:41:58.043Z.
+  Last heartbeat: 2026-08-20T16:16:49.491Z.
+
+  Git commits during this session (2):
+    - 5b5a8101 fix(fault-register): the bias tracks ESS, not support — r=-0.97 vs r=-0.01
+    - b5e54400 fix(estimator): the support bias was real, and removing it did not flip a single sign
+
+  Released 3 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

@@ -2,11 +2,12 @@ id: "WS-546"
 title: "Remove the narrow-support bias — an ESS gate warns, it does not fix"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
+completed_at: "2026-08-20T16:14:05.274Z"
+completion_commit: b5e54400
 priority_score: 92
 priority_label: "P1"
 category: "methodology-integrity"
@@ -69,3 +70,4 @@ source:
   kind: "measurement"
   detail: "2026-08-18 — WS-543 calibration returned INSTRUMENT_FALSIFIED"
 created_at: "2026-08-18T00:00:00.000Z"
+closed_by_event: ev-1787242446333-1ee6fadc4268

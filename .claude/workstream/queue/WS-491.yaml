@@ -58,6 +58,7 @@ accept_criteria: |
   - Register entry in docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md carrying that
     falsifier and its outcome.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/mine-sizing-and-lines.py"
   - "scripts/backtest/latent-class-behaviors.py"

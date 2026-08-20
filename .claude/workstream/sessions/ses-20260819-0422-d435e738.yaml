@@ -1,0 +1,43 @@
+id: "ses-20260819-0422-d435e738"
+status: "abandoned"
+revived_at: "2026-08-19T14:43:30.109Z"
+started_at: "2026-08-19T04:22:13.612Z"
+ended_at: "2026-08-19T21:03:01Z"
+mode: auto
+last_heartbeat: "2026-08-19T17:00:07.612Z"
+pid: 34316
+pid_recorded_at: "2026-08-19T17:00:07.612Z"
+host: MorinComputer
+agent_session_id: "d435e738-a7f7-4c87-9cfe-2cdd07930333"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-565"
+  - "WS-556"
+  - "WS-563"
+
+files_locked:
+  - ".claude/workstream/queue/WS-569.yaml"
+  - "src/__dev__/handLossAudit.js"
+  - "scripts/diagnostics/hand-loss-audit.console.js"
+  - "src/reducers/__tests__/destructiveUndoCoverage.test.js"
+  - ".claude/workstream/queue/WS-570.yaml"
+  - ".claude/workstream/queue/WS-571.yaml"
+
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-19.
+  Original start: 2026-08-19T04:22:13.612Z.
+  Last heartbeat: 2026-08-19T17:00:07.612Z.
+
+  Git commits during this session (1):
+    - fa526801 fix(persistence): a hand could vanish with nothing on screen saying so — and the alarm for it was already built
+
+  Released 3 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

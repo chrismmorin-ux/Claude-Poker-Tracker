@@ -1,0 +1,86 @@
+id: "WS-600"
+title: "A manifest can name an engineCommit that does not contain the emitter — measured 4 of 5 on real cards, and nothing checks it"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 79
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 while retroactively registering the seven existing Conduct Cards (WS-599).
+  Incidental to that work; nobody was looking for it.
+
+  THE MEASUREMENT. Across the seven cards in `.tmp-arch/`, five distinct `manifest.engineCommit`
+  values are stamped. For FOUR of them - fa526801, ca89f9e2, 32d968a4, 838416e6 - the emitter
+  itself did not exist at that commit:
+
+      git cat-file -e <commit>:scripts/villainArchetype/emitConductCard.mjs   ->  fails
+
+  The manifest names a commit that could not possibly have produced the artifact. All seven also
+  carry `engineDirty: true`, so the code that actually ran was uncommitted working-tree code.
+
+  WHY THIS IS NOT THE SAME AS THE DIRTY-TREE FLAG, which is already handled well. `engineDirty`
+  is required (`schemas.js:494`), documented as a "Dirty-tree honesty flag, surfaced not hidden"
+  (`schemas.js:649`), and rendered loudly - `depthAblationReport.mjs:708` prints
+  `*** DIRTY TREE - the commit does not identify the code that ran ***`. That is a deliberate,
+  honest design and this ticket does not propose changing it.
+
+  The gap is narrower and worse. `engineDirty: true` says "the tree had uncommitted changes on
+  top of this commit" - which implies the commit is at least the BASE the code was built from.
+  A commit that does not contain the emitter is not a base; it carries no information about the
+  code that ran. The two cases are currently indistinguishable, and only one of them is honest.
+
+  THE CHECK IS ONE CALL. `git cat-file -e <engineCommit>:<emitterPath>` decides it. Nothing in
+  `src/utils/standardOfRecord/manifest.js` runs it - `manifestProblems` validates the SHAPE of
+  `engineCommit` and never asks whether the commit contains the code. The same hole applies to
+  every emitter, not just this one: `emit-ws436-result-card.mjs:131` and
+  `emit-ws481-result-card.mjs:107` both take `gitStamp(REPO)` and stamp it unverified.
+
+  RELATION TO WS-595. The fleet-compute path already refuses to run when the working tree
+  diverges from what the compute node would execute - an unpushed G16 is a hard stop. That gate
+  protects jobs dispatched to cm-node1 and does not protect a card emitted locally on G16, which
+  is how all seven of these were produced. The doctrine exists; it is applied on one path only.
+
+  WHY IT MATTERS. `manifest.engineCommit` exists so a result can be replicated and so a fault
+  confirmed later can find the results that depended on it. A commit that does not contain the
+  emitter satisfies neither. It is a replication field that cannot replicate, and it validates.
+accept_criteria: |
+  - `manifestProblems` (or the manifest builder) REFUSES a manifest whose `engineCommit` does not
+    contain the emitting script at that commit. Shape validation is not enough; the commit must
+    be shown to contain the code.
+  - The emitter path is carried ON the manifest so the check has something to resolve. A check
+    that has to guess which file emitted the artifact is not a check.
+  - `engineCommit-does-not-contain-emitter` and `engineDirty` are DISTINCT and separately
+    reported. Collapsing them loses the fact that one is honest and one is not.
+  - The refusal is tested with a known-answer anchor: a commit known to predate the emitter must
+    fail, and the current HEAD must pass.
+  - Every emitter that calls `gitStamp` is covered, not only the Conduct Card path -
+    `emit-ws436-result-card.mjs:131`, `emit-ws481-result-card.mjs:107`, and any other call site.
+  - The seven registered cards' pointers carry `engineCommitIdentifiesCode: false` (already
+    recorded by WS-599). Confirm the new check reproduces that verdict independently rather than
+    reading the pointer - two representations that never have to agree is the recurring defect.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "src/utils/standardOfRecord/manifest.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "scripts/backtest/emit-ws436-result-card.mjs"
+  - "scripts/backtest/emit-ws481-result-card.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Refuse at build time, or stamp a verified:false flag and refuse only at publish? Refusing at build blocks a legitimate exploratory run from producing any artifact."
+source:
+  kind: "measurement"
+  detail: "2026-08-20 WS-599 retroactive registration; git cat-file -e over 5 stamped commits, 4 fail"
+created_at: "2026-08-20T00:00:00.000Z"

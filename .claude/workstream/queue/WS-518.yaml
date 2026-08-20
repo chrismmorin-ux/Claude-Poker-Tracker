@@ -1,0 +1,135 @@
+id: "WS-518"
+title: "The capture keeps ONE running stack map and snapshots it once at hand end, so only final stacks reach the record — starting and per-street stacks are never written, and SPR at every decision is reconstruction rather than data"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "extension"
+program: "data-provenance"
+finding_id: ""
+description: |
+  FOUND 2026-08-16 by two independent source audits of the Ignition capture extension. Every
+  file:line re-verified against HEAD.
+
+  TIME-SENSITIVE, AND THAT IS THE WHOLE ARGUMENT FOR ITS PRIORITY. Every other defect in this
+  batch corrupts data that can be repaired — WS-514's duplicates can be collapsed, WS-515's
+  losses can at least be counted. This one cannot. A hand captured today without per-street
+  stacks has the gap baked in permanently: the information was on the screen, the state machine
+  saw it, and it was overwritten. No later fix recovers it. Every day this stays open, the corpus
+  of live-observed hands grows a fraction that can never answer an SPR question.
+
+  THE DEFECT. `ignition-poker-tracker/shared/hand-state-machine.js` holds a single map,
+  `this.stacks = {}` (`:114`), which is overwritten in place as the hand progresses — at `:285`,
+  `:327`, `:355`, `:383` and `:405`:
+
+      this.stacks[Number(seat)] = stack;                      (:355, :405)
+
+  Each write destroys the previous value. The map is snapshotted exactly once, at `:663`:
+
+      stacks: { ...this.stacks },
+
+  and `record-builder.js:91` maps that snapshot to `finalStacks: { ...stacks }`. The name is
+  honest: what survives is the terminal value and nothing else. There is no `startingStacks`, no
+  `streetStacks`, no history structure of any kind in the file — a search for one returns
+  nothing.
+
+  WHAT IS LOST, AND WHY IT IS THE SPECIFIC THING THAT MATTERS. SPR is
+  `effectiveStack / potSize` (`gameTreeContext.js:216`). Pot size is recoverable — it walks from
+  the action sequence. The numerator is not. To know the SPR a villain actually faced when he
+  called on the flop, you need his stack AT THAT MOMENT, and the record holds only what he had
+  after the river. Working backwards from final stacks and the action sequence is arithmetic that
+  usually closes, but it is reconstruction with assumptions (rake, uncalled bets returned, side
+  pots, antes, a seat that rebought mid-hand) and it is not the same object as a measurement. The
+  repo already distinguishes these: `feedback_backtest_split_and_leakage` and the Standard of
+  Record both turn on knowing which of your inputs were measured.
+
+  AND SPR IS NOT AN ARBITRARY VARIABLE TO LOSE. `exploitEngine/CLAUDE.md` forbids position
+  labels and bucket labels as decision inputs precisely so villain decisions derive from equity,
+  pot odds and SPR. The founder's own recorded doctrine
+  (`feedback_fear_drives_medium_hands_passive`) names SPR as the causal variable behind the
+  behaviour the engine exists to model — "afraid of getting stacked" is SPR, not a label. So the
+  capture is dropping the one quantity the model treats as load-bearing, on the population the
+  model is meant to be fitted to.
+
+  THE STATE MACHINE ALREADY HAS THE DATA. This is not a case of information the extension cannot
+  see. The stacks arrive in `event.stacks` and are written five separate times across the hand —
+  the per-street values pass through `this.stacks` and are discarded a line later. The change is
+  to retain rather than to acquire, which is why the cost is small and the argument for doing it
+  before the next session is strong.
+
+  RELATION TO WS-388 — SAME GAP, OPPOSITE SIDE OF THE APP, AND THEY ARE NOT THE SAME TICKET.
+  WS-388 is that `src/reducers/gameReducer.js` records no per-seat stack at all for hands the
+  founder enters BY HAND at a live table, forcing `handStateReconstructor.js:254` to impute
+  100bb for every scored decision in the backtest. That is a data-ENTRY problem: asking a founder
+  on a phone to type nine chip counts per hand is the burden WS-388's decision flag agonises
+  over. This ticket is the CAPTURED side, where there is no burden at all because the client
+  already sends the numbers. The two must land on a compatible record shape or the corpus will
+  carry two different stack schemas; beyond that they are independent and this one is far cheaper.
+
+  CONTAMINATES SCORED FIGURE: Yes, by omission. WS-388 establishes that stack depth currently has
+  zero variance across the scored corpus. Captured hands are the only source that could supply
+  real variance on that axis, and today they supply one value per hand at the wrong moment.
+accept_criteria:
+  - "STARTING STACKS ARE RECORDED. Every seat's stack as of the first action of the hand is written to the record, distinct from `finalStacks`."
+  - "PER-STREET STACKS ARE RECORDED. A stack snapshot per street boundary (preflop / flop / turn / river), so effective stack — a pairwise quantity — is computable at any decision node from data rather than by unwinding the action sequence."
+  - "The record shape ADMITS QUESTIONS NOBODY HAS ASKED YET, per `feedback_record_shape_outlives_questions`. Do not pre-aggregate to 'the SPR the engine wants' — persist the stack values and let SPR be derived. Re-running capture for a question the shape cannot answer is the failure this criterion exists to prevent, and here re-running is impossible: the hands are gone."
+  - "`record-builder.js` carries the new fields through to the persisted record, and they survive the relay. Per WS-514, `wire-schemas.js` is an explicit whitelist that silently drops anything not listed — a field added to the state machine but not to `GAME_STATE_FIELDS` will pass every test and arrive as undefined. Assert the fields present on the APP side of the wire, not only in the builder."
+  - "A replay test over a recorded capture asserts that a seat's stack at the flop differs from its stack at the river where the action says it must. An assertion that only checks the fields exist would pass against a machine that writes the same final value five times."
+  - "Hands captured BEFORE this ships are marked as lacking per-street stacks, rather than being indistinguishable from hands that have them. Per WS-388's per-decision imputation flag, the marker must be on the record — a run-level note cannot survive a corpus that mixes eras, and this corpus will mix eras permanently."
+  - "The shape is reconciled with WS-388's live-entry schema, or the divergence is recorded as a decision with its reason. Two stack schemas in one corpus is the WS-291 mechanism — two numbers that never have to meet — and it is cheaper to prevent now than to reconcile later."
+  - "Verified against a real captured hand with a genuine mid-hand stack change, not only against fixtures. The whole defect is that intermediate values are overwritten, so the falsifier requires a hand where the intermediate value differs from the final one."
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "ignition-poker-tracker/shared/hand-state-machine.js"
+  - "ignition-poker-tracker/shared/record-builder.js"
+  - "ignition-poker-tracker/shared/wire-schemas.js"
+  - "ignition-poker-tracker/test/replay/"
+  - "ignition-poker-tracker/shared/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-388"
+sprint_id: ""
+decision_flags:
+  - |
+    OPEN — WHETHER PER-STREET IS THE RIGHT GRANULARITY OR PER-ACTION IS. Per-street is cheap and
+    covers SPR at every street's first decision, which is where the founder's doctrine puts the
+    weight. Per-action covers multiway pots where a seat's stack changes between two villains'
+    decisions on the SAME street — which is precisely the 9-handed live case this corpus exists
+    to model, so per-street may under-serve the target population. The state machine writes stacks
+    at five sites already, so per-action may be nearly free; measure the record-size cost before
+    choosing, and do not default to the smaller one because it is easier to store.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "ignition-capture-audit-2026-08-16"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  NOT A DUPLICATE OF WS-388, and the distinction is load-bearing: WS-388 is the live hand-entry
+  path (`gameReducer.js`, effort L, blocked by WS-389, with an open decision flag about founder
+  data-entry burden). This is the captured path, where the data already arrives from the client
+  and is discarded. Cross-referenced in both directions; this ticket is listed as enabling WS-388
+  because captured hands are the only near-term source of real stack-depth variance for the
+  measurement WS-388 wants to make.
+
+  CITATION CORRECTION made while re-verifying against HEAD: the overwrite sites were cited as
+  `:285, 327, 354, 383, 404`. Two drift by one line — `:355` and `:405` are the assignments;
+  `:354` and `:404` are the enclosing `for (const [seat, stack] of Object.entries(event.stacks))`
+  headers, i.e. the same statements. `:285`, `:327`, `:383` and the `:663` snapshot are exact.
+  Also confirmed during verification and not in the original audit: `:514` passes the live
+  `this.stacks` reference UNSPREAD into a separate call, so that consumer sees a mutating object
+  rather than a snapshot — check it as part of this work.
+
+  VERIFICATION HAZARD: `ignition-poker-tracker/dist/` was built 2026-08-04 and the source is two
+  commits ahead. Rebuild (`npm run build`) before verifying anything against the loaded
+  extension. Full detail in WS-517's status_note.

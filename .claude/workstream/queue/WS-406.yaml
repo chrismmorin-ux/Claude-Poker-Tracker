@@ -105,6 +105,7 @@ accept_criteria: |
     current ESS — about 200x the flop cost per bit — which is a statement that the river is not
     measurable until WS-402 raises the ESS. Sequence accordingly.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "docs/standard-of-record/cards/RC-depth-ablation.json"
   - "src/utils/standardOfRecord/schemas.js"

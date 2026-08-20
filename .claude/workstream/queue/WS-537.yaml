@@ -1,0 +1,65 @@
+id: "WS-537"
+title: "Change ledger is defined in the register but NOT implemented — build it"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 86
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUND 2026-08-17 while scoping the incremental strategy ladder.
+
+  `docs/standard-of-record/VOCABULARY.md` registers the term:
+
+    "Change ledger — the per-branch, EV-denominated decomposition of the difference between two
+     runs on an identical decision set. Reports NET (sum of per-branch deltas, equal to the
+     headline delta by construction) and GROSS (sum of absolute per-branch deltas) together;
+     GROSS/|NET| near 1 means the change moved the tree one way, and a large ratio means it
+     REDISTRIBUTED — helped one street, hurt another — so a NET near zero is a cancellation,
+     not an absence of effect. NET is never published without GROSS."
+
+  A repo-wide grep for `changeLedger` / `ChangeLedger` / `change-ledger` across scripts/ and
+  src/ returns NOTHING. The term is registered and the instrument does not exist.
+
+  WHY THIS BLOCKS WS-536 RATHER THAN BEING TIDINESS. The whole method is "add one rule, see
+  what it did". Without GROSS beside NET, a rule that helped the flop and hurt the river by the
+  same amount is indistinguishable from a rule that did nothing — and the ladder would record
+  "no effect" for a change that redistributed real money across the tree. That is the precise
+  failure the register defines the instrument to prevent, and it would be invisible for exactly
+  as long as nobody looked.
+
+  MATERIAL TO BUILD ON: `depthAblationReport.mjs` already slices by street (`nBySlice`,
+  `flipsBySlice`, `byStreet`) and `pairedDelta` already computes the paired total between two
+  arms on one decision set. What is missing is the per-BRANCH EV decomposition and the NET/GROSS
+  pair. Branch is the registered reporting unit — `street x facingAction x isIP`, a PROJECTION
+  of the situation key, never a parallel taxonomy. Its audit-level refinement is the cell (full
+  situationKey plus carried geometry), reported only when it clears the power gate.
+accept_criteria: |
+  - `changeLedger` implemented, decomposing two runs on an IDENTICAL decision set by branch.
+  - NET equals the headline paired delta BY CONSTRUCTION, asserted in a test, not by inspection.
+  - GROSS reported alongside NET always. A publish path that emits NET without GROSS is refused.
+  - GROSS/|NET| surfaced as the redistribution signal.
+  - Cell-level refinement gated on power; branch-level always available.
+  - Wired into WS-536 so every ladder rung reports what its one rule moved and where.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "gap-found-in-scoping"
+  detail: "2026-08-17 — registered vocabulary term with no implementation"
+created_at: "2026-08-17T00:00:00.000Z"

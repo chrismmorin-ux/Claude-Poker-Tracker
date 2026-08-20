@@ -24,6 +24,34 @@ description: |
   repeated failure into a build error. Design sketch: a CI check that every exported symbol
   under src/utils/ has at least one non-test importer, or carries an explicit
   `@inert-until WS-NNN` annotation with an expiry date that fails the build when passed.
+
+  AMENDED 2026-08-19 by run-launch-sweep-2026-08-18. THE PATTERN IS NOT CONFINED TO ENGINE
+  EXPORTS. Three fresh instances found in one audit, each by a DIFFERENT expert, none of whom
+  noticed it was a pattern:
+    1. `lastSavedAt` - computed and returned by `src/hooks/usePersistence.js:241-244`, TESTED at
+       `usePersistence.test.js:283-299`, ZERO production consumers (`useAppState.js:85-93` calls
+       the hook as a bare statement). This is the run's #1 finding, WS-556.
+    2. `onFastResult` - declared and guarded at `gameTreeEvaluator.js:954,1611-1622` under a
+       comment reading "THE YIELD IS LOAD-BEARING", zero production callers;
+       `computeHelpers.js:251-272` does not pass it. The documented two-phase advisor design in
+       SYSTEM_MODEL 2.3 therefore does not run in production.
+    3. `getStoresAtVersion` - `migrationRegistry.js:504`, never imported by `exportUtils.js`,
+       which hand-enumerates 3 of 25 stores instead. WS-559.
+
+  SCOPE EXTENSION REQUIRED: the gate must cover HOOK RETURN VALUES and CROSS-MODULE EXPORTED
+  HELPERS, not only engine symbols under src/utils/.
+
+  AND THE COMPOUNDING FAILURE MODE, which is the reason this outranks its priority score: a TEST
+  of an inert capability READS AS COVERAGE OF THE LIVE PATH. In this run the senior engineer
+  cited `usePersistence.test.js` as "real signal that the core record-a-hand-do-not-lose-it path
+  is guarded" - those are precisely the lines with no production consumer. An inert capability
+  does not merely fail to help; its test actively misleads the next audit.
+
+  ADDED ACCEPT CRITERIA:
+    - The gate flags a symbol whose only importers are test files.
+    - The gate flags all three instances above against current main (known-answer anchor); each
+      is then either wired or annotated @inert-until with a date.
+
 accept_criteria: |
   - The check runs in smart-test-runner.sh/CI and fails on a new exported symbol with no
     production importer and no annotation.
@@ -31,4 +59,5 @@ accept_criteria: |
     zero unannotated inert exports at merge.
   - MO-9's register entry updated to reflect the mechanism.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"

@@ -74,6 +74,7 @@ accept_criteria: |
     be reported as such, not written up as insight.
   - persona-validator passes on the five new personas.
 effort: "M"
+runs_on: "any"
 files_involved:
   - ".claude/commands/reframe-engine.md"
   - ".claude/agents/game-theorist.md"

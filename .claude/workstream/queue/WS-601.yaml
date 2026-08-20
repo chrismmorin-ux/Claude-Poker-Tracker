@@ -1,0 +1,85 @@
+id: "WS-601"
+title: "All-in is inferred from bet SIZE because the decision record drops the flag the labeller already computes — the proxy silently breaks at any other stack depth"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 76
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 while shipping WS-578 (sizing bands on a Conduct Card action). Named by the
+  implementing agent as a limitation it deliberately left on the card rather than hide.
+
+  THE SHAPE OF IT. The S2 preflop band `>=79` exists to capture full-stack shoves: the 9 raises
+  above that edge average 106.5bb at a 100bb table. But `>=79` is a SIZE PROXY FOR "he is
+  all-in", not an all-in flag. At a different stack depth the proxy is simply wrong - a 79bb
+  raise at 300bb deep is a large 4-bet, not a shove - and NOTHING IN THE PIPELINE WOULD NOTICE.
+  It would be silently misbanded and the card would read confidently.
+
+  THE INFORMATION ALREADY EXISTS AND IS DROPPED. Measured 2026-08-20:
+
+      grep -c "allIn|isAllIn" scripts/villainArchetype/decisionLabeler.mjs   ->  5
+      grep -n  "allIn|isAllIn" scripts/villainArchetype/decisionSchema.mjs   ->  (nothing)
+
+  The labeller computes it. The decision record does not expose it. So every consumer downstream
+  - the induction, the mix, the sizing bands, any future simulator - has to re-infer from size a
+  fact that was known and then discarded.
+
+  THIS IS THE SAME DEFECT WS-578 JUST FIXED, ONE FIELD OVER. `my_raise_to_bb` was populated on
+  1,676 of 1,676 aggressive actions and reached the card on zero rules, for the same reason: the
+  producer had it, the record did not carry it. The recurrence is the finding. A record whose
+  SHAPE cannot hold what the producer already knows will keep manufacturing this bug, and the
+  standing guidance is explicit that the record's shape must admit questions nobody asked yet.
+
+  WHY A LABEL, NOT A SIZE. Standing doctrine here: labels are OUTPUTS of the decision process,
+  never inputs, and a villain's decision derives from equity, pot odds, SPR and players
+  remaining. "All-in" is not a size band - it is a STATE, the one where SPR goes to zero and the
+  action closes. Deriving it from a size threshold inverts that: it makes a label out of a
+  number that the label should have explained. It also collapses two genuinely different actions
+  (a shove, and a large raise that leaves money behind) into one band whenever stacks are deep.
+
+  ALSO STILL MERGED, and named on the card for the same reason: the `12.25-79` band pools
+  4-bets (13-19bb, 32 obs) with large 3-bets and mid shoves (23-58bb, 20 obs) at RMSE 11.17.
+  The implementing agent declined to split it because no comparable gap exists there (the
+  largest is 9bb, inside populated territory), so any edge would be FITTED rather than FOUND.
+  An all-in flag removes part of that pooling for free, by taking the shoves out of the band.
+accept_criteria: |
+  - `decisionSchema.mjs` carries an explicit all-in field, sourced from what `decisionLabeler.mjs`
+    already computes. Populated count is reported against total aggressive actions, the way
+    WS-578 reported `my_raise_to_bb` at 1676/1676.
+  - The field distinguishes HERO all-in from a villain facing an all-in, and records whether the
+    action CLOSED the action. "All-in" is one word for several states; collapsing them is how the
+    proxy arose.
+  - The sizing bander consumes the flag instead of the `>=79` size threshold. The threshold is
+    removed, not left as a fallback - a fallback is how a proxy survives its own replacement.
+  - Re-band and report the delta against S2 v2 on the same 1,676 actions. If the flag changes no
+    band assignment on this corpus, that is a finding worth recording: it would say the proxy
+    happened to be right at 100bb and that the risk is entirely about other stack depths.
+  - `knownLimitation` on the card drops the `>=79` proxy caveat once the flag is real, and states
+    what the `12.25-79` pooling still merges.
+  - A test at a NON-100bb stack depth: a raise that is all-in at 60bb and not all-in at 300bb must
+    band differently. The proxy passes at 100bb, which is exactly why the test must not be at 100bb.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/villainArchetype/decisionSchema.mjs"
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "scripts/villainArchetype/sizingBands.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-580", "WS-583"]
+sprint_id: null
+decision_flags:
+  - "Does removing the >=79 band require a SIZING_SCHEME_VERSIONS.S2 bump to v3? It changes band membership, so stored v2 cards would be re-based silently without one."
+source:
+  kind: "measurement"
+  detail: "2026-08-20 WS-578 implementation; labeller has 5 allIn references, decisionSchema has 0"
+created_at: "2026-08-20T00:00:00.000Z"

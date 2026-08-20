@@ -74,6 +74,7 @@ accept_criteria: |
     will want the same treatment, and the roundtable found the missing JTBD domain has the same
     seven-surface scope. Name them; do not fix them in this ticket unless the fix is shared code.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/holeMapHtml.mjs"
   - "scripts/backtest/holeMap.mjs"

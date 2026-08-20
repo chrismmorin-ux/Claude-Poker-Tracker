@@ -1,0 +1,102 @@
+id: "ses-20260820-1712-119aa927"
+status: completed
+started_at: "2026-08-20T17:12:52.999Z"
+ended_at: "2026-08-20T20:52:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-20T20:48:54.718Z"
+pid: 26296
+pid_recorded_at: "2026-08-20T20:48:54.718Z"
+host: MorinComputer
+agent_session_id: "119aa927-eaa0-43d6-bef1-8207d8bdbfd4"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+
+files_locked:
+  - "scripts/backtest/probe-ess-scaling.mjs"
+  - "docs/research/ws596-ess-bias-decomposition-2026-08-20.md"
+  - "scripts/backtest/ladder/holdingConfoundPrereg.json"
+  - "scripts/backtest/probe-showdown-propensity.mjs"
+
+
+handoff_notes: |
+  WS-596 — INVESTIGATED, NOT COMPLETE. 2 of 5 accept criteria remain open.
+  Full state: docs/research/ws596-ess-bias-decomposition-2026-08-20.md (577 lines).
+
+  WHAT WAS ESTABLISHED (all measured, all pre-registered, all reproducible):
+  1. WS-596's stated mechanism is WRONG for the dominant term. It names SNIS
+     finite-sample bias; 81-86% of the bias is ASYMPTOTIC and survives n -> infinity.
+     Measured by player-level subsampling at 4 shares x 12 draws
+     (scripts/backtest/probe-ess-scaling.mjs).
+  2. The real mechanism is HOLDING-CONFOUNDING. pi_pool conditions on six features,
+     none of which is hand strength, so the holding confounds action and outcome.
+     Conditioning on the revealed holding removes 53.2% of the bias HELD OUT
+     (scripts/backtest/probe-showdown-propensity.mjs, prereg ladder/holdingConfoundPrereg.json).
+     clone-the-pool exactly 0.0000 under all three propensities.
+  3. BUT ACCEPT CRITERION 3 IS NOT MET. r(ESS share, edge) went -0.9432 -> -0.9835.
+     The bias LEVEL halves; the ESS STRUCTURE is untouched. r(ESS, reduction%) = +0.9973 --
+     the holding explains the bias in proportion to ESS, so the residual concentrates in
+     low-ESS arms (those leaning on a RARE action). Criterion 1 also open: never-fold
+     still +2.03 bb held out where domination guarantees negative.
+
+  NEXT ACTION, and it has a falsifier: the residual points at pi_pool's accuracy in the
+  TAIL of its own distribution (weight = pi_ours/pi_pool; error in a small pi_pool is
+  amplified by 1/pi_pool, which scales with ESS). WS-596's elimination list rules out the
+  weight CAP, not the ESTIMATE of a small propensity. Two cheap tests, neither run:
+  (a) vary behaviourPolicy shrinkWeight and re-measure r(ESS, edge);
+  (b) measure pi_pool calibration in its own tail on held-out players.
+
+  WS-527 (latent-holding EM fitter, "folds included") is now justified BY MEASUREMENT and
+  should become WS-596's dependency. The fold branch is structurally unidentifiable from
+  showdown data -- 3 of 9 arms returned `unexamined` for exactly that reason.
+
+  SEPARATE FINDING, HIGHER BLAST RADIUS THAN WS-596 (research doc section 10):
+  sizeBucketFor receives pot INCLUDING the live bet at every mining call site
+  (decisionGeometry.mjs:254, behaviorPolicyMiner.mjs:103, heroEvTask.mjs:304), so the ratio
+  is b/(P+b) < 1 and buckets 100-150 and 150+ are UNREACHABLE -- 0 of 3656 observations.
+  33-66 silently holds half-pot through 1.94x-pot (66% of all data). poolBestResponse.mjs:259
+  uses the opposite convention. sizeBucket is the deepest dimension of the behaviour-policy
+  hierarchy. NOT FIXED: all three call sites must change together and heroEvTask.mjs was in
+  another live session's working set (WS-540 / ses-1729). Needs an item.
+
+  ALSO FILED, NOT FIXED: strengthBand (rangeCalibrationProbe.mjs:144) thresholds a 0-1 scale
+  against comboStrengthPercentile's 0-100 return (handEvaluator.js:421), so acting.byStrength
+  at :896 is degenerate -- 628 strong / 0 medium / 3 weak on 631 reveals.
+
+  A CLAIM I MADE AND RETRACTED: I reported that run-calibration.mjs and
+  probe-depth2-coverage.mjs leak the loader server and could never terminate unattended.
+  FALSE -- asserted from a grep whose pattern missed optional chaining. Both call
+  `await loader.close?.()`. I edited run-calibration.mjs on that basis and REVERTED it.
+  The leak was only in the two probes I wrote. Corrected in the research doc section 11.9.
+
+  Items completed: none (WS-596 released to backlog, not done)
+  Items remaining: WS-596 (SPR-196 stays approved, item pending)
+  Autopilot eligible: not assessed
+
+context_notes: |
+  DECONFLICTION: founder approved this work conditionally on clean deconfliction, with
+  4-5 other sessions live. Honoured exactly -- this session added FOUR NEW FILES and
+  MODIFIED ZERO EXISTING ONES. Every module read was verified clean immediately before use.
+  Both known collisions (heroEvTask.mjs via WS-540/ses-1729, probe-depth2-coverage.mjs via
+  WS-574/595) were flagged and left untouched.
+
+  DO NOT trust `.claude/workstream/.current-session` -- when this session closed it pointed
+  at ses-20260820-1747, a DIFFERENT live session. The standard /session-end cleanup would
+  have clobbered it. Only this session's own file and claim were modified.
+
+  NEW ARTIFACTS: scripts/backtest/probe-ess-scaling.mjs,
+  scripts/backtest/probe-showdown-propensity.mjs (takes --cache; modelling half re-runs in
+  16.7s from out/ws596-rows.json), scripts/backtest/ladder/holdingConfoundPrereg.json,
+  docs/research/ws596-ess-bias-decomposition-2026-08-20.md.
+  Outputs: out/ess-scaling-ws596.json, out/showdown-propensity-ws596.json,
+  out/calibration-ws596-repro.json, out/ws596-rows.json (2.3MB row cache).
+
+  SEVEN probe defects were found and fixed across four runs, all mine, all logged in the
+  prereg under probeDefectsFoundAndFixed. Two pushed toward a null and two diluted the
+  effect; 53.2% is what survived removing all seven. Three separate summary/verdict STRINGS
+  in this investigation were narrower than their own evidence -- treat a verdict field as
+  encoding the question its author held at the time, not as the answer.
+
+  NOTHING IS COMMITTED. All four files are untracked.

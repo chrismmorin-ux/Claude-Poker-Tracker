@@ -1,0 +1,152 @@
+id: "ses-20260820-1747-e53d9810"
+status: completed
+started_at: "2026-08-20T17:47:09.344Z"
+ended_at: "2026-08-20T21:15:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-20T21:17:05.436Z"
+pid: 17420
+pid_recorded_at: "2026-08-20T21:17:05.436Z"
+host: MorinComputer
+agent_session_id: "e53d9810-a990-4d53-a94f-d6796c8713a4"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: ["WS-579", "WS-578", "WS-552", "WS-551", "WS-599", "WS-537", "WS-591", "WS-573"]
+files_locked:
+  - "scripts/villainArchetype/loadVillain.mjs"
+  - "scripts/__tests__/rehydrationHash.test.js"
+  - "scripts/backtest/changeLedger.mjs"
+  - "scripts/__tests__/changeLedger.test.js"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/villainArchetype/conductCardPointer.mjs"
+  - "scripts/villainArchetype/registerExistingCards.mjs"
+  - "scripts/villainArchetype/profileVillain.mjs"
+  - "scripts/villainArchetype/sizingBands.mjs"
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "scripts/__tests__/conductCardPointer.test.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/metricsSchemas.js"
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "src/utils/standardOfRecord/metrics.js"
+  - "src/utils/standardOfRecord/__tests__/conductCard.test.js"
+  - "src/utils/standardOfRecord/__tests__/resultCard.test.js"
+  - "src/utils/standardOfRecord/__tests__/metrics.test.js"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+  - "scripts/__tests__/scoreHeldOut.test.js"
+  - "src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - "src/utils/standardOfRecord/index.js"
+  - "scripts/standardOfRecord/schema-baseline.json"
+  - ".claude/workstream/queue/WS-602.yaml"
+  - ".claude/workstream/queue/WS-603.yaml"
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "scripts/__tests__/induceSizing.test.js"
+  - ".claude/workstream/queue/WS-604.yaml"
+  - ".claude/workstream/queue/WS-605.yaml"
+  - ".claude/workstream/queue/WS-606.yaml"
+  # SPR-198 Front A — Conduct Card chain
+  - src/utils/standardOfRecord/conductCard.js
+  - src/utils/standardOfRecord/schemas.js
+  - src/utils/standardOfRecord/__tests__/conductCard.test.js
+  - scripts/villainArchetype/emitConductCard.mjs
+  - scripts/villainArchetype/profileVillain.mjs
+  - scripts/villainArchetype/loadVillain.mjs
+  - scripts/villainArchetype/scoreHeldOut.mjs
+  # SPR-198 Front B — structural integrity (verified clean + unclaimed)
+  - scripts/backtest/changeLedger.mjs
+  - scripts/backtest/depthAblationReport.mjs
+  - scripts/backtest/heroEvReport.mjs
+  - scripts/__tests__/changeLedger.test.js
+  - scripts/__tests__/rehydrationHash.test.js
+  - .claude/workstream/queue/WS-018.yaml
+  - .claude/workstream/queue/WS-029.yaml
+  - .claude/workstream/queue/WS-097.yaml
+  - .claude/workstream/queue/WS-502.yaml
+  # added mid-sprint: WS-537 Result Card metrics block (verified unlocked — last lock 2026-08-15, dead)
+  - src/utils/standardOfRecord/metricsSchemas.js
+
+# ---------------------------------------------------------------------------
+handoff_notes: |
+  SPR-198 (informal - composed by hand, NOT via cwos-next approve, because the CLI cannot
+  compose an explicit item set and its own proposal anchored on WS-548, a node1 item held by a
+  stale-record-over-live-staged-work session. That anchoring bug is WS-569.)
+
+  ALL EIGHT ITEMS ARE CODE-COMPLETE. NONE IS MARKED DONE, deliberately: most carry acceptance
+  criteria that need the node1 emit run, which is held. Marking them done would be the
+  false-completion failure. Genuinely finished: WS-537, WS-599.
+
+    WS-579  nine-handed subject selection (loadVillain.mjs comparator). AC1 met; AC2-5 need node1.
+    WS-578  sizing on the action. Schema v3 + sizingBands.mjs, S2 v2 / S3 v1 two arms.
+            Preflop RMSE 8.6786 -> 2.4981 (-71.2%), bits 1.5158 -> 1.7479. AC3 pot-replay needs node1.
+    WS-552  sizing-aware induction. Second pass over action-homogeneous strata. Load-bearing
+            synthetic: OLD induction found 1 rule / 0 conditions; new finds the split at pAdj 1.07e-35.
+            Action-induction parity IDENTICAL vs HEAD (1,400 decisions) so no consumer changes.
+            AC villain-1 re-derivation needs corpus/node1.
+    WS-551  held-out score, now ON the card (schema v4 `score`). THE HEADLINE RESULT IS NEGATIVE.
+    WS-599  pointer store + refusing resolver; 7 legacy cards registered, none current. DONE.
+    WS-537  change ledger + NET/GROSS on the Result Card + publish guard. DONE.
+    WS-591  4 control-byte tickets repaired (583 -> 590 queue files parse). WRITE-PATH FIX UNDONE
+            (cwos-fleet-compute.js was another session's; that is the half that stops recurrence).
+    WS-573  rehydration-hash regression test, 8/8. Defect 2 (ipsEstimator clusterBy='player'
+            default) explicitly OUT of scope - needs off-limits callers.
+
+  THE RESULT THAT MATTERS. An 18-rule Conduct Card is BEATEN out of sample by a four-cell
+  legality table: card 0.9302 vs legality-conditioned 0.8651 bits/decision, paired interval
+  [-0.1099, -0.0209] entirely below zero, coverage 100%. One villain, one corpus window, 878
+  hands / 1156 decisions (903 preflop), online-2009 corpus - transferred, not measured.
+  The card that lost had NO sizing rules; WS-552 has now removed that blindness. WE CANNOT YET
+  TEST WHETHER IT HELPS, because scoreHeldOut still measures ACTION lift only. WS-606 is that
+  one extension and carries the pre-registered falsifier.
+
+  ALSO MEASURED FIRST TIME: on the live hero-EV path GROSS/|NET| = 14.32 - only 7% of per-branch
+  movement survives to the headline. Identity drift 1.1e-15 over 18 branches.
+
+  EIGHT TICKETS FILED, all P1, all from incidental findings:
+    WS-599 pointer gap · WS-600 engineCommit that does not contain the emitter (4 of 5 measured)
+    WS-601 all-in inferred from bet SIZE · WS-602 `predicate` dropped, stored cards cannot compete
+    WS-603 enrichDecisions leak (delta 0.0000 but only because 903/1156 are preflop)
+    WS-604 band target cannot express a PARAMETRIC rule (villain 1's +1bb-per-limper)
+    WS-606 sizing sub-rules unvalidated + unscored (re-file of WS-605 after an ID collision)
+
+  A PATTERN WORTH A RULE FILE: WS-578 / WS-601 / WS-602 / WS-604 are ONE mechanism four times -
+  a producer holds a machine-readable fact, renders it for humans, and keeps only the rendering.
+
+  NEXT SESSION SHOULD DO FIRST: WS-606. It unblocks the only question that matters here.
+
+context_notes: |
+  TWO CLOBBERS HAPPENED THIS SESSION. Both recovered and verified; both are process lessons.
+  1. A subagent ran `git checkout -- schema-baseline.json` and destroyed another live session's
+     uncommitted work. Survived on a backup it happened to take.
+  2. I then told the next agent to prove safety by diffing against `git HEAD`. That check is
+     STRUCTURALLY BLIND to loss of uncommitted work - it reported LOST:0 while wiping 8
+     changeLedger fields and 2 version bumps. Recovered via backup + the repo's own
+     check-additive --update; verified 0 lost against the PRE-EDIT SNAPSHOT.
+  RULE: snapshot before the edit, diff against the snapshot, never against HEAD. Forbid
+  `git checkout --` / stash / restore / reset / clean in every subagent brief. Written to
+  auto-memory as feedback_concurrent_edit_safety.
+
+  ID ALLOCATOR COLLIDED. cwos-next.js allocate-ws-id returned {reserved:true} for WS-605 and
+  handed the same id to another session, whose write silently won. My ticket was re-filed as
+  WS-606. Captured as high friction. With 5-7 concurrent sessions this loses filed work silently.
+
+  FLEET / NODE1 IS STILL BLOCKED, and the path is TWO steps not one:
+    (a) WS-574's session must land src/utils/exploitEngine/gameTree{Depth2,Evaluator,Sampling}.js
+        and refinementWork.js - still dirty; WS-540's session HAS now committed.
+    (b) origin/main must then be advanced. node1 runs pipeline code from ITS OWN CHECKOUT, so
+        commits that never reach the remote are not live there (SKEW line, 2 commits behind).
+  Neither step is this session's to take. Founder chose "write all code, hold at emit".
+
+  TEST SUITE IS NON-DETERMINISTIC - see the OTHER session's WS-605, which independently measured
+  12 files over 70s each running 4-wide against a declared 5s ceiling. That is why
+  villainFeed.test.js and entryEvaluatorGuard.test.js "failed" in full runs and pass 10/10 and
+  19/19 in isolation. Verification here was therefore run TARGETED, not full-suite:
+    313/313 across the 7 sprint suites · 677/677 across src/utils/standardOfRecord/
+    additive gate OK (28 objects, 404 fields) · 590 queue files parse · 16/16 touched files node --check
+  ESLint is not configured in this repo at all (no eslint.config.js since v9). Pre-existing.
+
+  MY OWN ERRORS, for the record: I set the S2 preflop bands and an agent overturned them with
+  measurement (correctly). I told an agent thin sizing cells should REFUSE; the right operation
+  is SHRINK toward the parent - refusing would have discarded 86% of the signal. I proposed
+  delegating compute_job spec authoring to a weak model; that was refuted - authoring the spec
+  IS the experimental design, at 4-8h of node1 per mistake.

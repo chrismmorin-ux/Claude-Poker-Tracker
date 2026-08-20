@@ -178,6 +178,7 @@ accept_criteria: |
     the change replaces a number documented as a LIVE estimate with one measured ONLINE, so the
     disclaimer is not boilerplate, it is the substance of what changed.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/bayesianConfidence.js"
   - "src/utils/exploitEngine/poolBaseline.js"
@@ -191,26 +192,26 @@ blocked_by_legacy: []
 enables: []
 sprint_id: null
 decision_flags:
-  - |
-    OPEN — LIVE ESTIMATE VS TRANSFERRED MEASUREMENT, AND THIS IS THE REAL QUESTION. The module
-    header says STAT_PRIORS encodes "typical 1/2 LIVE player frequencies"; every field number
-    available is ONLINE 2009. Live 1/2-1/3 is limpier and more passive, so its
-    fold-vs-any-preflop-raise rate is plausibly lower than online's 76% — but nobody has
-    measured it, and 55% has no recorded basis either. Three shapes, not equivalent:
-    (a) re-anchor on the mined figure and stamp it transferred; (b) keep a founder estimate but
-    write down what quantity it estimates and why that value; (c) keep both, live-intended
-    estimate and online measurement, as separate named priors resolved by segment — which is
-    what `poolBaseline`'s tier structure already does for the mined rows and would be
-    consistent with it. The founder is the only source for what a live 1/2 field actually
-    folds; ASK rather than inferring.
-  - |
-    OPEN — WHETHER THE OTHER FIVE MEASURABLE PRIORS MOVE IN THIS TICKET OR A SUCCESSOR. The
-    comparison table in the description shows vpip (-12.2pp vs 6max), foldToCbet (-10.9pp) and
-    threeBet (+2.3pp) are also off, all in the range a 10-pseudocount prior partly absorbs.
-    Moving all six at once makes the before/after uninterpretable — nothing would attribute a
-    scorecard change to a cause. Moving only foldTo3Bet leaves known-wrong numbers in place
-    deliberately. Recommend: fix foldTo3Bet + limp-fold here with an isolated measurement, and
-    file the remaining five as one successor with the table already computed.
+  - 'OPEN — WHETHER THE OTHER FIVE MEASURABLE PRIORS MOVE IN THIS TICKET OR A SUCCESSOR.
+  The
+
+  comparison table in the description shows vpip (-12.2pp vs 6max), foldToCbet (-10.9pp)
+  and
+
+  threeBet (+2.3pp) are also off, all in the range a 10-pseudocount prior partly absorbs.
+
+  Moving all six at once makes the before/after uninterpretable — nothing would attribute
+  a
+
+  scorecard change to a cause. Moving only foldTo3Bet leaves known-wrong numbers in
+  place
+
+  deliberately. Recommend: fix foldTo3Bet + limp-fold here with an isolated measurement,
+  and
+
+  file the remaining five as one successor with the table already computed.
+
+  '
 source:
   type: code-review
   created_by: ai
@@ -253,3 +254,5 @@ status_note: |
   a miner change or an explicit founder estimate. Stated here so the ticket does not begin by
   looking for data that is not there — the recurring composition failure recorded in memory
   (`verify ticket premise at composition`, 8 occurrences).
+resolved_by_rule: ".claude/rules/corpus-transfer-is-earned.md"
+resolved_on: "2026-08-20"

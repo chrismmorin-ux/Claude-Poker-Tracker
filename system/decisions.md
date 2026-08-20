@@ -1300,3 +1300,103 @@ assumptions:
 **Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
 **Decision:** Orthogonality is a scoring criterion for generated primitives, never a generation constraint
 **Reasoning:** I told the blind agents a primitive must not be a rename of an existing column, to protect correction-family size. That instruction made the generator route around suit_max — the known separator — and the positive control failed as a result.
+
+### DEC-124: A Lesson (session-locked off-table prescription for hero) binds to a Result Card with a d…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A Lesson (session-locked off-table prescription for hero) binds to a Result Card with a declared metrics variant and does NOT mint a new card type
+**Reasoning:** It makes a comparative claim ('the MOST valuable activity'), and ADR-009 permits exactly one comparison path. The second-argument rule already settled the general case: only Conduct Card, which makes no comparative claim, gets a form of its own; Appraisal and Read bind to Result Cards. Minting a Lesson Card would create the second comparison path the ADR forbids.
+
+### DEC-125: CLAUDE.md Purpose sentence rewritten from its March 2026 wording, with a standing note th…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** CLAUDE.md Purpose sentence rewritten from its March 2026 wording, with a standing note that it must be re-read when the model changes shape
+**Reasoning:** Verified via git that the sentence was byte-identical from 2026-03-05 (febe9cf6) to 2026-08-20 while the substance moved seven eras. It named three things the register has since retired or bounded (exploit -> Leak per-stratum; player models -> Stratum; maximally exploitative -> a pier post, not a goal). It is the most-read line in the repo and was orienting every session to March.
+
+### DEC-126: Ignition capture converts wire increments to the app's street-total amount convention at…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Ignition capture converts wire increments to the app's street-total amount convention at RECORD-BUILD time, derived from the finished hand — not accumulated during the frame stream
+**Reasoning:** Measured: the CO_BLIND_INFO seeding is empty at the first action of all 109 replayed capture hands because the blind frames arrive before the hand-start reset. A derivation from the finished hand (button + seat set + blinds known at once) has no frame-ordering hazard; an accumulation does. Cut adapter refusals 16 -> 7 of 109.
+
+### DEC-127: A persisted hand record adapts INTO the labeller shape via scripts/backtest/appRecordAdap…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A persisted hand record adapts INTO the labeller shape via scripts/backtest/appRecordAdapter.mjs, which refuses by name rather than defaulting a big blind
+**Reasoning:** WS-555 accept criterion: close shape gaps with an adapter, never by widening the labeller's contract, which is how three representations of one hand drift apart. Without _backtest, decisionGeometry returns null and the labeller falls back to bb=1, reading every chip amount as big blinds — silently. Refusal reasons come from a closed enum.
+
+### DEC-128: depth-3 refinement may not outrank candidates that never received it (depthParity: common…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** depth-3 refinement may not outrank candidates that never received it (depthParity: common-depth)
+**Reasoning:** depth3Barrel deepens exactly one candidate, always the aggressive one, and only when it is already ahead; the ranking then compared depth-3 against depth-2 on raw EV. Measured: 100% raise share at full coverage vs 77.5% with the guard, matching a depth3Barrel-ablated arm exactly. The horizon-asymmetry explanation was tested (Arm 2, passive depth-3) and REFUTED - equal horizon left raise share at 100%. Residual is upward bias in the max-over-runouts inside the estimator.
+
+### DEC-129: Fault register entry named for ESS dispersion, not narrow support: FAULT-ess-driven-edge-…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Fault register entry named for ESS dispersion, not narrow support: FAULT-ess-driven-edge-bias
+**Reasoning:** I first filed FAULT-narrow-support-bias per the WS-543 diagnosis. The WS-546 re-run falsified that mechanism: across the 8 arms that fired, r(essShare,edgeBB)=-0.967 while r(supportShare,edgeBB)=-0.010, and four arms with supportShare exactly 1 were still confidently wrong, ranked by ESS. Support-matching reduced the error (never-fold 2.8478->1.9849) without flipping a sign (verdict FIX_INSUFFICIENT). Naming the entry for support would have pointed every future reader at the wrong fix. Matcher is value-based at essShare<0.75, conservative because the measured sign-flip is bracketed between 0.448 (wrong) and 0.738 (right).
+
+### DEC-130: FOUR_BET_FREQUENCIES marked vestigial: the only measured prior in populationPriors.js has…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** FOUR_BET_FREQUENCIES marked vestigial: the only measured prior in populationPriors.js has zero engine readers, and that is correct
+**Reasoning:** WS-521 s 2.5.5a did not re-scope the read at bayesianUpdater.js:110, it REPLACED it with FACED_3BET_FREQUENCIES_BY_ROLE (cold seats are 47.2% of the tree and fold 94.55% where the pooled opener prior said 43.37%). The import outlived the read, so a grep made the engine look like it still consumed the pooled table. Table is NOT deleted: POKER_THEORY 2.5.5a names it the independent cross-check that validates the role rows to under 0.5pp, and populationPriors.test.js still asserts it against raw HandHQ counts. Ledger row now liveness:vestigial readSites:0 primaryPath:false; dead import removed with a comment naming the replacement.
+
+### DEC-131: WS-596's stated mechanism (SNIS finite-sample bias) is wrong for the dominant term: measu…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** WS-596's stated mechanism (SNIS finite-sample bias) is wrong for the dominant term: measured 81-86% of the estimator's ESS-tracking bias is ASYMPTOTIC and survives n->infinity. The suspect is piPool conditioning on 6 features none of which is hand strength, making the holding an unmeasured confounder. WS-527 (latent-holding EM fitter) becomes WS-596's dependency rather than an unrelated item.
+**Reasoning:** The naming was the entire justification for the doubly-robust build and its leakage question. Building DR against a finite-sample term would remove ~19% of the problem. Measured via player-level subsampling at 4 shares x 12 draws; pre-registered falsifier for the asymptotic hypothesis held on 7 of 7 arms.
+
+### DEC-132: Holding-confounding CONFIRMED as the mechanism for ~half the hero-EV estimator's asymptot…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Holding-confounding CONFIRMED as the mechanism for ~half the hero-EV estimator's asymptotic bias. Conditioning piPool on the acting seat's revealed holding-strength band removes 53.2% of the bias held out (3.33bb mean over 6 arms), TV shift 0.1494 vs a pre-registered 0.02 power floor, clone-the-pool exactly 0 under all three propensities. WS-527 (latent-holding EM fitter) is now justified by measurement rather than argument and becomes WS-596's dependency.
+**Reasoning:** Pre-registered in ladder/holdingConfoundPrereg.json with a FIT/SCORE player split; the falsifier did not fire. Leakage quantified at 86-99.9% in-sample vs 33-70.5% held out, so the split was the difference between a result and an artifact. Residual is still +2.03bb on never-fold where domination guarantees negative, so holding-confounding explains about half and the remainder is now the open question.
+
+### DEC-133: The reusable artifact for ladder throughput is the per-decision COMBO SAMPLE and the per-…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The reusable artifact for ladder throughput is the per-decision COMBO SAMPLE and the per-board percentile table, not the decision row. WS-540's remaining decoupling work is re-scoped onto that object.
+**Reasoning:** Measured: persisting the decision row would have bought 0.8%, because the cost was per-(decision x rung), not per-decision. sampleCombos is pure in (range, board, k) — all decision properties — so it is the thing that is genuinely arm-independent and worth persisting. After both fixes the corpus walk is 99.6%, which is what makes the ORIGINAL decision-set plan worth doing now.
+
+### DEC-134: The shared combo sample crosses to arms as an OPTIONAL parameter (combos / combosFor), ne…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** The shared combo sample crosses to arms as an OPTIONAL parameter (combos / combosFor), never a module-level memo or cache.
+**Reasoning:** Keeps every existing caller of heroPolicyAt and policyAt bit-identical and paying exactly what it paid before; a module-level cache would have introduced cross-decision state into functions the codebase relies on being pure, and would not have been keyable by the arm's own comboSamples.
+
+### DEC-135: Both refuted cost predictions stay recorded in run-rule-ladder.mjs's header; the second i…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Both refuted cost predictions stay recorded in run-rule-ladder.mjs's header; the second is quoted as refuted rather than deleted.
+**Reasoning:** Accept criterion #6, generalised: this file has now been wrong about its own cost model twice, and each wrong claim sent the next piece of work at the wrong term. The 2026-08-17 corpus-walk claim is TRUE today but was false when made — it became true only once the dominant term was removed, so keeping the history is what stops it being read as evidence.
+
+### DEC-136: Conduct Card sizing uses banding scheme S2 as a VERSIONED lattice (now v2), with S3 fixed…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Conduct Card sizing uses banding scheme S2 as a VERSIONED lattice (now v2), with S3 fixed-convention shipped as a permanent second arm and the delta reported
+**Reasoning:** unmeasured-constants.md: both arms are real arms and the delta is itself a result. Measured: arms indistinguishable preflop (+0.0014) until the tail split, then +6.18; postflop they disagree in OPPOSITE directions (S3 reconstructs better by 0.035 pot-fractions, S2 retains +0.51 bits). Shipping one arm would have measured nothing. Full boundary table rides on the card so a later lattice change cannot silently re-base a stored card.
+
+### DEC-137: S2 preflop tail split at 11.75/12.25 (isolating the 12bb modal 3-bet) and at 79 (the jam…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** S2 preflop tail split at 11.75/12.25 (isolating the 12bb modal 3-bet) and at 79 (the jam edge)
+**Reasoning:** 121 of 191 raises in the old >=8 band were EXACTLY 12bb, and that band carried 8,325,235 of 8,327,391 total sum-of-squares - essentially all preflop error against 2,156 for the other four bands. Pre-registered -11% RMSE; actual -71.2% (8.6786 -> 2.4981), bits 1.5158 -> 1.7479. The 79 edge is FOUND not fitted: largest gap in the whole distribution is 58->100 (42bb) vs 9bb next largest. Domain reason: >=8 conflated the modal 3-bet with the jam tail - different ACTIONS, not different sizes of one action.
+
+### DEC-138: Sizing shrinkage is applied UNIFORMLY to every band, not only to bands below the n=25 flo…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Sizing shrinkage is applied UNIFORMLY to every band, not only to bands below the n=25 floor
+**Reasoning:** A threshold-triggered shrink puts a discontinuity at n=25 and makes a cell at 24 and a cell at 26 products of different estimators. Raw k/n are never edited; pRaw and p sit side by side with the shift. Prior weight m = MIN_RULE_DEFAULT = 25 imported from induceCore.mjs rather than re-chosen.
+
+### DEC-139: A sizing cell is keyed (regime, band), never band alone
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** A sizing cell is keyed (regime, band), never band alone
+**Reasoning:** Preflop is a bb lattice and postflop is a pot fraction; they are not commensurable. Induced leaves genuinely span streets (villain 2's real card has a leaf keyed [turn,preflop,flop,river]), so band-name-only keying would sit a 3.5bb cell beside a 0.6x cell and make the two look comparable. Refused in the validator.
+
+### DEC-140: Sizing induction is a SECOND PASS over action-homogeneous strata, not a combined (action,…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Sizing induction is a SECOND PASS over action-homogeneous strata, not a combined (action,band) joint objective
+**Reasoning:** The joint double-counts: a fold/raise split scores enormous joint gain purely because folds have no size, attributing to the feature a definitional consequence of the action. It also starves cells (5 actions x 10 preflop bands) and is unsayable at a table. Factorisation P(action,size|sit)=P(action|sit)P(size|action,sit) only holds if the second factor is estimated with action held constant - enforced STRUCTURALLY by assertActionHomogeneous throwing, not by care. Cost accepted and named: a feature separating only size cannot CREATE a leaf, so the sizing search only sees fragments the action search left.
+
+### DEC-141: Conduct Card pointers are one file per card under docs/standard-of-record/pointers/ plus…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Conduct Card pointers are one file per card under docs/standard-of-record/pointers/ plus a GENERATED index
+**Reasoning:** FOUNDER RULING 2026-08-20. Mirrors how queue-index.yaml and findings-index.yaml already work (per-file records, derived index). A single append-only index would collide constantly with 5-7 concurrent sessions - and this session then proved the point twice, losing work to a git checkout and to an ID-allocator collision.
+
+### DEC-142: The seven legacy .tmp-arch/ Conduct Cards are registered with full recovered provenance b…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** The seven legacy .tmp-arch/ Conduct Cards are registered with full recovered provenance but standing 'unrankable' - none is current
+**Reasoning:** Founder ruled register-all-seven-properly. rulesetHash is unrecoverable on all 7 (it postdates them), so the (subjectId, rulesetHash) currency key CANNOT BE FORMED. Recomputing it from positional rule ids was tested and REJECTED - measured collisions (two different subjects both -> 59b83c08). Naming one current would assert authority nobody verified. Registered honestly; only the authority claim withheld.
+
+### DEC-143: A Result Card carrying a NET delta without its GROSS is REJECTED at publish, via a DECLAR…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** A Result Card carrying a NET delta without its GROSS is REJECTED at publish, via a DECLARED net->gross map rather than a name regex
+**Reasoning:** A regex would let each new metrics variant silently opt itself in. The guard fires inside metricsProblems -> resultCardProblems -> buildResultCard, which throws; it rejected 13 pre-existing fixtures on first run including the committed RC-depth-ablation.json (depthDeltaBB -0.4711, no GROSS) - the exact artifact WS-537 was filed against. A NET protected only in the renderer is protected in the one place nobody parses.

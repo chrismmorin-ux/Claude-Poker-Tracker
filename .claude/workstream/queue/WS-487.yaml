@@ -49,6 +49,7 @@ accept_criteria: |
     route through buildStampInput; a publish-side check asserts any *Rate sibling of a
     `conditioned` block equals its rate to display precision.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/ipsEstimator.mjs"
   - "scripts/backtest/heroEvReport.mjs"

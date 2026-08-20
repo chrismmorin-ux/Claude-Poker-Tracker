@@ -1,0 +1,82 @@
+id: "WS-529"
+title: "Rule-basis parameterisation + legibility ladder — beat A3's 53-55% recovery"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 84
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Design record: docs/research/villain-strategy-inference-2026-08-17.md §5.1, §5.3, §5.5, §6 (F5).
+  Specimen output: docs/standard-of-record/FIELD-STRATEGY-CARD-50NL-ONLINE-2009.md
+
+  GOAL. The villain's policy, written as a Strategy Card — a declared, enclosed, warranted
+  rule set — that a human can read and execute. Register terms already exist: Strategy Card,
+  Warrant (equity|structure|read|fear), Residual clause. Do not coin new ones.
+
+  ARCHITECTURE, AND THIS IS LOAD-BEARING. The rules PARAMETERISE the WS-527 generative fit;
+  they are not a description written on top of it. A discriminative rule set fitted separately
+  predicts actions but does not compose into a coherent policy across a hand, cannot be sampled
+  from, and drifts from the fit. One object must serve three uses: the text, the predictor,
+  the simulator.
+
+  A RULE SPLITS ACROSS TWO BASES, which is what reconciles this with the measured
+  dials-not-switches finding (latent-class-behaviors.py: 8 of 9 behaviours are dials):
+    PREDICATE  — "folds to a turn barrel on a paired board after calling the flop".
+                 Discrete, SHARED across villains. This is where commonality can live.
+    THRESHOLD  — how often, at what price. Continuous, PER-VILLAIN. This is the dial.
+  Villains are compared on WHICH PREDICATES ARE LOAD-BEARING FOR THEM, never on their rates.
+
+  LEGIBILITY LADDER, each rung scored by deltaLogVsUniform on held-out EVAL players:
+    3-class -> 5-bucket -> equity-decile -> equity x draw x blocker -> predicate basis.
+  Report where predictive accuracy SATURATES. That saturation point is the answer to
+  "how simply can this be stated without losing accuracy."
+
+  LEGIBILITY COST IS A DIVERGENCE. The fit is a Read surface; the rule set is a Declared
+  surface; d between them is the cost of forcing the model into words, computed through
+  src/utils/standardOfRecord/divergence.js (the ONE comparison path ADR-009 permits) with a
+  pre-registration naming kl or ev-difference as primary BEFORE the run.
+  A large d is not a failure — it is the finding that the vocabulary is the wrong shape.
+
+  THE BAR TO BEAT (F5), already measured:
+    A3's 12-number table recovers 53.3% (PS) / 54.9% (FTP) of the engine's narrowing gain.
+    A4's 3 extra numbers buy ~0.003 nats — adding detail in THAT basis does not close it.
+
+  FOUNDER RULING 2026-08-17: rules are DERIVED, never authored by hero. The shape-freedom
+  constraint and the grammar-free reference now live in WS-535; the frontier and the two
+  coverages live in WS-534's metrics kind. This item keeps the legibility ladder and the
+  Read-vs-Declared divergence.
+
+  NOTE: POKER_THEORY's postflop taxonomy has been falsified once for being too small.
+  3 classes is very unlikely to be enough. Do not treat the existing bucket set as closed.
+accept_criteria: |
+  - Rules parameterise the WS-527 fit; sampling from the rule set reproduces the fit's
+    action distribution within stated tolerance. Demonstrated, not asserted.
+  - Every rule carries a Warrant. A Residual clause exists and its EV share is COMPUTED.
+  - Legibility ladder scored end to end; saturation point reported.
+  - Divergence d(Read, Declared) reported with pre-registration stamped into the card.
+  - F5: rule-basis Delta-log EXCEEDS 53-55%, or the shortfall is recorded unhedged.
+  - Output loadable as a .card.js and passing strategyCard.js validation.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "src/utils/standardOfRecord/strategyCard.js"
+  - "src/utils/standardOfRecord/warrants.js"
+  - "src/utils/standardOfRecord/divergence.js"
+  - "scripts/backtest/teachableArmsProbe.mjs"
+blocked_by: ["WS-527"]
+blocked_by_legacy: []
+enables: ["WS-530", "WS-533", "WS-535"]
+sprint_id: null
+decision_flags: ["heavy-design"]
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 villain strategy inference, turns 2-4"
+created_at: "2026-08-17T00:00:00.000Z"

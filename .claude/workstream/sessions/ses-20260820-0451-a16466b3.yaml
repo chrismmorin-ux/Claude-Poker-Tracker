@@ -1,0 +1,44 @@
+id: "ses-20260820-0451-a16466b3"
+status: "abandoned"
+revived_at: "2026-08-20T15:49:44.417Z"
+started_at: "2026-08-20T04:51:11.746Z"
+ended_at: "2026-08-20T20:48:02Z"
+mode: auto
+last_heartbeat: "2026-08-20T16:45:43.074Z"
+pid: 26296
+pid_recorded_at: "2026-08-20T16:45:43.074Z"
+host: MorinComputer
+agent_session_id: "a16466b3-98d0-437a-a778-14cd240866e9"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-574"
+
+files_locked:
+  - "scripts/backtest/probe-depth2-coverage.mjs"
+  - ".claude/workstream/queue/WS-594.yaml"
+  - "src/hooks/useActionAdvisor.js"
+  - "src/hooks/__tests__/useLiveActionAdvisor.twoPhase.test.js"
+  - "src/utils/liveAdvisor/__tests__/buildPostflopAdvice.passthrough.test.js"
+  - "src/utils/exploitEngine/__tests__/depthParity.test.js"
+  - "docs/design/surfaces/live-advice-refinement-state.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-20.
+  Original start: 2026-08-20T04:51:11.746Z.
+  Last heartbeat: 2026-08-20T16:45:43.074Z.
+
+  Git commits during this session (4):
+    - 17f1c421 perf(ladder): one enumeration per board, not per combo — 61.6x, and the corpus-walk diagnosis is finally true
+    - 534b6ee5 perf(ladder): the rules were never the cost — 3.25x from one combo sample per decision, not per rung
+    - 5b5a8101 fix(fault-register): the bias tracks ESS, not support — r=-0.97 vs r=-0.01
+    - b5e54400 fix(estimator): the support bias was real, and removing it did not flip a single sign
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

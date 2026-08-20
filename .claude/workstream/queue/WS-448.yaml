@@ -55,6 +55,7 @@ accept_criteria: |
     replacement or an explicit research-only marking with the finding carried into
     the code.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/assumptionEngine/assumptionProducer.js"
   - "src/utils/assumptionEngine/assumptionTypes.js"

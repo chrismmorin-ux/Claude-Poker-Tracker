@@ -2,12 +2,12 @@ id: "WS-445"
 title: "The Label & Foundation Ledger — every label-shaped input and its data foundation listed exhaustively in one artifact, each entry ranked by estimated absolute-EV impact; adopted as a standing repo standard"
 legacy_id: ""
 type: feature
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-17T04:08:03.810Z"
+completion_commit: 6f4cf7db
 priority_score: 40.0
 priority_label: "P1"
 category: "strategy-of-record"
@@ -90,3 +90,4 @@ status_note: |
   decisions changed at population villains — exact n=0 identities end-to-end), and the one
   same-source replacement tried (continuous shrunk seed in the model priors) was REFUTED at
   ΔLL −0.00691 (t=−5.64) — the ledger's foundation column matters more than its label column.
+closed_by_event: ev-1786939683836-126aadafb162

@@ -28,4 +28,5 @@ accept_criteria: |
   - Plain English: the app no longer assumes opponents fold to a raise at the same rate they
     fold to a bet — those are different measured numbers.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"

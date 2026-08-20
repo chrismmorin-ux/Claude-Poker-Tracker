@@ -84,6 +84,7 @@ accept_criteria: |
   - The `answerable: false` entry in schemas.FORCING_QUESTIONS for layer attribution flips to
     true, naming the field that made it answerable.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/standardOfRecord/stack.js"
   - "src/utils/standardOfRecord/surfaceRegistry.js"

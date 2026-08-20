@@ -103,9 +103,7 @@ files_involved:
   - "src/components/views/TableView/__tests__/tableRotation.invariant.test.jsx (NEW)"
   - "src/components/views/SettingsView/SettingsView.jsx (feature flag toggle)"
 
-blocked_by:
-  - "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks all feature work until Item 4 (decision-system extraction) completes. Bug fixes are exempt; this is not a bug."
-
+blocked_by: []
 blocked_by_legacy: []
 enables: []
 
@@ -150,3 +148,9 @@ status_note: |
 
   Critical invariant: rotation must NOT mutate game state — render-time
   transform only. Surface doc must enforce.
+gate_resolution: |
+  2026-08-20: gate cleared. blocked_by held a PROSE PARAGRAPH, not an item id, so it could
+  never resolve — no resolver can match a charter sentence against an id. The charter it cited
+  (refactor-sprint-2026-05-10, 'no new features during this sprint') gated on the decision-system
+  extraction, which is WS-188, status done. Feature work has shipped continuously since May.
+  Malformed blocked_by entries filed as part of WS-590.

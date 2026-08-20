@@ -1,0 +1,37 @@
+id: "SPR-189"
+title: "Ship WS-504: `--max-files` slices a SORTED list, so every capped multi-stake run is silently stake-b"
+status: done
+approved_at: "2026-08-17T05:15:26.813Z"
+completed_at: "2026-08-18T19:21:21.533Z"
+completed_by_commit: "56ef5909"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-504: `--max-files` slices a SORTED list, so every capped multi-stake run is silently stake-biased — add stratified corpus selection
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-17T05:15:26.813Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-504 selected (76 × no damping = 76).
+  Program cap-breach: data-provenance, data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-421 16→20 (+3 more).
+  Cap usage: 2 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-504"
+    title: "`--max-files` slices a SORTED list, so every capped multi-stake run is silently stake-biased — add stratified corpus selection"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-08-18T19:21:21.533Z"
+  - id: "WS-521"
+    title: "The opener's response to a 3-bet is emitted NOWHERE — derivePreflopDecisions guards its second emission on `if (seatLimped)`, so open-then-4bet produces exactly one record and the most common aggressive preflop trajectory is invisible to the range model"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-08-18T19:21:21.533Z"
+
+created_at: "2026-08-17T05:15:26.813Z"

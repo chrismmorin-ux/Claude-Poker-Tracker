@@ -1,0 +1,104 @@
+id: "WS-516"
+title: "Silence detection permanently disarms after the first game message — `ignition-capture.js:520` early-returns on a cumulative counter that is never reset, so the escalating thresholds and the recovery banner can only fire for a capture that never started"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 45.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "extension"
+program: "data-provenance"
+finding_id: ""
+description: |
+  FOUND 2026-08-16 by two independent source audits of the Ignition capture extension. Every
+  file:line re-verified against HEAD.
+
+  THE DEFECT. `ignition-poker-tracker/content/ignition-capture.js:520`:
+
+      if (gameWsMessageCount > 0) {
+
+  and that branch early-returns. `gameWsMessageCount` is declared `let gameWsMessageCount = 0;`
+  at `:73` and appears in exactly four places in the file: the declaration, a read at `:94`, the
+  increment `gameWsMessageCount++;` at `:359`, and a report at `:551`. IT IS NEVER RESET. Not on
+  table change, not on reconnect, not on session boundary, not anywhere.
+
+  So the counter is monotonic for the lifetime of the content script, and the guard at `:520`
+  becomes permanently true the moment the first game WebSocket message arrives. Everything below
+  it is unreachable from that instant on. That includes the escalating `SILENCE_THRESHOLDS`
+  defined at `:500-505` and the `recovery_needed` banner they drive.
+
+  WHAT THAT INVERTS. The silence detector fires only when `gameWsMessageCount === 0` — that is,
+  only for a capture that NEVER STARTED. The case it can detect is the one the founder would
+  notice anyway: he sits down, plays, and the panel shows nothing. The case it cannot detect is
+  the one that needs detection: capture starts fine, runs for an hour, then the socket dies, the
+  page reloads a frame, the table is re-seated, or the probe detaches — and the detector, having
+  seen a message once, has already retired. An alarm that arms only before the thing it watches
+  begins is not an alarm.
+
+  THE FIX IS ALREADY HALF PRESENT IN THE FILE. `lastWsMessageAt` exists — declared at `:76`,
+  assigned `lastWsMessageAt = Date.now();` at `:460`, read at `:530`. The recency math the
+  detector needs is written, at `:530`, INSIDE the block that `:520` returns before reaching. So
+  the correct comparison already exists and is dead code behind the wrong guard. The change is to
+  gate on `now - lastWsMessageAt` against the thresholds rather than on a cumulative count, and
+  to let the count question ("has capture ever started?") be a separate and differently-worded
+  state.
+
+  WHY IT MATTERS TO THE CORPUS, NOT JUST TO THE UI. The founder is building a dataset of
+  live-observed hands for villain modelling. A capture that dies mid-session does not produce a
+  gap anyone can see later — it produces a session that looks complete and shorter. Hands played
+  after the death are absent with no marker, and there is no way to reconstruct which hands are
+  missing or even that any are. Every downstream k/n over that session is silently conditioned on
+  "the part of the session where capture happened to still be alive", which is not a population
+  anyone chose.
+
+  READ WITH WS-517. That ticket covers the second half of the same blindness: the side panel's
+  status bar reports LIVE forever once any hand has been captured, and the only recency readout
+  in the panel is hidden precisely when hands exist. Between the two, the system has no surface —
+  none — that can tell the founder capture has stopped. They are separable fixes in separate
+  files and should be verified together, because either one alone still leaves a silent death.
+
+  CONTAMINATES SCORED FIGURE: Yes. Truncated sessions enter the corpus as complete ones.
+accept_criteria:
+  - "Silence is detected by RECENCY, not by a cumulative count: the check compares `now - lastWsMessageAt` against `SILENCE_THRESHOLDS`, and it runs on every tick regardless of how many messages have been seen. `lastWsMessageAt` already exists at `:76`/`:460` and the comparison already exists at `:530` — this is unblocking written code, not writing new logic."
+  - "A capture that dies MID-SESSION raises the same escalation and the same `recovery_needed` banner as one that never started. The two states are distinguishable in the copy — 'capture never started' and 'capture stopped N minutes ago' are different problems with different actions — but both raise."
+  - "A test that captures a hand, then advances the clock past every threshold with no further messages, and asserts each escalation fires in order. Against HEAD this test fails at the first threshold, because `:520` returned. A test that only exercises the zero-message path reproduces the blind spot it is meant to close."
+  - "`gameWsMessageCount` either gains a defined reset point or is demoted to what it actually is — a lifetime 'has capture ever started' flag — and no liveness decision reads it. Leaving a monotonic counter in place next to a recency check invites the next author to gate on it again."
+  - "The gap is RECORDED, not merely displayed. When silence is detected and capture later resumes, the session record carries a marker of the interval during which capture was dead. A session with an unrecorded hole is indistinguishable from a short session, and that indistinguishability is what poisons the corpus — a banner the founder dismissed leaves no trace, a data marker does."
+  - "Verified against a real capture on a real page, not only in unit tests: start capture, confirm hands flow, then kill the WebSocket and confirm the escalation fires and the banner appears. The defect is 'the alarm never sounds after the first message', so the falsifier is silence after a message."
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "ignition-poker-tracker/content/ignition-capture.js"
+  - "ignition-poker-tracker/shared/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "ignition-capture-audit-2026-08-16"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  No existing item covers this. Checked WS-370 (dead export handler), WS-460 / FIND-122 (journal
+  retention), FIND-083 (origin checks + captureId dedup), WS-358 (the capture-durability work
+  this detector shipped alongside) — none of them touches the silence detector or the liveness
+  path.
+
+  All citations confirmed exactly as given: `:520` guard, `:359` increment, `:500-505` thresholds,
+  counter never reset. `lastWsMessageAt` confirmed present at `:76`/`:460`/`:530` — the audit
+  proposed comparing against it as a fix and did not know the comparison was already written and
+  stranded behind the guard, which makes this materially smaller than filed.
+
+  VERIFICATION HAZARD, applies to this ticket and WS-517 both: `ignition-poker-tracker/dist/` was
+  last built 2026-08-04 and the source is two commits ahead. Anything checked against the
+  currently loaded extension is testing 2026-08-04 code. Rebuild before verifying — see WS-517's
+  status_note for the full detail.

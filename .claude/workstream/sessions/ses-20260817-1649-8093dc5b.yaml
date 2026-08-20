@@ -1,0 +1,44 @@
+id: "ses-20260817-1649-8093dc5b"
+status: "abandoned"
+started_at: "2026-08-17T16:49:03.363Z"
+ended_at: "2026-08-17T18:44:32Z"
+mode: auto
+last_heartbeat: "2026-08-17T17:57:09.056Z"
+pid: 31584
+pid_recorded_at: "2026-08-17T17:57:09.056Z"
+host: MorinComputer
+agent_session_id: "8093dc5b-c8d5-4237-ab04-1262d8a6973b"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "src/utils/standardOfRecord/manifest.js"
+  - "scripts/backtest/sampleAdmissibility.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/backtest/probe-villainmodel-size.mjs"
+  - "scripts/backtest/show-ws481-flips.mjs"
+  - "scripts/backtest/verify-ws433-determinism.mjs"
+  - "src/utils/standardOfRecord/__tests__/resultCard.test.js"
+  - "scripts/__tests__/heroEvAdmissibility.test.js"
+  - "docs/runbooks/baseline-ev-run.md"
+  - ".claude/workstream/queue/WS-503.yaml"
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "docs/domain/readiness/scorecard-history.yaml"
+  - ".claude/workstream/queue/WS-504.yaml"
+  - ".claude/workstream/queue/WS-523.yaml"
+  - ".claude/workstream/queue/WS-524.yaml"
+  - ".claude/workstream/queue/WS-525.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-17.
+  Original start: 2026-08-17T16:49:03.363Z.
+  Last heartbeat: 2026-08-17T17:57:09.056Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

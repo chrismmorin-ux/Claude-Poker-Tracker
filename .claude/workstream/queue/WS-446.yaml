@@ -44,6 +44,7 @@ accept_criteria: |
     record is too sparse to recreate faithfully (a partial recreation is labeled partial,
     never silently smoothed).
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "docs/design/surfaces/"
   - "src/components/views/"

@@ -1,0 +1,50 @@
+id: "ses-20260818-1703-0f827d81"
+status: "abandoned"
+started_at: "2026-08-18T17:03:00.012Z"
+ended_at: "2026-08-19T02:18:01Z"
+mode: auto
+last_heartbeat: "2026-08-18T22:17:10.599Z"
+pid: 34316
+pid_recorded_at: "2026-08-18T22:17:10.599Z"
+host: MorinComputer
+agent_session_id: "0f827d81-db39-426a-8300-027641eb27c0"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "scripts/villainArchetype/dump-villain.mjs"
+  - "scripts/villainArchetype/ruleFitter.mjs"
+  - "scripts/villainArchetype/buildArchetypes.mjs"
+  - "scripts/villainArchetype/villainRuleset.mjs"
+  - "scripts/villainArchetype/inspectExceptions.mjs"
+  - ".claude/context/VILLAIN-ARCHETYPE-ENGINE.md"
+  - "scripts/villainArchetype/handNarrative.mjs"
+  - "scripts/villainArchetype/ruleCatalogue.mjs"
+  - "scripts/villainArchetype/testSequenceRules.mjs"
+  - "scripts/villainArchetype/handDossier.mjs"
+  - "scripts/villainArchetype/selectHands.mjs"
+  - "scripts/villainArchetype/verifyRule.mjs"
+  - "scripts/villainArchetype/rulesetCoverage.mjs"
+  - "scripts/villainArchetype/induceRules.mjs"
+  - "scripts/villainArchetype/decisionSchema.mjs"
+  - "scripts/villainArchetype/emitTable.mjs"
+  - "scripts/villainArchetype/profileVillain.mjs"
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "docs/research/villain-ruleset-next-session-prompt.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-19.
+  Original start: 2026-08-18T17:03:00.012Z.
+  Last heartbeat: 2026-08-18T22:17:10.599Z.
+
+  Git commits during this session (2):
+    - 32d968a4 docs(villain-archetype): continuation prompt — the procedure, the corrections, and the three bugs that made the gates necessary
+    - e1b1eead feat(villain-archetype): the procedure — gates that fail the run, not caveats nobody reads
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

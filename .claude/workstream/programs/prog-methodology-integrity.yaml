@@ -212,10 +212,16 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
 findings_open: 11
-work_items_open: 17
+work_items_open: 24
 
 cap_breach:
-  active: false
+  active: true
+  work_items_open: 24
+  findings_open: 11
+  max_open_items: 20
+  priority_floor: 18
+  ratio: 1.2
+  since: "2026-08-20"
 evidence:
   last_audit_report: null
   protocol_history: []

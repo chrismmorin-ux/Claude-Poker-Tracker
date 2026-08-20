@@ -90,6 +90,7 @@ accept_criteria: |
   - CP-2's own `knownBias` is stated as honestly as CP-1's was. A policy that claims no known
     bias has not been examined.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/preflopFlopEV.js"
   - "src/utils/exploitEngine/preflopAdvisor.js"

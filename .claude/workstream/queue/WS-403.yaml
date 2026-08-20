@@ -129,6 +129,7 @@ accept_criteria: |
     standing memory entry that advice depth already tracks machine load through `Date.now()`, so any
     recommendation here interacts with a known defect.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

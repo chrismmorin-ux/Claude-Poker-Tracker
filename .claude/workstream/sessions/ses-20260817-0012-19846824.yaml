@@ -1,0 +1,32 @@
+id: "ses-20260817-0012-19846824"
+status: "abandoned"
+started_at: "2026-08-17T00:12:34.820Z"
+ended_at: "2026-08-17T04:33:01Z"
+mode: auto
+last_heartbeat: "2026-08-17T04:26:20.266Z"
+pid: 504
+pid_recorded_at: "2026-08-17T04:26:20.266Z"
+host: MorinComputer
+agent_session_id: "19846824-bf75-4f2e-9b30-a765b7cb47be"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - ".claude/workstream/queue/WS-514.yaml"
+  - ".claude/workstream/queue/WS-515.yaml"
+  - ".claude/workstream/queue/WS-516.yaml"
+  - ".claude/workstream/queue/WS-517.yaml"
+  - ".claude/workstream/queue/WS-518.yaml"
+  - ".claude/workstream/queue-index.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-17.
+  Original start: 2026-08-17T00:12:34.820Z.
+  Last heartbeat: 2026-08-17T04:26:20.266Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

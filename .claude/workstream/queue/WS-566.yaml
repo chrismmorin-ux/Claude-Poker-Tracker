@@ -1,0 +1,88 @@
+id: "WS-566"
+title: "FOUNDER DECISION - does the launch program have a referent? intention.md never says launch, and OQ-001 is still the unedited template placeholder"
+legacy_id: ""
+type: decision
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 58.0
+priority_label: "P0"
+category: "methodology"
+capability: "governance"
+program: "launch"
+runs_on: phone
+effort: S
+finding_id: ""
+description: |
+  THE SHARED BLIND SPOT of the 2026-08-19 sweep. Six experts assessed readiness for an event with
+  no audience, and not one asked whether the event exists. They did not reach that branch because the
+  orchestrator's brief had already chosen the other one.
+
+  EVIDENCE, re-verified by the facilitator:
+    - `system/intention.md` contains NO occurrence of "launch", "users", "distribution" or "pricing".
+      Its Imagined Outcome names four ordered capabilities - trusted math -> player-interaction
+      relations -> cueing -> manipulation. None is a shipping event.
+    - `system/intention.md:77` - OQ-001 is VERBATIM the template placeholder text, status open. The
+      register was never populated. The question was never ASKED, not asked-and-unanswered.
+    - `prog-launch.yaml:107` - blocking_programs [] carries the comment "/adopt populates based on
+      archetype". The program was installed by a template, not authored for this repo.
+    - `prog-launch.yaml:4` - lifecycle temporary, created 2026-05-01. 110 days temporary, against an
+      event with no date and no audience.
+    - `kit/scripts/cwos-pulse.js` contains ZERO occurrences of "launch".
+
+  THIS IS NOT A DESCOPE. Removing an aggregator with no referent removes a limitation. The
+  engineering findings it currently sits on top of (WS-556..564) are unaffected and proceed either
+  way - they are worth doing because the founder uses this app at a table, not because a program
+  watches them.
+
+  OPTION 1 - Name the audience and date; keep the program with a real contract.
+    Cost: the GATE-SPEC code work (cwos-pulse launch branch M, prog-launch rewrite S, sequenced
+    behind FIND-107's stamp/recompute fix S), PLUS the scale correction, PLUS what a real launch
+    brings: a privacy posture for ethnicity/physical-description data about OTHER people, a Chrome
+    Web Store listing that describes what the extension actually does, and the extension's stealth
+    design becoming someone else's account risk too.
+    Honest read: 12 days of not building the blessed gate spec, and 110 days of "temporary", are
+    revealed priority. This option is available and does not look chosen.
+
+  OPTION 2 - Rewrite it into the gate this repo actually needs. Facilitator's recommendation.
+    Not "are we ready to launch" but "IS THE INSTRUMENT TRUSTWORTHY" - which intention.md DOES ask,
+    in P2 and in the Imagined Outcome's ordering, where trusted math comes FIRST.
+    Concretely: rename to trustworthy-instrument, lifecycle permanent, blocking contract =
+    (a) no hand can be silently lost (WS-556/557/558/560); (b) every comparative number resolves to a
+    Result Card (ADR-009, already binding, currently unenforced); (c) the advice the founder acts on
+    states its own depth and confidence (FIND-067).
+    That gate has a referent TODAY, would go RED today for reasons that matter, and goes green on work
+    wanted regardless of whether anyone else ever installs this.
+
+  OPTION 3 - Retire it; route its findings to their owning programs.
+    Cost: FIND-097/098/099/106 need re-homing to infrastructure and engineering; the sweep cadence
+    goes away UNLESS re-pointed - and note this run's value came from RUNNING THE PRODUCT, not from
+    the launch frame, so the cadence is worth keeping under some program.
+    Benefit: five sweeps have fired; three produced zero findings; this one consumed six expert
+    dispatches. Nobody has ever compared the gate's running cost to its yield.
+
+  Answerable from a pocket in one sentence. Until it is answered, every future launch sweep re-runs
+  this same argument.
+accept_criteria:
+  - "Founder picks option 1, 2 or 3"
+  - "OQ-001 is either answered with a date or replaced with the real open question"
+  - "If the program survives, the GATE-SPEC pass condition of health >= 60 is corrected to the 0-10 scale in the same edit"
+  - "The decision is recorded via /decide with weight heavy"
+files_involved:
+  - ".claude/workstream/programs/prog-launch.yaml"
+  - "system/intention.md"
+  - ".claude/workstream/evidence/run-launch-sweep-2026-08-07.md"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-methodology-.claude-workstream-programs-prog-launch.yaml-1-110"
+  facilitator_ref: "L"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

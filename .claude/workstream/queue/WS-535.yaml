@@ -1,0 +1,80 @@
+id: "WS-535"
+title: "Derived villain rules with SHAPE FREEDOM — the villain's model need not look like ours"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 89
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER RULING, 2026-08-17, TWO PARTS. Both are binding.
+
+  1. RULES ARE DERIVED, NOT AUTHORED. Earlier in the same session the founder was offered the
+     choice between encoding his own rules first and mining them; he chose derived. This
+     supersedes the "start with your rules" framing in WS-536's origin.
+
+  2. THE SHAPE MAY DIFFER FROM OURS, and this is the harder half:
+       "the shape of villain's decision model may look different than ours, they may have
+        different rulesets, or rulesets that transform in a strange way to our engine."
+
+  THE FAILURE THIS PREVENTS, stated as the correction. If induction runs inside HERO's rule
+  grammar — `when: {street, facingAction, handClass} -> action` — then a villain who reasons on
+  an axis that grammar LACKS cannot be expressed at all. The fit will pack that structure into
+  the nearest available shape and report good coverage anyway. Nothing downstream would catch
+  it, because every instrument would be measuring inside the same grammar.
+
+  Candidate axes hero's grammar does not currently carry, each testable:
+    - pot commitment / sunk cost (money already in, independent of equity)
+    - recent history within the session (just lost a big pot; just showed down a bluff)
+    - stack ratio to THIS specific opponent rather than to the pot
+    - time-in-hand and action-order effects
+    - whether the villain has already been caught in a rare act this session
+
+  THE FALSIFIER, pre-registered here before any induction runs:
+    Fit the villain under (a) hero's rule grammar and (b) a GRAMMAR-FREE reference predictor
+    with no rule structure, on the SAME decisions with the same leakage controls. If the
+    grammar-free reference materially beats the grammar on behavioural OR EV coverage, THE
+    GRAMMAR IS THE BINDING CONSTRAINT, not the data. The finding is then the named missing
+    axis — and the axis gets added. It is not a tuning problem and it is not a reason to
+    report the grammar-bound number.
+
+  This is the `shapeTest` field on `metrics.villain-model-card` (WS-534), which is REQUIRED —
+  a card without it is asserting that our shape is the villain's shape, which is the claim
+  under test.
+
+  VOCABULARY IS SHARED, PARAMETERS ARE NOT. A rule splits into a PREDICATE (discrete, shared
+  across villains — where commonality lives) and a THRESHOLD/FREQUENCY (continuous, per
+  villain — the dial). This is what reconciles a shared vocabulary with the measured
+  dials-not-switches finding (latent-class-behaviors.py: 8 of 9 behaviours are dials).
+  Villains are compared on WHICH PREDICATES ARE LOAD-BEARING for them, never on their rates.
+accept_criteria: |
+  - Rules DERIVED from the fitted policy, not authored. Provenance recorded per rule.
+  - Grammar-free reference fitted on the same decisions; `shapeTest` reports both coverages
+    and the gap on BOTH axes (behavioural and EV).
+  - If a gap exists, the missing axis is NAMED and a follow-up item files to add it. Reporting
+    the grammar-bound number as the answer is refused.
+  - Predicate/threshold split explicit: the vocabulary is shared, the parameters are not.
+  - Permutation control (WS-530) run on the shared vocabulary before any commonality is claimed.
+  - POKER_THEORY's postflop taxonomy has been falsified once for being too small — do not treat
+    the existing bucket set as the available axis list.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/latent-class-behaviors.py"
+  - "src/utils/standardOfRecord/strategyCard.js"
+blocked_by: ["WS-527"]
+blocked_by_legacy: []
+enables: ["WS-534", "WS-536"]
+sprint_id: null
+decision_flags: ["heavy-design"]
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 — derived rules, and the villain's shape may differ from ours"
+created_at: "2026-08-17T00:00:00.000Z"

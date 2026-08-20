@@ -112,6 +112,7 @@ accept_criteria: |
     heavy/light split lands, the denominator moves and the ceiling should be re-argued against the
     new numbers rather than carried forward because it is already written down.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "kit/scripts/cwos-bundle-validate.js"
   - "kit/scripts/cwos-reconcile.js"

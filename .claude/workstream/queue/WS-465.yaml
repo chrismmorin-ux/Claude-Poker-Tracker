@@ -24,4 +24,5 @@ accept_criteria: |
     mirroring check-idb-additive.sh's pattern; a hand-edit fails the build.
   - Regeneration commands are invocable from package.json scripts.
 effort: "S"
+runs_on: "any"
 created_at: "2026-08-13"

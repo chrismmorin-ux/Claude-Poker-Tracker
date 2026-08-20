@@ -171,6 +171,7 @@ preflight_findings: |
      INTERACTION classes is the thing this ticket must actually measure; do not import a number
      for it from anywhere.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/pokerCore/situationKey.js"
   - "src/utils/standardOfRecord/strategyCard.js"

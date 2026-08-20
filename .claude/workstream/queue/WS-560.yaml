@@ -1,0 +1,57 @@
+id: "WS-560"
+title: "Guard the v23/v24 concurrent cursor walk on players, and put an executable assertion behind MUST STAY LAST"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 45.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "core"
+program: "data-quality"
+runs_on: any
+effort: M
+finding_id: "FIND-104"
+description: |
+  `src/utils/persistence/migrations.js:1350` (oldVersion < 23) and `:1354` (oldVersion < 24) are
+  unguarded by oldVersion > 0. Both open players.openCursor() (`:798-799`, `:870-871`) in the SAME
+  upgrade transaction and both call c.update(). The codebase documents this exact hazard class at
+  `:1077-1087` and GUARDS it for hands in v27 (`:1094-1099`) and v28 (`:1152-1171`). v23/v24 have no
+  guard. The transaction commits cleanly, so a player record can silently lose one migration's
+  fields with NO ERROR AT ALL.
+
+  Untested by construction: every seed in `migrationV24.test.js` calls seedPlayersAtVersion(23,...),
+  so the co-run path never executes in CI.
+
+  SEVERITY CORRECTED CRITICAL -> HIGH by cross-critique, and the correction is recorded because it
+  matters: on a fresh install oldVersion = 0 and migrateV1 creates players in the same transaction,
+  so both cursors walk an EMPTY store. NEW USERS ARE NOT EXPOSED. The exposed set is installs at DB
+  v1-22, whose existence is unverified - WS-565 answers that. Remediation unchanged and mandatory.
+
+  THE HIGHER-VALUE HALF IS FORWARD-LOOKING: `migrations.js:1178` "MUST STAY LAST" is an English
+  sentence with no assertion behind it, guarding hands - the store every future user will have
+  populated. FIND-104 already names the untested-cursor half; the v23/v24 co-run MECHANISM is new.
+accept_criteria:
+  - "migrateV23/migrateV24 use the v27/v28 skip-or-reapply pattern, or are merged into a single cursor walk"
+  - "A test seeds the DB below v23 and asserts every field written by both migrations survives the co-run - this test fails against current main"
+  - "An executable assertion fails when a hands-store cursor migration is registered after migrateV28, replacing the comment at :1178"
+  - "Behavioral tests exist for the v7 userId backfill and v13 seatActions cursor migrations"
+files_involved:
+  - "src/utils/persistence/migrations.js"
+  - "src/utils/persistence/__tests__/migrationV24.test.js"
+  - "src/utils/persistence/migrationRegistry.js"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-data-integrity-src-utils-persistence-migrations.js-768-946"
+  facilitator_ref: "E"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

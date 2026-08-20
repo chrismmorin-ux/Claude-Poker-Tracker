@@ -132,6 +132,7 @@ accept_criteria: |
     and the founder's game is live 9-handed 1/2-1/3; any live claim is TRANSFERRED, not
     measured, and must say so.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

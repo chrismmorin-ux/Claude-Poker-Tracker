@@ -1,0 +1,62 @@
+id: "WS-554"
+title: "Archetype torsion needs a rebase discipline - you cannot measure drift in the player if the instrument also drifts"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 80
+priority_label: "P2"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-18: "there will end up being a kind of torsional effect on archetypes over
+  time, and it will be useful to know HOW each has developed and changed in addition to their
+  stats."
+  
+  THE REQUIREMENT THAT DOMINATES EVERYTHING ELSE. In one session villain 1's ruleset went
+  34 -> 15 -> 13 rules and the CONDITIONS changed at every step - off_button, then price_pct,
+  then seat_pos framings, all scoring 84.4%. None of that was the player. If two era-cards are
+  built by different inducers, "the rules changed" is confounded with "the inducer changed".
+  
+  The register already holds the doctrine for Result Cards: a new generation means every prior
+  card is RE-RUN onto it, so the Ladder rebases rather than resets. Conduct Cards need the same
+  and do not have it.
+  
+  SECOND, AND LESS OBVIOUS: you cannot diff rule TEXT. Two cards of the same player can carry
+  entirely different conditions and near-identical behaviour - demonstrated this session, three
+  framings all at 84.4%. The comparison has to be on the BEHAVIOUR the rules imply: over a
+  common set of situations, what action distribution does each card predict. That is divergence,
+  the register's single permitted comparison path - and since divergence is unsigned by rule,
+  the direction comes from the time ordering.
+  
+  The card already stamps what is needed: induction constants, separatorSearch arity, schema
+  version, engine commit, and (v2) the provenance block with site, date window, stake and table
+  sizes. What is missing is the machinery that re-runs the old ones.
+  
+  An archetype is a TRAJECTORY through surface space. A Conduct Card is a point on it.
+accept_criteria: |
+  - Re-inducing every stored Conduct Card under the current inducer is one command.
+  - A card built by a superseded inducer is refused for comparison, not silently compared.
+  - Divergence between two cards of the same subject over a common situation set.
+  - Note the standing constraint: the register's Stratum entry replaced NAMED archetypes with
+    quantile positions on measured axes, and Stratum is defined in VOCABULARY.md and implemented
+    nowhere. A branch needs separability evidence or it gets no row.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "scripts/villainArchetype/profileVillain.mjs"
+blocked_by: ["WS-551"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

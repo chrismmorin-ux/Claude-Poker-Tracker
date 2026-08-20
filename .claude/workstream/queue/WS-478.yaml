@@ -48,6 +48,7 @@ accept_criteria: |
   - No change ships to buildRepresentedHeroRange without the ground-truth pin
     (groundTruthCoverage census stays exact).
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-14"
 source:
   type: manual

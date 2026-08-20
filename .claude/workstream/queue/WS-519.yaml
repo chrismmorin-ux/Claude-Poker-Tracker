@@ -1,0 +1,95 @@
+id: "WS-519"
+title: "Emit the first derived Guide — the guide form has zero instances, and a standard with zero instances passes every conformance check while printing a green tick"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 55.0
+priority_label: "P1"
+category: "strategy"
+capability: "analysis"
+program: "guide-authority"
+finding_id: ""
+description: |
+  OWNS THE INERTNESS DEADLINE in `scripts/standardOfRecord/guide-ledger-baseline.json`
+  (`__meta.inert_deadline: 2026-10-15`). When that date passes with zero derived Guides,
+  `check-guide-ledger.mjs` FAILS the build with `STANDARD INERT`. This ticket is the named
+  owner of that alarm — it exists so the form cannot sit inert and green.
+
+  WHY THE ALARM EXISTS. `prog-strategy-of-record`'s own baseline found 7 of 13
+  standardOfRecord modules — 1,679 lines — with zero non-test consumers, under 304 passing
+  tests. Conformance monitoring cannot distinguish "perfectly obeyed" from "never used". The
+  guide form shipped 2026-08-16 with exactly one document, and that document is the authored
+  root, which by construction is not evidence that anything is derived.
+
+  THE SUBJECT: TT. It is already the positional hinge in `docs/guides/hand-class-99-TT-JJ.md`
+  §3 (the prior moves TT's 3-bet propensity 6x from EARLY to LATE while 99 barely moves), and
+  it is the hand the founder used to describe the form on 2026-08-16.
+
+  WHAT MAKES THIS HARD, AND IT IS NOT THE WRITING. Three of the four inputs do not exist yet:
+
+  1. OCCUPANCY needs a Field. The founder's game is live 9-handed 1/2-1/3; the corpus is
+     online July 2009 and a distinct population, so any occupancy figure taken from it is
+     TRANSFERRED, NOT MEASURED and must be stamped as such. Founder ruling 2026-08-16: an
+     n=0 cell reports `unexamined` and never inherits — so the first Guide is expected to be
+     mostly holes, and that is the correct output rather than a failure of the ticket.
+
+  2. RESOLUTION needs a preflop indifference criterion. The neutral-zone machinery
+     (POKER_THEORY §15.2, exercised in `hand-class-99-TT-JJ.md` §6) is POSTFLOP-ONLY. There
+     is no preflop equivalent. Depends on WS-520 (soft — see below).
+
+  3. THE LINE-SHAPE KEYS occupancy is a measure OVER do not exist. `lineTaxonomy.js` emits
+     independent per-decision records; nothing aggregates by trajectory. And the opener's
+     response to a 3-bet is emitted NOWHERE — `derivePreflopDecisions` guards its second
+     emission on `if (seatLimped)` (`lineTaxonomy.js:223`), `subActionExtractor.js` has no
+     notion of `open` at all, and the 4-bet tree does not exist (WS-270). "Raise-raise-shove"
+     is currently unrepresentable. Depends on WS-521 (soft — see below).
+
+  SOFT, NOT HARD. `blocked_by` is deliberately empty. This ticket does NOT wait for all three. It emits the Guide with whatever is measurable and
+  reports the rest as `unexamined` — that is the founder's ruling working as intended, and the
+  holes route back as queue items (AS-732).
+accept_criteria: |
+  - `docs/guides/` contains a Guide with `authority` != `authored-root` and all five
+    conditioning slots present in its ```guide-standing``` block.
+  - Any open slot carries both a `weighting` (`frequency` | `uniform`) and a non-empty
+    `marginalizes_over` set, or the slot rule is violated and the gate blocks.
+  - `check-guide-ledger.mjs` reports `derived: 1` or more, and no longer prints the INERT
+    warning.
+  - Every occupancy figure traceable to SRC-011/012 is stamped as transferred, not measured.
+  - Its Census carries at least one `unexamined` row — a Guide claiming total coverage is
+    itself a violation.
+  - AS-730 (decision load is not proportional to occupancy) is either tested against this
+    instance or explicitly recorded as still untested, with the reason.
+  - Every `unexamined` Census row carries an ID, and `check-guide-ledger.mjs`'s AS-732 check
+    is upgraded from counting program-owned queue items to matching items against SPECIFIC
+    row IDs. Until then "20 holes, 3 items" cannot detect 3 items all pointing at one hole.
+    The id scheme rides on this ticket because it needs real rows to exist before it is
+    chosen — the first draft of that matcher scored 5 on a queue whose true count was 2.
+effort: L
+runs_on: any
+files_involved:
+  - "docs/guides/"
+  - "scripts/standardOfRecord/check-guide-ledger.mjs"
+  - "scripts/standardOfRecord/guide-ledger-baseline.json"
+blocked_by: []
+blocked_by_legacy: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source: "founder-directive"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  Filed alongside the guide-authority monitor rather than after it, deliberately: the monitor's
+  INERT check names an owner and a date, and an alarm with no owner is not one.
+
+  The decision flag is real and unresolved. It was raised on 2026-08-16 and the founder
+  redirected to the program question before ruling on it. It does not block starting — the
+  Guide can be emitted with the cell reported `unexamined` either way — but it determines
+  whether the first Guide has any numbers in it at all.
+resolved_by_rule: ".claude/rules/corpus-transfer-is-earned.md"
+resolved_on: "2026-08-20"

@@ -116,6 +116,7 @@ accept_criteria: |
     founder's game is live 9-handed 1/2-1/3; a hero-side claim transferred from an online corpus
     is transferred, not measured, and must say so.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/phhAdapter.mjs"
   - "scripts/backtest/run-atoms.mjs"

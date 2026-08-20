@@ -1,0 +1,97 @@
+id: "WS-587"
+title: "The Lesson — a session-locked prescription naming the most valuable OFF-TABLE activity, pre-registered with its own falsifier so the advice is scoreable"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 90
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-20: the proprietary lessons-tracking system - "a reflection and kind of
+  session locked reflection of the most valuable non-poker activity (drill, etc) suggested."
+
+  THIS IS S8 AND IT IS THE ARGUMENT THE LATTICE WAS CONVERGING ON. Every object through S7
+  answers what is true AT the table. A Lesson answers what hero should do AWAY from it -
+  the first output of this system whose subject is the founder and whose execution happens
+  off the felt. See docs/standard-of-record/NAMING-HISTORY.md §6.
+
+  THE OBJECT.
+    Lesson        - one spot, the measured gap at it, the off-table ACTIVITY that addresses
+                    it, its expected EV recovery in bb/100, and its FALSIFIER: the
+                    measurement that would show it worked. Written at session close and
+                    never edited. A revision is a NEW Lesson that supersedes, so the ledger
+                    records what was actually believed at the time.
+    Lesson Ledger - the persistent record across sessions with each Lesson's later score.
+                    The analogue of Ladder, whose subject is hero rather than a strategy.
+    Activity      - the executable form: a drill, a range-study block, a hand review.
+                    Something hero can DO, never a fact he should know.
+
+  WHY THE SESSION LOCK IS THE LOAD-BEARING PART, not a storage detail. Without it this is a
+  suggestion engine, and suggestion engines are unfalsifiable - they get re-read in the light
+  of what happened. Locking the Lesson at session close, with its falsifier written BEFORE
+  the next session is played, makes the apparatus scoreable. Over a season the Ledger answers
+  "did our own advice make money", which is the hero-EV question pointed at the founder.
+  The register already has `Pre-registration` as a term; a Lesson is one.
+
+  FIVE CONSTRAINTS IT INHERITS AND CANNOT ESCAPE.
+  1. IT IS AN APPRAISAL, SO IT BINDS TO A RESULT CARD. "The MOST valuable activity" is a
+     comparative claim and ADR-009 permits exactly one comparison path. A Lesson does NOT
+     get its own card type; it resolves to a Result Card with a declared `metrics` variant.
+     The second-argument rule already settled this - only Conduct Card, which makes no
+     comparative claim, gets a form of its own.
+  2. IT REQUIRES THE HERO CONDUCT CARD (WS-584). "The gap at this spot" is
+     Divergence(hero Strategy Card, hero Conduct Card) - what hero says he does against what
+     he did. There is no other way to state it inside the register.
+  3. RANKING IS AN N PROBLEM AND MUST REFUSE. The register forbids per-player leak ranking at
+     35-51 observations because it would be a ranking of noise. Hero has more data about
+     himself than about any villain, but ONE SESSION does not. A Lesson carries its own n and
+     emits NOTHING rather than inventing a ranking - the `unexamined` discipline.
+  4. VALUE IS OCCUPANCY-WEIGHTED. A spot hero misplays badly but stands at twice an hour is
+     worth less than a small error at a node he occupies constantly. AS-730 says Decision
+     Load concentrates in relatively RARELY occupied nodes, so the ranking quantity is
+     gap x Occupancy and neither factor alone.
+  5. THE TEACHABLE FORM MAY DIFFER FROM THE ENGINE'S, IF IT IS SCORED. Standing founder rule:
+     a novel method hero can execute beats a right answer he cannot. A Lesson's Activity is
+     scored on the same metric as the engine's own recommendation, never exempted from it.
+
+  THE TRANSFER DISCLAIMER APPLIES AND MUST BE ON THE FACE OF IT. Any Lesson whose gap is
+  measured against a corpus-derived standard is transferred, not measured - online 2009 vs
+  live 1/2-1/3. It stamps `manifest.disclaimerRegisterVersion` like every other card.
+accept_criteria: |
+  - A Lesson is written at session close, is immutable thereafter, and carries: spot,
+    measured gap with its n, Activity, expected EV recovery in bb/100, falsifier, and the
+    disclaimer register version.
+  - Superseding produces a new Lesson linked to its predecessor; nothing is edited in place.
+  - Ranking of candidate Lessons is gap x Occupancy, and refuses with a reason from a closed
+    enum when n cannot support a ranking. A session that produces no Lesson is a valid
+    outcome and says so.
+  - The comparative claim resolves to a Result Card with a declared `metrics` variant; no new
+    card type is minted.
+  - Lesson Ledger persists across sessions and is readable as a list, oldest first, with each
+    Lesson's score slot present-but-null until WS-588 fills it.
+  - Register entries for Lesson / Lesson Ledger / Recovery / Activity added to VOCABULARY.md
+    in the same change.
+effort: "L"
+runs_on: "any"
+files_involved:
+  - "src/utils/standardOfRecord/"
+  - "src/utils/exploitEngine/heroSelfObservation.js"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "docs/standard-of-record/NAMING-HISTORY.md"
+blocked_by: ["WS-584"]
+blocked_by_legacy: []
+enables: ["WS-588"]
+sprint_id: null
+decision_flags: ["surface-bearing: a founder-facing Lesson view triggers design Gates 1/2/4 - the OBJECT here is engine-internal, the surface splits out"]
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-20, mid-session: the proprietary lessons-tracking system"
+created_at: "2026-08-20T00:00:00.000Z"

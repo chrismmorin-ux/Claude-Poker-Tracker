@@ -77,6 +77,7 @@ accept_criteria: |
   - Scored through the WS-273 calibration harness so depth-1 and depth-2 advice land on ONE
     scale, per the Standard of Record. Any comparative figure resolves to a Result Card.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/gameTreeDepth2.js"
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"

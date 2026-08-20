@@ -1,0 +1,69 @@
+id: "WS-559"
+title: "Build the recovery floor: backup captures 3 of 25 stores and reports success, and restore begins by clearing everything"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 55.0
+priority_label: "P0"
+category: "data-integrity"
+capability: "core"
+program: "data-quality"
+runs_on: g16
+effort: L
+finding_id: "FIND-101"
+description: |
+  MERGES FIND-101 + FIND-103 + three experts' separate filings of the same defect with two
+  different denominators, none of whom joined them.
+
+  VERIFIED COUNTS: 25 unique stores (storesAdded union in `migrationRegistry.js`; count of
+  createObjectStore in `migrations.js` = 25 independently). The architect's "23" came from
+  `SYSTEM_MODEL.md:501`, a doc he was condemning as stale in the same finding.
+
+    - `src/utils/exportUtils.js:22` - EXPORT_VERSION '1.2.0' commented as aligned to IndexedDB v12
+      against `src/utils/persistence/database.js:50` DB_VERSION = 28. 16 schema versions of
+      accretion never folded into backup.
+    - `exportAllData` (`:32-54`) imports only getAllHands/getAllSessions/getAllPlayers.
+    - `validateImportData` validates the same three arrays, so a restore REPORTS SUCCESS while
+      photos, tournaments, rangeProfiles, exploitAnchors and anchorObservations vanish.
+    - `clearAllData` (`:159-182`) is three sequential non-transactional phases AND runs as phase ONE
+      of every restore - the recovery path can itself destroy state (FIND-103).
+    - `.claude/context/SYSTEM_MODEL.md:252` claims "backup before destructive ops". Verified by the
+      failure engineer: it DOES NOT EXIST in code. `exportUtils.js:32,83` are manual only, never
+      called from initDB() or the upgrade path.
+    - `migrationRegistry.js:504` exports `getStoresAtVersion()` - the exact enumerator needed - and
+      `exportUtils.js` does not import migrationRegistry at all. Shipped-but-inert instance #3.
+
+  time_to_detect: at restore, i.e. the worst possible moment. recoverability: NONE - the data was
+  never captured.
+
+  ABSORBS WS-266 (exportAllData omits anchorObservations) - one store of a 22-store defect.
+accept_criteria:
+  - "exportAllData, importData/validateImportData and clearAllData all derive their store list from getStoresAtVersion(DB_VERSION) - no hand-enumerated list remains"
+  - "A parity test fails the build when a store exists in MIGRATION_REGISTRY with no backup/restore/purge counterpart"
+  - "playerPhotos blobs round-trip, or the export refuses to emit a dangling photoBlobId"
+  - "validateImportData fails loudly on version skew instead of reporting success"
+  - "clearAllData runs in a single readwrite transaction across all cleared stores, or stages into shadow stores and swaps"
+  - "An automatic pre-upgrade snapshot runs before onupgradeneeded, OR SYSTEM_MODEL.md:252 is corrected in the same commit - doc and code agree either way"
+  - "WS-266 closed as absorbed"
+files_involved:
+  - "src/utils/exportUtils.js"
+  - "src/utils/persistence/migrationRegistry.js"
+  - "src/utils/persistence/database.js"
+  - "src/components/views/SessionsView"
+  - ".claude/context/SYSTEM_MODEL.md"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-data-integrity-src-utils-exportUtils.js-22-182"
+  facilitator_ref: "D"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

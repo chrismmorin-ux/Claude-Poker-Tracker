@@ -127,6 +127,7 @@ accept_criteria: |
     transfer caveat does not apply in the usual way — say which it is rather than pasting the
     boilerplate.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js"
   - "src/utils/exploitEngine/__tests__/helpers/groundTruth.js"

@@ -1,0 +1,60 @@
+id: "WS-528"
+title: "F2 — re-run BOTH per-villain refutations at power on EM-recovered holdings"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 86
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Design record: docs/research/villain-strategy-inference-2026-08-17.md §3.2, §4, §6 (F2).
+
+  TWO PER-VILLAIN ATTEMPTS HAVE BEEN RUN AND BOTH MADE PREDICTIONS WORSE:
+
+    per-player range width  (per-player-width-2026-08-05.result-card.json)
+      -0.025 nats/decision, CI [-0.042, -0.008]. Chosen shrinkage k = Infinity, i.e.
+      "ignore the player". heldoutPlayersMovedOffPopulation: 0.
+
+    per-villain style seed  (ws436-style-collapse-2026-08-12.result-card.json)
+      -0.0069 nats, t = -5.64. Recorded REFUTED.
+
+  Both were measured at medianRevealedPerPlayer = 13 with foldRevealRate = 0, and the
+  per-player-width card's OWN admissibility warning calls its null a WEAK-POWER NULL:
+  62 of 91 players (68.1%) could not have resolved even a population-sized effect.
+
+  The hypothesis is therefore that both refutations measured sample starvation rather than
+  villains being unmodellable. WS-527 raises per-villain evidence from ~13 revealed decisions
+  to every decision the villain made.
+
+  PRE-REGISTERED, AND THIS IS THE POINT OF THE TICKET: if per-villain STILL loses with
+  hundreds of decisions per villain, per-villain modelling is dead and the population is the
+  answer. That outcome is real and is to be recorded unhedged, not softened, not re-scoped
+  into a third attempt.
+accept_criteria: |
+  - Both arms re-run on EM-recovered holdings, same estimand and same scoring as the originals.
+  - Paired per-decision against the population arm on an IDENTICAL decision set.
+  - Power stated: observations per player, and what effect size the sample could have resolved.
+  - Verdict recorded unhedged either way. A negative closes the per-villain program and says so.
+  - Result Card; prior cards flagged where superseded.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "docs/research/per-player-width-2026-08-05.result-card.json"
+  - "docs/research/ws436-style-collapse-2026-08-12.result-card.json"
+  - "scripts/backtest/separability.mjs"
+blocked_by: ["WS-527"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 villain strategy inference, turn 2"
+created_at: "2026-08-17T00:00:00.000Z"

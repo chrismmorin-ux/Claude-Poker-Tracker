@@ -1,0 +1,56 @@
+id: "ses-20260816-0813-1c308458"
+status: "abandoned"
+revived_at: "2026-08-16T16:05:04.675Z"
+started_at: "2026-08-16T08:13:34.503Z"
+ended_at: "2026-08-16T17:33:02Z"
+mode: auto
+last_heartbeat: "2026-08-16T16:38:05.737Z"
+pid: 39432
+pid_recorded_at: "2026-08-16T16:38:05.737Z"
+host: MorinComputer
+agent_session_id: "1c308458-ac0f-4952-b2e0-7b054ed1c107"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "kit/scripts/core/reducers/workstream.js"
+  - "kit/scripts/lib/cwos-compute-job.js"
+  - "kit/scripts/cwos-next.js"
+  - "kit/scripts/cwos-fleet-compute.js"
+  - ".claude/workstream/queue/WS-320.yaml"
+  - ".claude/workstream/queue/WS-293.yaml"
+  - ".claude/workstream/queue/WS-295.yaml"
+  - ".claude/commands/next.md"
+  - "scripts/fleet/done-summary.js"
+  - "scripts/fleet/compute-feed.ps1"
+  - "scripts/fleet/install-feeder.ps1"
+  - "kit/scripts/lib/cwos-fleet-harvest.js"
+  - ".claude/workstream/queue/WS-496.yaml"
+  - ".claude/workstream/queue/WS-498.yaml"
+  - ".claude/workstream/queue/WS-499.yaml"
+  - ".claude/workstream/queue/WS-500.yaml"
+  - ".claude/workstream/queue/WS-501.yaml"
+  - "scripts/fleet/done-summary.cjs"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-16.
+  Original start: 2026-08-16T08:13:34.503Z.
+  Last heartbeat: 2026-08-16T16:38:05.737Z.
+
+  Git commits during this session (9):
+    - 0c2ef1fc fix(readiness): the gate reported STALE FAILURES for 20 days and nothing could see it
+    - cb51a70b docs(next): the node1 panel is a pipeline view, not a sprint view
+    - 211a6f8a feat(fleet): node1 gets a pipeline panel, and dedupe stops re-running finished work
+    - c5b8beaf fix(fleet): a FAILED job was as invisible as an unreviewed success
+    - 5b2c3a29 feat(strategy): multiway limped pots — founder approves building on the limp finding
+    - 2f0eed02 docs(research): retract WS-492's bb-level stake mapping — DEC-082
+    - 2c96e355 fix(fleet): node1 ranked an EMPTY index for 4.5 hours and said so every 10 min
+    - 6d785025 fix(backtest): sort corpus discovery — --max-files sliced a filesystem-ordered list
+    - 90f72d3f feat(fleet): finished runs file their own review item
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

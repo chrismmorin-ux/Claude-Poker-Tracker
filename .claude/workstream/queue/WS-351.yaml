@@ -90,6 +90,7 @@ accept_criteria: |
   - `cwos-event append` can emit T15:session-end / session-abandoned with the same payload shape
     the script emits internally, or the CLI documents that this event is internal-only.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "kit/scripts/cwos-session-recovery.js"
   - "kit/scripts/cwos-session-register.js"

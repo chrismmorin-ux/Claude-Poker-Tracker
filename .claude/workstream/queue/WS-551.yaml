@@ -1,0 +1,52 @@
+id: "WS-551"
+title: "Two Conduct Cards cannot compete - there is no held-out score, only in-sample fit"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 91
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Villain 1's card reports 84.4% accuracy. It is IN-SAMPLE - measured on the very decisions
+  the rules were fitted to. The villain-archetype spec is explicit that a rule is scored by
+  held-out predictive log-loss on a walk-forward split and never by fit to its own hands.
+  
+  CONSEQUENCE: "which description of this villain is better" is currently unanswerable, so the
+  Ladder has nothing to rank and the founder's stated goal - a place where villain models
+  compete - does not yet have a quantity to compete on.
+  
+  Two anchors for what the number must beat, both measured on villain 1's own 1,937 decisions:
+    always-fold                       71.2%
+    condition on the facing column alone (7 cells)  80.1%
+    the 13-rule Conduct Card          84.4%
+    a 146-cell lookup (69 cells hold n=1)  86.1%   <- memorisation, not a model
+  
+  The 13 rules buy 4.3 points over a 7-cell lookup. Whether they buy anything OUT of sample is
+  the open question, and rule count - not accuracy - is what the founder's standing rule says
+  carries the information.
+accept_criteria: |
+  - Walk-forward split: fit on early hands, score on later hands the fitter never saw.
+  - Held-out log-loss reported per card, alongside the three anchors above.
+  - Two cards of the SAME villain built by different inducers can be ranked.
+  - Comparative claims resolve to a Result Card per ADR-009.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "scripts/villainArchetype/profileVillain.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

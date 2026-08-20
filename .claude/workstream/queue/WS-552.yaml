@@ -1,0 +1,48 @@
+id: "WS-552"
+title: "The induction predicts WHICH action and never HOW BIG - the sharpest rule on the card is invisible to it"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 86
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  my_size_x_pot rides on every row of the schema and has never been consumed.
+  
+  The consequence, measured on villain 1: his single most reliable rule is a SIZING rule that
+  the ruleset cannot express. Stated as "4bb base, with the 3bb discount applying only to an
+  unopened pot from the button or small blind, plus 1bb per limper" it fires on 104 of 111
+  opening raises.
+  
+  It is also the only rule on the card that needs NO hole cards, so it escapes the 94.4% card
+  shortage entirely - which makes it the highest-evidence thing about him and the one thing the
+  model is blind to.
+  
+  Note the interpretive trap this closes: the first attempt read the discount as "arithmetic,
+  not a decision". It is a steal-price-versus-isolation-price distinction, which is strategic,
+  and it is conditioned entirely on seat.
+accept_criteria: |
+  - The induction predicts my_size_x_pot as a second target alongside the action.
+  - Sizing rules appear on the Conduct Card as first-class rules with their own k/n and interval.
+  - Re-derive villain 1's rule and confirm 104/111 or better from the induction rather than by hand.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "scripts/villainArchetype/decisionSchema.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

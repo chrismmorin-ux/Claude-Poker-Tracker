@@ -81,6 +81,7 @@ accept_criteria: |
     changelog entry carries the same premise, correct them in this diff — otherwise the false half
     survives in the record the next audit will read.
 effort: "S"
+runs_on: "g16"
 files_involved:
   - "src/hooks/useActionAdvisor.js"
   - "src/hooks/__tests__/useActionAdvisor.test.js"

@@ -105,6 +105,7 @@ accept_criteria: |
     — which is the intended behaviour: a reader of an older Result Card can then tell it was
     stamped under a register that could not settle this entry.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/persistence/handsStorage.js"
   - "src/utils/persistence/validation.js"

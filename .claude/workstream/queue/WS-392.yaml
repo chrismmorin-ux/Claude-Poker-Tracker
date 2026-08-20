@@ -121,6 +121,7 @@ accept_criteria: |
     table with rake omitted is the specific harm the roundtable's `do_not_file` ruling exists to
     prevent.
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "src/components/views/TableView/CommandStrip.jsx"
   - "src/hooks/useLiveEquity.js"

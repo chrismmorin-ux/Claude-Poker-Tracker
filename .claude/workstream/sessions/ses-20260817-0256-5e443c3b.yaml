@@ -1,0 +1,33 @@
+id: "ses-20260817-0256-5e443c3b"
+status: "abandoned"
+started_at: "2026-08-17T02:56:46.332Z"
+ended_at: "2026-08-17T08:18:01Z"
+mode: auto
+last_heartbeat: "2026-08-17T04:08:40.759Z"
+pid: 33524
+pid_recorded_at: "2026-08-17T04:08:40.759Z"
+host: MorinComputer
+agent_session_id: "5e443c3b-7b43-42d5-aecc-c08d5cd2377f"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "src/utils/standardOfRecord/index.js"
+  - "src/utils/standardOfRecord/__tests__/labelLedger.test.js"
+  - "scripts/standardOfRecord/traceLabelReaders.mjs"
+  - "src/utils/standardOfRecord/labelLedger.js"
+  - "docs/standard-of-record/LABEL-AND-FOUNDATION-LEDGER.md"
+  - "scripts/check-label-ledger.sh"
+  - ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-17.
+  Original start: 2026-08-17T02:56:46.332Z.
+  Last heartbeat: 2026-08-17T04:08:40.759Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

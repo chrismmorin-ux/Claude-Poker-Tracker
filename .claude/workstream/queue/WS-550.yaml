@@ -1,0 +1,52 @@
+id: "WS-550"
+title: "Every MIX verdict is provisional - the separator search only ever looks one feature at a time"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 90
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  classifyLeaf tests features ONE AT A TIME. A leaf whose structure is a DISJUNCTION is
+  therefore misreported as a mix, and "mix" is 12 of the 13 rules on villain 1's Conduct Card.
+  
+  MEASURED, on the continuation-bet leaf (n=83): an independent search over 113,704 OR-
+  combinations found that he shuts down when ANY of {3+ opponents live, initiative lost, third
+  barrel} holds - 1 bet in 16 against 46 in 67. Each of the three disjuncts dies alone under
+  correction, which is exactly why a feature-at-a-time sweep found nothing.
+  
+  CAVEAT ON THAT NUMBER, recorded because it was relayed unverified once already: the agent's
+  "corrected p = 0.024" is NOT reproducible. Raw Fisher on that table is 5.2e-6 and Bonferroni
+  over 113,704 gives 0.59. The disjunction is real and the split is real; the correction method
+  was never stated and must be established here rather than inherited.
+  
+  The Conduct Card already carries separatorSearch.arity = 1 on its face precisely so this
+  limitation cannot be read as a finding about the player. Raising the arity is what turns those
+  twelve provisional verdicts into claims.
+accept_criteria: |
+  - Search covers disjunctions to a stated arity (3-4) over binarised features.
+  - Family-wise error controlled by a PERMUTATION null, with the method stated on the card.
+  - separatorSearch.arity on every emitted Conduct Card reflects what actually ran.
+  - Re-run villain 1: report how many of the 12 MIX verdicts survive.
+  - Embarrassingly parallel - this is a compute job, not a research problem.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/mixTest.mjs"
+  - "scripts/villainArchetype/induceCore.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

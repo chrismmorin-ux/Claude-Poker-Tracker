@@ -1,0 +1,27 @@
+id: "SPR-197"
+title: "Ship WS-540: Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box"
+status: approved
+approved_at: "2026-08-20T17:35:13.454Z"
+program_focus: "infrastructure"
+
+goal: |
+  Ship WS-540: Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-20T17:35:13.454Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-540 selected (90 × no damping = 90).
+  Program cap-breach: data-provenance, data-quality, design, infrastructure, methodology-integrity, strategy-of-record (priority_floor applied to candidates from these programs).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-540"
+    title: "Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-08-20T17:35:13.454Z"

@@ -1,0 +1,64 @@
+id: "WS-526"
+title: "F1 — synthetic recovery harness: can EM recover a known villain policy INCLUDING its fold branch?"
+legacy_id: ""
+type: research
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-17T23:10:00.000Z"
+priority_score: 92
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE GATE ON THE WHOLE VILLAIN-INFERENCE PROGRAM. Nothing downstream (WS-527..WS-531) is
+  funded until this returns.
+
+  Design record: docs/research/villain-strategy-inference-2026-08-17.md §5.2, §6 (F1).
+
+  The claim under test — and it is currently UNCHECKED REASONING, not a measurement:
+
+    A villain's policy pi(a | s, h) is identifiable from corpus action data even though
+    holdings are revealed only at showdown, because (a) P(h) at the root is exact
+    combinatorics, (b) the full action sequence and board are observed for EVERY hand
+    including folded ones, so only the HOLDING is missing, (c) branch ranges partition the
+    parent range at every node, so the folding branch is identified by subtraction, and
+    (d) behaviorPolicy.mjs already supplies unbiased P(fold | s) as a hard constraint.
+
+  METHOD. Self-play a KNOWN rule-based villain policy through the hand generator, producing
+  synthetic histories with the same observability as the corpus (holdings hidden except at
+  showdown). Fit the EM. Compare the recovered policy to the known one, PER BRANCH, with the
+  fold branch reported separately from the continue branches.
+
+  src/utils/anchorLibrary/__sim__/syntheticVillains.js already holds 4 fully-specified
+  known-ground-truth policies and anchorScenarioRunner.js drives them. Start there rather
+  than authoring a fifth generator.
+
+  This is a known-answer anchor. Per reference_ai_error_shape_study, a load-bearing claim
+  without an executable falsifier or known-answer anchor is below standard here.
+accept_criteria: |
+  - Recovered vs known policy reported per branch, with the FOLD branch called out separately.
+  - A stated tolerance, declared BEFORE the run, not chosen after seeing the result.
+  - If the fold branch is NOT recovered: recorded unhedged as F1 FAILED, and the finding is
+    that fold composition needs a showdown-independent channel (sizing, timing). Do not
+    quietly shrink the claim to the branches that did recover.
+  - Result Card emitted with a replication manifest and disclaimerRegisterVersion.
+  - Sweep at least two n levels so the answer is "identified at n>=X", not a single point.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "src/utils/anchorLibrary/__sim__/syntheticVillains.js"
+  - "src/utils/anchorLibrary/__sim__/anchorScenarioRunner.js"
+  - "scripts/backtest/behaviorPolicy.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-527", "WS-528", "WS-529", "WS-531"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 villain strategy inference, turns 1-4"
+created_at: "2026-08-17T00:00:00.000Z"

@@ -47,6 +47,7 @@ accept_criteria: |
   - If no consumer is live: the finding recorded and the gameTreeContext comment updated
     to cite it, so the one-range choice carries its evidence instead of an argument.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-14"
 source:
   type: manual

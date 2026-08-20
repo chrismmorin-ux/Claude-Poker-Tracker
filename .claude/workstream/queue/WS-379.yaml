@@ -102,6 +102,7 @@ accept_criteria: |
     on the same flop board. If they share the exposure and have simply not lost the coin flip
     yet, fix them in the same change or state why they are safe.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

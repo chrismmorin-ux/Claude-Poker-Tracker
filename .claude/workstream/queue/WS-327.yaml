@@ -89,6 +89,7 @@ accept_criteria: |
   - Revision diaries are preserved verbatim, including rejected alternatives; these are
     Tier-1 unrecoverable-if-not-captured artifacts.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/"
   - "src/utils/predictionAudit/"

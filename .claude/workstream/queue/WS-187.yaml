@@ -82,10 +82,7 @@ files_involved:
   - "src/components/views/TableView/TableView.jsx (seat avatar rendering)"
   - "src/utils/persistence/playerPhotosStore.js (read API exists per memory; verify)"
 
-blocked_by:
-  - "WS-184 (camera capture silent-fail) — photo path must actually attach and render before inverting avatar priority"
-  - "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks feature work until Item 4 completes"
-
+blocked_by: []
 blocked_by_legacy: []
 enables: []
 
@@ -123,3 +120,7 @@ status_note: |
 
   Doubly-blocked: by Refactor Sprint charter (no new features) AND by
   WS-184 (capture must work first). Lift both blockers before promoting.
+gate_resolution: |
+  2026-08-20: gate cleared. Both entries were PROSE, not item ids, and neither could ever
+  resolve. WS-184 (camera capture accept-button failure modes) is done and archived. The
+  refactor-sprint charter gated on WS-188, which is done. See WS-590.

@@ -113,6 +113,7 @@ accept_criteria: |
   - The forcing-function question list is stored WITH the schema, and any question later found
     unanswerable is appended to it -- the schema learns from its own gaps.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/"
   - "src/utils/predictionAudit/"
@@ -123,8 +124,7 @@ blocked_by_legacy: []
 enables:
   - "WS-329"
 sprint_id: null
-decision_flags:
-  - "Where do atoms physically live? Local disk outside the repo is simplest and matches the existing C:/Users/chris/data/phh-mining pattern, but is not backed up and is invisible to other fleet nodes. A content-addressed store that can be synced is more durable and more work. Recommend local-first with the hash recorded, so relocation later does not invalidate any Result Card."
+decision_flags: []
 source:
   type: founder-directive
   created_by: ai
@@ -135,3 +135,5 @@ status_note: |
   Filed 2026-08-02. Founder asked runs to capture more than strictly required, explicitly
   anticipating future analyses. The anti-rot rule was added because the repo has already
   shipped capture with no reader (predictionAudit).
+resolved_by_rule: ".claude/rules/artifact-location.md"
+resolved_on: "2026-08-20"

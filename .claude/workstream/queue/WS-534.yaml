@@ -1,0 +1,68 @@
+id: "WS-534"
+title: "Villain Model Card — emit the metrics kind that tracks the rule-evolution objective"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 87
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  THE FLAG IN THE GROUND IS ALREADY PLANTED. `metrics.villain-model-card` is registered in
+  src/utils/standardOfRecord/metricsSchemas.js (v1, 11 fields), mirrored in the independent
+  SHIPPED_FIELDS list in schemas.test.js, and the schema baseline is re-snapshotted. The
+  strict publish check now REFUSES a card of this family that omits any field. What does not
+  exist yet is a PRODUCER.
+
+  THE OBJECTIVE FUNCTION IT SCORES, founder 2026-08-17 verbatim:
+    "Least amount of rules, standardized vocab, highest amount of behavioral and EV coverage
+     of the villain."
+
+  Three terms that trade against each other, so the card reports a FRONTIER — best coverage
+  achieved at each rule count — not a point. The frontier is THE record; the headline row is a
+  view over it. This is the artifact the founder watches evolve run over run.
+
+  TWO COVERAGES, NEVER COLLAPSED. `evCost.mjs` already establishes that an estimate error
+  costs nothing unless it moves hero across a decision boundary. So a rule set can predict 95%
+  of a villain's actions and capture almost none of the money, or predict 60% and capture most
+  of it. Both figures ride on every card.
+
+  `behavioralCoverage` carries `entropyCeiling` with it ALWAYS: a villain mixing 60/40 caps any
+  rule set at 60% in that spot, so accuracy is unreadable without its ceiling. The baseline to
+  beat is the shipped villain predictor at log-loss 0.757 (WS-436, n=10,147).
+
+  `evCoverage.capturedShare` = edge of hero's best response to the RULE SET over edge of hero's
+  best response to the FULL fitted model, both played against the same observed villain. Same
+  shape as `exploitationEfficiency` one level in. Not clamped — below 0 and above 1 are real.
+accept_criteria: |
+  - A producer emits a valid `metrics.villain-model-card` through the strict publish path.
+  - `villainScope.level` is DECLARED (`field` | `stratum` | `individual`), never inferred. A
+    pooled card mislabelled as one villain is the exact error the Field Strategy Card was
+    renamed to prevent.
+  - `frontier` is populated across at least 5 rule counts, including where it is FLAT — a flat
+    frontier means added rules bought nothing and that is the finding.
+  - `shapeTest` populated from WS-535. A card without it asserts our shape is the villain's.
+  - `census` per axis, with observed-zero / unexamined / dropped kept distinct.
+  - Ladder entry so successive runs are comparable; `assertComparable` respected.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "src/utils/standardOfRecord/metricsSchemas.js"
+  - "src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - "scripts/standardOfRecord/schema-baseline.json"
+  - "scripts/backtest/ladder.mjs"
+blocked_by: ["WS-535"]
+blocked_by_legacy: []
+enables: ["WS-536", "WS-539"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 — 'set a flag in the ground for different standard of record measurements as we iterate'"
+created_at: "2026-08-17T00:00:00.000Z"

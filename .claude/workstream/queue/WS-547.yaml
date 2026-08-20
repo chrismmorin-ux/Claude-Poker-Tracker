@@ -1,0 +1,46 @@
+id: "WS-547"
+title: "WS-503 FAILED on cm-node1 — no error captured in the step log"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-19T21:57:24.750Z"
+completion_commit: db4c7e96
+priority_score: 88
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A compute job on cm-node1 reached a terminal state WITHOUT succeeding. It produced no
+  artifacts, so it landed in no inbox — nothing else would ever have surfaced it, and the
+  machine went idle having achieved nothing.
+
+  JOB       : ws-503-17172f8726ce
+  SOURCE    : WS-503 — C3 continuation — take the hero-EV re-baseline from 308 to 1200 player-clusters on the SAME population
+  OUTCOME   : failed
+  DETAIL    : no error captured in the step log
+
+  Retries are already exhausted at the runner level (maxAttempts), so re-submitting the
+  identical spec will fail identically. The spec or the code has to change first — which
+  also re-keys the job hash and lets the feeder pick it up again.
+accept_criteria: |
+  - The cause is identified and fixed in the code or the compute_job block, not worked
+    around by shrinking the run until it fits.
+  - WS-503 either runs to completion or its blocker is stated explicitly.
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest — failed job ws-503-17172f8726ce"
+created_at: "2026-08-18T17:03:24.108Z"
+closed_by_event: ev-1787176645633-478084934e63

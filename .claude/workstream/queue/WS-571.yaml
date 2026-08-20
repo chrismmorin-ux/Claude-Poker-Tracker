@@ -1,0 +1,76 @@
+id: "WS-571"
+title: "PlayerFinderView smoke test fails under parallel load and passes alone — a 10s timeout on a dynamic-import test with no headroom"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 34.0
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "engineering"
+runs_on: any
+effort: S
+finding_id: ""
+description: |
+  REPRODUCED TWICE, INDEPENDENTLY, AND THE SECOND TIME SETTLES THE DIAGNOSIS.
+
+  `src/components/views/PlayerFinderView/__tests__/PlayerFinderView.smoke.test.jsx`:
+    - run inside `npx vitest run src/components` -> FAILS at 12,357 ms (10,000 ms timeout)
+    - run alone                                 -> PASSES at  3,563 ms
+  Measured 2026-08-19 with the dev server stopped and the Playwright browser closed.
+
+  WHY THE SECOND REPRODUCTION MATTERS. The 2026-08-19 launch sweep's senior engineer reported
+  this as "a flake produced by the suite's own weight". The cross-critic REFUTED that as
+  unsupported (synthesis D9), and was right to at the time: that run had six agents against one
+  working tree, two concurrent `npm run build`s into the same `dist/`, a dev server, Playwright
+  browsers and a file swapped in and out mid-run. "Suite load" was indistinguishable from
+  "contention with five peers".
+
+  This run had none of that — one vitest process, one directory, no browser, no dev server — and
+  it still failed. So the load-dependence is real, and the cross-critic's demand for a clean
+  re-measurement is what produced the evidence. Record both: the original diagnosis was
+  UNEARNED when made and is now SUPPORTED.
+
+  MECHANISM, which is sharper than "it is slow". The test body is two bare dynamic imports:
+
+      const mod = await import('../PlayerFinderView');
+
+  It asserts only that the module graph loads and exports the symbol. Its duration is therefore
+  almost entirely Vite TRANSFORM cost for PlayerFinderView's transitive imports, and transform
+  work contends across vitest's parallel workers. So the wall time scales with how much else is
+  being transformed at that moment, while the timeout is a fixed 10,000 ms. At 3.5s alone and
+  12.4s under one directory's load, there is no headroom left for a busier machine or CI runner.
+
+  WHY IT IS WORTH FIXING RATHER THAN RETRYING. A test that fails only when the suite is busy is
+  the worst kind of red: it appears on unrelated PRs, trains the reader to re-run rather than
+  read, and is exactly the "gate whose failure output carries no information" pattern already
+  filed as WS-567. It will land on CI as soon as WS-558 gates deploys on green CI — the two
+  interact.
+
+  NOT A REGRESSION FROM THE 2026-08-19 SPRINT: PlayerFinderView imports nothing changed in
+  SPR-190 (no useGame / usePersistence / GameContext / persistenceHealth / CommandStrip), and
+  `git status` shows no file under that directory was touched.
+accept_criteria:
+  - "The root cause is identified as transform cost vs a fixed timeout, and the chosen fix is recorded: raise the per-test timeout with headroom, warm/mock the heavy transitive imports, or split the smoke assertion off the module graph"
+  - "The test passes when the full suite runs with maximum worker parallelism on this machine, repeated 3x without failure"
+  - "If the fix is a raised timeout, the new value is justified against a measured worst case rather than picked round"
+  - "Any other dynamic-import smoke test with the same shape is checked for the same lack of headroom"
+files_involved:
+  - "src/components/views/PlayerFinderView/__tests__/PlayerFinderView.smoke.test.jsx"
+  - "vite.config.js"
+decision_flags: []
+source:
+  type: verification
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-infrastructure-src-components-views-PlayerFinderView-smoke-timeout"
+  note: "Found while running post-sprint regression partitions for SPR-190; second independent reproduction of a diagnosis the cross-critic had correctly refused on the first."
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

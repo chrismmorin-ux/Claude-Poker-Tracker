@@ -1,0 +1,69 @@
+id: "WS-548"
+title: "Exploit card prices a 2bb open with a fold rate measured against 3-4bb raises - condition every seat on size"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 94
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE LARGEST MEASURED ERROR IN THE EXPLOIT CARD, and it reverses two published conclusions.
+  
+  Field fold-to-a-single-open has a large SIZE GRADIENT, measured on the same 120 files:
+  
+    seat   to a 2bb open        to a 4bb open        pooled (what the card used)
+    BB     57.38% (2388/4162)   79.46% (8232/10360)  74.69%
+    SB     74.78% (2737/3660)   83.69% (7701/9202)   80.53%
+    BTN    75.92%               82.71%               80.71%
+    CO     75.41%               83.08%               80.58%
+  
+  The card applied the POOLED rate - measured against a raise distribution centred on 3-4bb -
+  to a 2bb open. That imports fold equity the corpus says does not exist at that size, and the
+  error runs in the card's favour at exactly the size it declared the winner.
+  
+  RE-PRICED SIZE-MATCHED (measured, not modelled):
+    open 2bb  needs 57.1%   vs HIM 63.8% -> +0.232bb   vs FIELD 42.9% -> -0.498bb
+    open 3bb  needs 66.7%   vs HIM 73.4% -> +0.305bb   vs FIELD 57.9% -> -0.396bb
+    open 4bb  needs 72.7%   vs HIM 72.6% -> -0.005bb   vs FIELD 66.5% -> -0.343bb
+  
+  THREE CONCLUSIONS OVERTURN:
+    1. The sizing ranking INVERTS - 3bb beats 2bb. The published "cheapest steal is the best
+       one" is refuted by the data once conditioned, not merely untestable.
+    2. The field control row flips sign: published +0.576bb, measured -0.498bb.
+    3. "Most of the edge is the game, not the man" is BACKWARDS. At 2bb he folds 63.8% where the
+       field folds 42.9%. Almost the entire edge at that size IS the man.
+  
+  Note the interaction, because it is the methodological lesson: the interval bug (WS-550's
+  sibling, already fixed in module) and this conditioning bug push in OPPOSITE directions, and
+  this one is ~5x larger. Fixing the statistics while leaving the conditioning wrong moved the
+  conclusion further from the truth, confidently.
+accept_criteria: |
+  - Every seat in a priced line carries a fold rate conditioned on the size actually faced.
+  - The size-conditioned field curve is PERSISTED (populationBaseline currently only console.logs).
+  - Thin cells refuse rather than fall back to pooled: a 2bb cell with too few players is an
+    explicit unavailable, never a silent substitution of the pooled rate.
+  - The three overturned conclusions are restated from the corrected numbers.
+  - occurrencesPer100 corrected from 16.67 (P(you hold the seat)) to the measured 8.18 per 100
+    for BTN-first-in; every bb/100 halves.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/exploitCard.mjs"
+  - "scripts/villainArchetype/runExploitCard.mjs"
+  - "scripts/villainArchetype/populationBaseline.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-549"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"

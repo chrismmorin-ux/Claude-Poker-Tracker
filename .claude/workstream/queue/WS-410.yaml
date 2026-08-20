@@ -272,6 +272,7 @@ accept_criteria: |
   - NO STAGE SHIPS A RESULT CARD WITHOUT `manifest.disclaimerRegisterVersion`. `manifestProblems`
     already rejects one; do not weaken it.
 effort: "XL"
+runs_on: "node1"
 files_involved:
   - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
   - "docs/standard-of-record/VOCABULARY.md"
@@ -291,7 +292,7 @@ files_involved:
   - "scripts/backtest/replicationStamp.mjs"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "scripts/standardOfRecord/schema-baseline.json"
-blocked_by: ["WS-428", "WS-431", "WS-432", "WS-433"]
+blocked_by: []
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -506,3 +507,11 @@ status_note: |
       level is not read as a contaminated delta.
     - The transcription itself (Stage 8) is genuinely a separate task, as the founder suspected. Only
       its INTERFACE is owned here.
+gate_resolution: |
+  2026-08-20: gate cleared. Root cause was not this ticket — the dependency resolver
+  builds its done-set from the LIVE queue only, so a blocker that was completed and then
+  ARCHIVED is invisible to it and its dependents are permanently unselectable. Verified
+  empirically: .claude/workstream/state/queue.json holds 393 items and WS-055/199/428/184
+  are all ABSENT from it while sitting in queue/archive/ with status done. Filed as WS-590.
+  All four blockers are done: WS-428 (archived, commit 88bb2dc6), WS-431, WS-432, WS-433.
+  This is a P0 that has been unselectable purely because of the archive lookup gap.

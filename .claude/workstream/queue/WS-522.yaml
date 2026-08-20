@@ -1,0 +1,91 @@
+id: "WS-522"
+title: "`overCall` — calling behind an existing caller is not modelled, and it was riding invisibly on WS-270"
+legacy_id: ""
+type: gap
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 38.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "analysis"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-17 while implementing WS-521 (the facing-3-bet tree). Not a defect introduced
+  by that work — a pre-existing gap that was about to be lost.
+
+  HOW IT WAS HIDING. `.claude/context/POKER_THEORY.md` §2.5.5 deferred it in a trailing clause
+  of the WS-270 paragraph: "Tracked at high priority as **WS-270**; `overCall` (calling behind
+  an existing caller) is deferred with it." It appeared in NO ticket — not WS-270's
+  `description`, not its `accept_criteria`, not its `files_involved`. WS-270 has now been
+  absorbed into WS-521 and closed, so the only sentence in the repo that remembered `overCall`
+  was about to be rewritten along with the section that carried it. Filed so it survives.
+
+  THE GAP. `lineTaxonomy.js` classifies a call facing exactly one raise as `coldCall`, with no
+  subclass, whether or not other players have already called that raise. Those are different
+  decisions in the same way `cold3Bet` and `squeeze` are different (POKER_THEORY §2.5.1
+  already accepts that argument for the raise side):
+
+    - **cold call, first in** — heads-up to the raiser, no dead money, position still uncertain
+      because seats remain behind.
+    - **over-call** — one or more callers are already in. The price is identical but the pot
+      odds are better, the field is multiway, and the range that profitably continues is wider
+      and more speculative (implied odds rise with the number of callers, and equity
+      realisation falls with it — these pull in opposite directions, which is exactly why one
+      averaged class is unsatisfying).
+
+  It is the CALL-side analogue of the `cold3Bet` / `squeeze` split, which §2.5.1 already
+  models on the raise side of the same node. The taxonomy therefore splits one branch of the
+  faced-raise tree and not the other, for no stated reason.
+
+  WHAT IT WOULD TAKE. This is small BECAUSE WS-521 just built the machinery:
+    - `lineTaxonomy.js` — a `classifyCallFacingRaise` mirroring `classifyRaiseFacingRaise`;
+      the "callers between" predicate already exists there and is what `squeeze` uses.
+    - `populationPriors.js` — `SUBCLASS_SPLIT.coldCall` + prior grids. Note `coldCall` has
+      never had subclasses, so this is its first carve.
+    - `rangeProfile.js` — PROFILE_VERSION bump, two grids.
+    - No new scenario and no normalization change: both subclasses live inside the existing
+      `coldCall` parent, carved per DEC-025 Amd 1.
+
+  DO NOT start this without re-reading `rangeEngine/CLAUDE.md` §4 rule 1 and POKER_THEORY
+  §2.5.3 — the carve must shrink toward the parent in BOTH dimensions, and a carve that can
+  reorder its parent is not a carve (WS-366).
+accept_criteria:
+  - "A call facing a raise with >=1 caller between is emitted as a distinct subclass of the `coldCall` parent; with no callers between it is the other subclass."
+  - "`coldCall` PARENT aggregates stay bit-identical for every hand — this is a carve, not a reclassification (asserted by the taxonomyInvariants parent-invariance control)."
+  - "Subclass grids are carved from `coldCall`, shrink toward it, and cannot reorder it (WS-366 assertion, per position, on the CARVED grid)."
+  - "`SUBCLASS_SPLIT.coldCall` sums to 1.0 per position and its key set equals the new subclass list (the existing populationPriors.test.js structural assertions extend to it)."
+  - "Prior shapes encode the doctrine DIRECTION: the over-call range is wider and more speculative than the first-in cold call, asserted by combo-weighted mass."
+  - "The measured split, if any, names its conditioning set and its n — do not seed a founder estimate beside the measured FOUR_BET_FREQUENCIES without saying which is which."
+effort: M
+runs_on: any
+files_involved:
+  - "src/utils/rangeEngine/lineTaxonomy.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/rangeEngine/rangeProfile.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/standardOfRecord/labelLedger.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Is the split binary (first-in vs over-call), or does it scale with the NUMBER of callers already in? The number changes both pot odds and equity realisation, and they pull opposite ways."
+source:
+  type: session-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-17-ws521"
+created_at: "2026-08-17"
+updated_at: "2026-08-17"
+status_note: |
+  Surfaced by WS-521. POKER_THEORY §2.5.5 has been rewritten to record `overCall` as the
+  remaining unmodelled item and to point here, so the deferral is no longer carried only by a
+  trailing clause in a paragraph about a different ticket.
+resolved_by_rule: ".claude/rules/unmeasured-constants.md"
+resolved_on: "2026-08-20"

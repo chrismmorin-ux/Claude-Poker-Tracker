@@ -25,6 +25,7 @@ accept_criteria: |
   The AKs squeeze 4-way hand exists in the on-device hands store and its recorded actions match the
   reviewed hand in docs/hand-reviews/2026-08-07-aks-squeeze-4way.md.
 effort: "S"
+runs_on: "any"
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

@@ -105,6 +105,7 @@ accept_criteria: |
     whose immediate primitive under-describes it". Per the repo rule, do not invent a name in code
     before the vocabulary has one.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/heroPolicy.mjs"
   - "scripts/backtest/ipsEstimator.mjs"

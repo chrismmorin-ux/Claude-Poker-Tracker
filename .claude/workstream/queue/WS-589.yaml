@@ -1,0 +1,83 @@
+id: "WS-589"
+title: "Data admissibility standard — what counts as a usable observation, and when a session's capture is complete enough to rely on"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 89
+priority_label: "P1"
+category: "data-quality"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-20, asked for this directly: "we can define what is considered minimum to be
+  relied upon by our model or considered a useful data point. Some measure of completeness
+  probably."
+
+  THE CONTEXT THAT MAKES IT URGENT. The founder can generate modern data on demand — "I can go
+  play Ignition anytime. I can up the stakes, move up or down, collect data by just playing
+  tight" — but the offer carries a condition: "AS LONG AS YOU'RE ABLE TO CAPTURE THE DATA. The
+  last time I did this I think I played 3 hours just to learn something didn't click."
+
+  Three hours of the founder's session time was spent producing nothing. That is the most
+  expensive input this project has and it was lost to an unverified pipeline. Until there is a
+  standard for what a usable observation IS, and a check that says so before he sits down, every
+  collection session is a gamble.
+
+  WHAT THIS ITEM DEFINES.
+    1. ADMISSIBLE OBSERVATION — the minimum a single recorded decision must carry to enter a
+       Conduct Card or a model: which fields are load-bearing, which may be absent, and what
+       makes a row unusable rather than merely thin. A row that is missing a load-bearing field
+       is REFUSED by name, not silently dropped.
+    2. SESSION COMPLETENESS — a measure over a captured session: what fraction of decisions were
+       recorded, whether the capture has gaps, whether any street or seat is systematically
+       missing. Systematic absence is the dangerous kind: it biases rather than thins.
+    3. THE RELIANCE THRESHOLD — the point at which a session's data is allowed to inform a model
+       rather than merely be stored. Below it, the data is kept (never deleted for a null result)
+       and labelled.
+    4. A PRE-FLIGHT the founder can run BEFORE a collection session that answers "is capture
+       working end to end, right now" — not a log to read afterwards.
+
+  THIS IS NOT A GATE ON COLLECTION. Data below threshold is still recorded and still kept. The
+  standard governs what may be RELIED ON, which is the sparsity rule applied to intake:
+  comparative claims refuse, decision inputs shrink and carry the label.
+
+  RELATED AND SEQUENCED BEHIND: WS-555 (verify a Conduct Card can be built from an Ignition
+  import and a live tableview player at all) is the S-effort precondition — run it first, since
+  it answers whether the pipeline works before this defines how good it has to be.
+accept_criteria: |
+  - An admissibility predicate for a single observation, with refusal reasons from a closed enum.
+  - A session completeness measure that distinguishes THIN (uniformly sparse) from GAPPY
+    (systematically missing a street, seat, or action class) — the second is disqualifying at a
+    far lower threshold than the first.
+  - A reliance threshold, stated with the reasoning for its level, applied at the point data
+    enters a model rather than at the point it is stored.
+  - A one-command pre-flight the founder runs before a collection session that exercises the real
+    capture path and reports GO / NO-GO, not a log.
+  - Below-threshold data is retained and labelled, never discarded.
+  - The standard applies identically to Ignition capture, live app entry, and imported histories —
+    one predicate, three sources.
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "ignition-poker-tracker/"
+  - "src/utils/standardOfRecord/decisionAtom.js"
+  - "src/utils/standardOfRecord/coverageCensus.js"
+# WS-555 completed 2026-08-20 (archived): the three sources now produce identically-shaped
+# decision rows, gated by scripts/villainArchetype/__checks__/sourceParity.check.mjs. The
+# pointer is cleared rather than left dangling because an archived blocker never clears
+# itself (WS-590) and would hold this item unselectable forever.
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-20 standing-ruling elicitation; founder asked for the completeness measure directly"
+created_at: "2026-08-20T00:00:00.000Z"

@@ -62,6 +62,7 @@ accept_criteria: |
   - THE RULE IS WRITTEN DOWN WHERE THE NEXT PERSON WILL LOOK. Today it exists only in a Gate 1 audit.
     It belongs beside the code it constrains, or in INVARIANTS.md, or both.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "scripts/__tests__/holeMapFreshness.test.js"
   - "scripts/backtest/holeMapHtml.mjs"

@@ -99,6 +99,7 @@ accept_criteria: |
   - No strand's verdict is derived from a label (position, bucket, style). Strands compute from
     game state — the standing first-principles rule applies unchanged.
 effort: "L"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/bluffValueConstruction.js"

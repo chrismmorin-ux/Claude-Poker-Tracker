@@ -96,6 +96,7 @@ accept_criteria: |
     consumer; if the change turns out to touch one, that is a finding in its own right and
     the scope stops until it is recorded.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/__dev__/mwEquityValidation/scenarios/heroResponse.js"
   - "src/__dev__/mwEquityValidation/comparator.js"

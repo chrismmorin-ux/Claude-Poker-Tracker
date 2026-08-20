@@ -120,24 +120,6 @@ findings:
     program: data-quality
     created_at: "2026-06-19"
 
-  - id: "FIND-031"
-    title: "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)"
-    engine: eng-engine
-    severity: medium
-    status: open
-    dedup_key: "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets"
-    program: domain-correctness
-    created_at: "2026-06-20"
-
-  - id: "FIND-032"
-    title: "Showdown sizing-tell calibration stubbed; timing tells absent (and time-to-act not captured)"
-    engine: eng-engine
-    severity: low
-    status: open
-    dedup_key: "blindspot-domain-correctness-sizing-and-timing-tells-missing"
-    program: domain-correctness
-    created_at: "2026-06-20"
-
   - id: "FIND-033"
     title: "Verify sample-size confidence reaches live-advice UI; range-advantage-driven sizing in live path"
     engine: eng-engine
@@ -1082,4 +1064,18 @@ findings:
     dedup_key: "founder-2026-08-14-rake-gate-is-flop-not-showdown"
     program: domain-correctness
     created_at: "2026-08-14"
+
+  - id: "FIND-138"
+    title: "Every backtest instrument passes villainModel: null — the personalized fold curve is fitted for 62.6% of corpus players, reaches the engine in the app, and is invisible to all 11 harnesses"
+    severity: high
+    status: open
+    program: prog-methodology-integrity
+    created_at: "2026-08-15T03:00:00Z"
+
+  - id: "FIND-139"
+    title: "tightenRatesForContinuation is inert on both depth-2 paths — callingRates and bettingRates are destructured and never used, so WS-482's premise that the population 0.45 'moves every depth-2 EV' is FALSE"
+    severity: high
+    status: open
+    program: prog-domain-correctness
+    created_at: "2026-08-15T03:30:00Z"
 

@@ -47,6 +47,7 @@ accept_criteria: |
   - A paired advice-distribution diff (probeFrequency) shows zero divergence for the pure renames;
     any item that moves a number (none expected) is split out and priced per Amendment 1.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/postflopNarrower.js"
   - "src/utils/exploitEngine/villainModelData.js"

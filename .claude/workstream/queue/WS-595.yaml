@@ -2,12 +2,12 @@ id: "WS-595"
 title: "WS-594 FAILED on cm-node1 — Error: Cannot find module 'C:\\cj\\ws-594-4de0a32e99b8\\scripts\\backtest\\probe-depth2-coverag"
 legacy_id: ""
 type: bug
-status: dismissed
-claimed_by: ses-20260820-1618-80f6de17
-claimed_at: "2026-08-20T17:12:13.821Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-20T17:21:58.809Z"
+completion_commit: 5b5a8101
 priority_score: 92
 priority_label: "P1"
 category: "domain-correctness"
@@ -49,3 +49,4 @@ dismissed_at: "2026-08-20"
 dismiss_reason: "Duplicate report of the defect WS-592 fixed: WS-594 died on a step script absent at the pinned commit, which missingScriptsAtCommit now refuses by name (falsifier exercised 2026-08-20 against a pre-introduction commit: missing=[probe-depth2-coverage.mjs]). node1 is back at parity and WS-594 is compute_ready again."
 superseded_by: "WS-592"
 transitioned_by_event: "ev-1787242864183-304ada35d389"
+closed_by_event: ev-1787246518835-f12b462b611c

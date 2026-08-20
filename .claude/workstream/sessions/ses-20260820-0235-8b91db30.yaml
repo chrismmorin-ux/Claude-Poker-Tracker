@@ -1,0 +1,43 @@
+id: "ses-20260820-0235-8b91db30"
+status: "abandoned"
+started_at: "2026-08-20T02:35:21.268Z"
+ended_at: "2026-08-20T04:33:02Z"
+mode: auto
+last_heartbeat: "2026-08-20T04:15:06.827Z"
+pid: 27000
+pid_recorded_at: "2026-08-20T04:15:06.827Z"
+host: MorinComputer
+agent_session_id: "8b91db30-9fd1-46f9-9367-524baaf12355"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "docs/standard-of-record/NAMING-HISTORY.md"
+  - ".claude/workstream/queue/WS-584.yaml"
+  - ".claude/workstream/queue/WS-585.yaml"
+  - ".claude/workstream/queue/WS-586.yaml"
+  - ".claude/workstream/queue/WS-587.yaml"
+  - ".claude/workstream/queue/WS-588.yaml"
+  - ".claude/rules/sparsity-refuse-or-shrink.md"
+  - ".claude/rules/artifact-location.md"
+  - ".claude/rules/unmeasured-constants.md"
+  - ".claude/rules/cold-read-regime.md"
+  - ".claude/rules/corpus-transfer-is-earned.md"
+  - ".claude/rules/surfaces-reach-the-table.md"
+  - ".claude/rules/founder-read-detects-site-not-direction.md"
+  - ".claude/workstream/queue/WS-589.yaml"
+  - ".claude/workstream/queue/WS-590.yaml"
+  - ".claude/workstream/queue/WS-319.yaml"
+  - ".claude/workstream/queue/WS-591.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-20.
+  Original start: 2026-08-20T02:35:21.268Z.
+  Last heartbeat: 2026-08-20T04:15:06.827Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

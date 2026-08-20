@@ -9,7 +9,7 @@
 # the invariant suite. They are carried forward from the last writer that did,
 # with vitals_observed_at naming when that was. Check that date before
 # trusting them, and run /verify if it is old.
-last_updated: "2026-08-15T13:21:02Z"
+last_updated: "2026-08-20T21:15:11Z"
 generated_by: cwos-reconcile
 vital_signs_ok: true
 red_vitals: []
@@ -18,31 +18,31 @@ verify_last_completed_at: null
 reconcile_integrity_ok: true
 queue_counts:
   decomposed: 1
-  done: 59
+  done: 77
   in_progress: 4
   deferred: 46
-  backlog: 162
-  dismissed: 3
+  backlog: 255
+  dismissed: 5
   completed: 7
   review: 1
   blocked: 10
   active: 2
   claimed: 1
 top_3_unclaimed:
-  - id: WS-410
-    title: "The Scored Readout — persist the decision-level record, then serve six EV-denominated views over it…"
-    score: 60
-    category: measurement
-
-  - id: WS-445
-    title: "The Label & Foundation Ledger — every label-shaped input and its data foundation listed exhaustivel…"
-    score: 40
-    category: strategy-of-record
-
-  - id: WS-468
-    title: "Wall-clock truth on the founder's phone: measure it, bound it, and turn the fast answer on"
-    score: 38
+  - id: WS-575
+    title: "Completing depth-2 pushes hero to raise 98% of the time — the truncation was MASKING an aggression…"
+    score: 95
     category: domain-correctness
+
+  - id: WS-548
+    title: Exploit card prices a 2bb open with a fold rate measured against 3-4bb raises - condition every sea…
+    score: 94
+    category: domain-correctness
+
+  - id: WS-596
+    title: "The estimator's bias is a function of ESS, not of the policy — r = -0.95 across 8 arms"
+    score: 94
+    category: methodology-integrity
 
 stale_programs:
   - id: anti-hallucination
@@ -55,7 +55,7 @@ stale_programs:
 
   - id: data-provenance
     tier: active
-    overdue_protocols: [delta (1d overdue), challenge (never run)]
+    overdue_protocols: [delta (6d overdue), challenge (never run)]
 
   - id: design
     tier: active
@@ -63,15 +63,19 @@ stale_programs:
 
   - id: domain-correctness
     tier: critical
-    overdue_protocols: [theory_completeness (never run)]
+    overdue_protocols: [theory_completeness (never run), delta (2d overdue)]
 
   - id: engineering
     tier: watch
     overdue_protocols: [delta (never run)]
 
+  - id: guide-authority
+    tier: active
+    overdue_protocols: [sweep (never run), delta (never run), challenge (never run)]
+
   - id: launch
     tier: active
-    overdue_protocols: [sweep (1d overdue), delta (never run), challenge (never run)]
+    overdue_protocols: [delta (never run), challenge (never run)]
 
   - id: methodology-integrity
     tier: active
@@ -79,7 +83,7 @@ stale_programs:
 
   - id: self-compliance
     tier: critical
-    overdue_protocols: [delta (1d overdue), challenge (never run), blind_spot (never run)]
+    overdue_protocols: [delta (6d overdue), challenge (never run), blind_spot (never run)]
 
   - id: strategy-of-record
     tier: active

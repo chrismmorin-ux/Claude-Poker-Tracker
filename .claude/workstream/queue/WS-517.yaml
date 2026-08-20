@@ -1,0 +1,156 @@
+id: "WS-517"
+title: "A dead capture is visually identical to a live one — `buildStatusBar` returns LIVE on a cumulative hand count with no recency term, the 30s escalation is hard-gated on `handCount === 0`, and the panel's only freshness readout is hidden the instant hands exist"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 45.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "extension"
+program: "data-provenance"
+finding_id: ""
+description: |
+  FOUND 2026-08-16 by two independent source audits of the Ignition capture extension. Every
+  file:line re-verified against HEAD.
+
+  THREE INDEPENDENT MECHANISMS, ALL KEYED OFF COUNTERS THAT ONLY EVER INCREASE, AND THEY
+  COMPOSE INTO A SINGLE BLINDNESS.
+
+  1. THE STATUS BAR IS STICKY-LIVE. `side-panel/render-orchestrator.js` — `buildStatusBar` is
+     declared at `:1465` and returns at `:1477-1478`:
+
+         } else if (handCount > 0) {
+           return { tier: STATUS_TIERS.LIVE, text: `${handCount} hands captured` };
+
+     There is no recency term anywhere in the function. The branch above it at `:1475-1476`
+     (`tableCount > 0 && handCount > 0`) is equally recency-free. `handCount` is cumulative, so
+     once one hand has ever been captured the panel reads LIVE for the rest of the session,
+     forever, regardless of whether anything has arrived in the last second or the last hour.
+
+  2. THE ESCALATION CAN NEVER RE-ARM. `side-panel/render-coordinator.js:1247`:
+
+         const inWaitingState = !!connected && tableCount > 0 && handCount === 0;
+
+     The strict `=== 0` is deliberate and documented at `:1236-1239` (null distinguishes a boot
+     race). It is correct for the problem it was written for and it means the 30s escalation is
+     available exactly once, before the first hand, and is permanently unavailable afterwards.
+
+  3. THE ONE FRESHNESS READOUT IS HIDDEN WHEN IT BECOMES RELEVANT. The panel does compute
+     recency, in two places, and both live inside `#pipeline-health`:
+
+         side-panel/side-panel.js:996  — `Last hand: ${handAge}s ago · ${d.handCompletedCount || 0} total`
+         side-panel/side-panel.js:949  — `ctx: ${...} (${ctxAge} ago) · hands: ${...}`
+
+     And `side-panel.js:1867` — inside the `else` of `if (!snap.hasTableHands)` at `:1861` —
+     runs `hideEl($('pipeline-health'));`. So the moment `hasTableHands` becomes true, the only
+     display in the entire panel that shows how long it has been since the last hand is hidden.
+     The freshness indicator is visible exactly while there is nothing to be fresh, and hidden
+     from the first hand onward.
+
+  THE COMPOSITE. Capture dies mid-session and: the status bar still says LIVE with a hand count
+  that stops climbing, the escalation cannot fire because a hand has been seen, the freshness
+  readout that would show `Last hand: 2400s ago` is hidden because hands exist, and — per
+  WS-516 — the content script's silence detector has permanently disarmed for the same reason.
+  Four mechanisms, one shared cause: every one of them decides liveness from a monotonically
+  increasing count rather than from a timestamp. NOTHING IN THE SYSTEM CAN TELL THE FOUNDER
+  CAPTURE STOPPED. He finds out by noticing, hours later, that a number did not move.
+
+  WHY THIS IS A DATA TICKET AND NOT A UI TICKET. The corpus is the product. A session that
+  captures for twenty minutes and then dies enters the dataset as a complete short session — no
+  gap marker, no truncation flag, no way after the fact to know which hands are missing or that
+  any are. Every villain frequency computed over it is conditioned on "the part of the session
+  where the extension was still alive", a selection nobody chose and nobody can correct for. The
+  status bar reading LIVE is what makes it unrecoverable: the founder had the one opportunity to
+  notice, in the moment, and the surface told him everything was fine.
+
+  THE FIX. `buildStatusBar` takes a recency term sourced from `pipeline_diagnostics.lastHandCompletedAt`
+  — which already exists, since `side-panel.js:996` computes `handAge` from it. LIVE requires
+  both a hand count and a recent hand; past a threshold the tier degrades to a STALE/dead state
+  with the age on its face. That single change also makes the hidden `#pipeline-health` readout
+  non-load-bearing, because the fact it carried is promoted into the surface that is always
+  visible.
+accept_criteria:
+  - "`buildStatusBar` cannot return LIVE without a recent hand. The tier is a function of `lastHandCompletedAt` as well as `handCount`, and past a threshold it degrades to an explicit stale/dead tier that states the age — 'no hand for 12 min', not a silent downgrade."
+  - "The age is on the ALWAYS-VISIBLE surface. Promoting recency into the status bar is the fix; leaving it in `#pipeline-health` and merely un-hiding that panel moves the defect rather than removing it, because the panel is diagnostic chrome the founder is not watching mid-hand."
+  - "`side-panel.js:1867` no longer hides the only freshness readout on the transition that makes freshness matter. Either the hide condition is corrected, or the readout it hides is no longer the only one — one of those must be true, and which one is chosen is stated."
+  - "The 30s escalation re-arms. `render-coordinator.js:1247`'s `handCount === 0` gate is replaced by a recency condition, preserving the documented boot-race distinction at `:1236-1239` — that null-vs-zero handling is correct and must survive the change."
+  - "Rendering tests assert the dead state: given a snapshot with `handCount = 40` and `lastHandCompletedAt` well in the past, `buildStatusBar` does NOT return LIVE. Against HEAD that assertion fails. Add it for both the `handCount > 0` branch (`:1477`) and the `tableCount > 0 && handCount > 0` branch (`:1475`) — fixing one and not the other leaves a live path to a false LIVE."
+  - "Verified VISUALLY, in the harness and in a real side panel — `npm run harness` serves 16 scenarios on localhost:3333 and a dead-capture scenario is added to it. Per CLAUDE.md, visual verification is mandatory for sidebar changes and a status-tier claim is never made from code alone. Screenshot the live state and the dead state side by side; if they are not obviously different to a founder glancing at a phone, the fix is not done."
+  - "The gap is RECORDED as well as displayed. When capture is detected dead and later resumes, the session record carries the dead interval, so a truncated session is identifiable in the corpus after the fact rather than only in the moment. A banner the founder missed leaves no evidence; the whole cost of this defect is unrecoverable retrospective ambiguity."
+  - "Verified against a REBUILT extension. `dist/` is 11 days stale (see status_note) — running `npm run build` in `ignition-poker-tracker/` before loading is part of this ticket's verification, not an incidental step."
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "ignition-poker-tracker/side-panel/render-orchestrator.js"
+  - "ignition-poker-tracker/side-panel/render-coordinator.js"
+  - "ignition-poker-tracker/side-panel/side-panel.js"
+  - "ignition-poker-tracker/side-panel/harness/"
+  - "ignition-poker-tracker/shared/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - |
+    OPEN — WHAT THRESHOLD MAKES A CAPTURE "DEAD", AND IT IS A POKER QUESTION NOT A UI ONE. At a
+    live 9-handed table the founder is observing, the gap between completed hands is minutes, and
+    it varies with table speed, breaks, and his own absence from the table. Too tight and the bar
+    cries dead during a normal orbit, which trains him to ignore it — the failure mode that
+    retired the last alarm. Too loose and a dead capture reads LIVE for a quarter of an hour.
+    `SILENCE_THRESHOLDS` (`ignition-capture.js:500-505`) already encodes an escalation ladder for
+    the WebSocket layer; whether the panel reuses that ladder, derives one from observed
+    inter-hand intervals in already-captured sessions, or takes a founder-declared number should
+    be decided rather than defaulted. Deriving it from real captured data is the improvement-
+    default answer and is cheap — the inter-hand intervals are already in the corpus.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "ignition-capture-audit-2026-08-16"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  No existing item covers this. Checked WS-370, WS-460 / FIND-122, FIND-083, WS-358 — none touch
+  the status bar, the escalation gate, or `#pipeline-health` visibility. Paired with WS-516: same
+  root shape (liveness decided by a monotonic counter), different files, separable fixes, and
+  neither alone closes the blindness.
+
+  CITATION CORRECTIONS made while re-verifying against HEAD:
+    - `render-orchestrator.js:1465` is the `buildStatusBar` SIGNATURE; the recency-free LIVE
+      return is at `:1477-1478`. Also flagged during verification: `:1475-1476` is a second
+      recency-free branch the audit did not mention, and it must be fixed in the same change.
+    - `ctx: N (Xs ago)` is at `side-panel.js:949`, not `:948` (`:948` computes `ctxAge`).
+    Confirmed exactly as cited: `render-coordinator.js:1247`, `side-panel.js:996`, `:1867`.
+
+  BUILD STALENESS — RECORDED HERE BECAUSE THIS IS THE TICKET THAT REQUIRES LOADING THE EXTENSION.
+  `ignition-poker-tracker/dist/` was built 2026-08-04 15:15:34 (uniform mtime across the whole
+  tree) and the source is two commits ahead: `0457b9a3` (2026-08-07) and `0d011fbe` (2026-08-13).
+  Newest source files on disk are 2026-08-15/16. So the loaded extension is running 2026-08-04
+  code, and any observation made against it — for this ticket, WS-516, WS-514 or WS-515 — is an
+  observation about a build eleven days behind the source being read.
+
+  Two things make that hard to notice. `dist/` carries NO build stamp: no `buildTime`, `builtAt`
+  or equivalent token anywhere in the tree, and `dist/manifest.json` shows only the static
+  `"version": "0.9.0"`, unchanged since before the drift. And `dist/` is gitignored
+  (`ignition-poker-tracker/.gitignore:1`), so nothing in version control tracks its freshness.
+
+  A related claim from the source audits is CORRECTED here rather than filed. The audits reported
+  that "the repo root cannot load as an unpacked extension" because `background/service-worker.js:12-17`
+  uses ESM `import` while `manifest.json` declares no `"type": "module"`. There is no repo-root
+  `background/` or `manifest.json` at all — `git ls-files` returns nothing for either. The
+  construct is real one directory down: `ignition-poker-tracker/background/service-worker.js:12-17`
+  is six ESM imports, and `ignition-poker-tracker/manifest.json`'s background block is
+  `{ "service_worker": "background/service-worker.js" }` with no `type`. But this is NOT a defect:
+  `build.mjs` bundles the service worker, and `dist/background/service-worker.js` opens `(() => {`
+  with esbuild's `__esm`/`__export` shims and contains zero import statements. The source tree was
+  never intended to load unpacked; `dist/` is the load target and it works. The only real problem
+  in this area is the staleness above, which `npm run build` fixes in seconds.
+
+  WORTH FILING SEPARATELY IF IT RECURS: a build stamp in `dist/` plus a freshness check would make
+  "am I testing current code?" answerable instead of requiring an mtime comparison. Not filed as
+  its own ticket yet — it is one line of `build.mjs` and belongs to whoever touches this next.

@@ -94,6 +94,7 @@ accept_criteria: |
     figures in `system/decisions.md`, or a register entry — over a one-off correction. Assume
     there is a second unbacked figure in the same documents.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "system/decisions.md"
   - ".claude/context/SYSTEM_MODEL.md"

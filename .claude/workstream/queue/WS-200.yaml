@@ -53,8 +53,7 @@ runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/design/surfaces/postflop-drills.md (potentially modified)"
   - "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"
-blocked_by:
-  - "WS-199"
+blocked_by: []
 blocked_by_note: "Sequenced after WS-199 (landscape v1) so the mobile variant reflows a stable base. Could parallelize if owner prefers, at cost of double-revision."
 blocked_by_legacy: []
 enables: []
@@ -69,3 +68,10 @@ source:
   audit_doc: "docs/design/audits/2026-05-19-blindspot-pre-session-drill.md"
 created_at: "2026-05-19"
 updated_at: "2026-05-19"
+gate_resolution: |
+  2026-08-20: gate cleared. Root cause was not this ticket — the dependency resolver
+  builds its done-set from the LIVE queue only, so a blocker that was completed and then
+  ARCHIVED is invisible to it and its dependents are permanently unselectable. Verified
+  empirically: .claude/workstream/state/queue.json holds 393 items and WS-055/199/428/184
+  are all ABSENT from it while sitting in queue/archive/ with status done. Filed as WS-590.
+  WS-199 (PSD Gate 4 landscape v1) is done.

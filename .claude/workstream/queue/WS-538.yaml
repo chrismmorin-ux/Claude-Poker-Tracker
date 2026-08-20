@@ -1,0 +1,67 @@
+id: "WS-538"
+title: "The lower pier post does not exist — no equilibrium, so exploitation premium is unanswerable"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 72
+priority_label: "P2"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  `scripts/backtest/equilibriumPost.mjs` is 166 lines that exist to document their own absence.
+  Its header is explicit: the lower pier post is registered as SRC-013, DOES NOT EXIST YET —
+  no store, no ingestion, no schema, gated on an external solver artifact. The module returns
+  `null` with a reason and the report prints the reason, which is the honest behaviour.
+
+  THE NUMBER THIS BLOCKS:
+
+    EXPLOITATION PREMIUM = EV(Pool Best Response) - EV(Equilibrium)
+
+  How much money exists SPECIFICALLY BECAUSE THE POOL IS BAD, as opposed to because hero plays
+  solid poker. The module's own framing: "If the premium is small, the exploit engine is
+  chasing pennies and the honest founder-facing answer is 'play well'. If it is large, reads
+  are where the money is and we would know by how much."
+
+  WHY IT MATTERS TO THE RULE-EVOLUTION LADDER. WS-536 measures `exploitationEfficiency` — the
+  fraction of AVAILABLE money a ruleset captured, where available is defined by the upper post
+  alone. That tells you how well you are exploiting. It cannot tell you whether exploiting is
+  where the money was in the first place. The entire villain-modelling programme rests on the
+  premise that it is, and that premise is currently unmeasured.
+
+  The upper post is built (`poolBestResponse.mjs`). This is the missing half.
+
+  NOT A DOCUMENTATION TASK. The module already documents the absence correctly. What is needed
+  is the artifact: an equilibrium strategy for the relevant abstraction, ingested under a
+  schema, with provenance, so the subtraction can be performed.
+accept_criteria: |
+  - SRC-013 has a store, an ingestion path, and a schema, with provenance recorded in the
+    promoted registry.
+  - `equilibriumPost` returns a value rather than a reason, for at least one declared
+    abstraction, with that abstraction's limits stated on the card.
+  - Exploitation premium computed and reported alongside exploitation efficiency.
+  - Where the solver abstraction does not cover a spot, the post returns `null` WITH A REASON
+    for that spot rather than a substituted value. Chart-derived substitutes stay refused by a
+    throw, not a warning.
+  - The premium is reported even if it is SMALL. A small premium is a finding about where the
+    money is, and suppressing it would be the measurability bias the improvement default names.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/equilibriumPost.mjs"
+  - "scripts/backtest/poolBestResponse.mjs"
+  - "scripts/backtest/strategyPosition.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: ["heavy-design"]
+source:
+  kind: "gap-found-in-scoping"
+  detail: "2026-08-17 — surfaced while scoping the incremental strategy ladder's scoreboard"
+created_at: "2026-08-17T00:00:00.000Z"

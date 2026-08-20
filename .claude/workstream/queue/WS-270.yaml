@@ -114,6 +114,34 @@ source:
   run_id: "session-2026-07-25"
 created_at: "2026-07-25T00:00:00Z"
 status_note: |
+  ABSORBED INTO WS-521 — 2026-08-17, founder ruling. DO NOT START THIS INDEPENDENTLY; the
+  engine layer is built and shipped under SPR-189. Close this against WS-521 rather than
+  working it.
+
+  What landed: the third normalization scenario `fold | call4 | fourBet`, selected by the
+  raise count in the sequence (0 / 1 / 2+) rather than by the `facedRaise` boolean;
+  subclasses `cold4Bet` / `fourBetAfterOpen` carved from the `fourBet` parent;
+  PROFILE_VERSION 4 -> 5; ENGINE_VERSION v128.
+
+  THE FORK IN THIS TICKET IS RESOLVED. `:40` said "a third independent tree" and `:56` said
+  "shrinkage toward the parent threeBet posterior" — two different architectures, ~3x apart in
+  effort, and nothing in the code decided between them. Founder chose the THIRD TREE. The
+  deciding argument: a `threeBet` subclass can only claim the 4-bet RAISE branch (the
+  `subAction: null` residual) and would still emit nothing for the opener who FOLDS or CALLS a
+  3-bet — which was WS-521's actual defect. The `:56` reading is retired.
+
+  Accept criteria 1-5, 7 and 8 are met. STILL OPEN, and the reason this is not simply closed:
+    - AC-6: the HIGH consequence-weighted tier gate on stack-off / fold-to-4bet exploits
+      (`rangeRules.js` / `preflopAdvisor.js` wiring). `preflopAdvisor` already carries
+      `fourbet_ip` / `fourbet_oop` sizing with no range class behind it.
+    - The UI surface: `RangeDetailPanel.jsx` `DISPLAY_SUBCLASSES` is hardcoded and does not
+      list the new classes, so they are modelled but not shown. UX-touching, so Design Program
+      gates apply — that is why this ticket is `runs_on: g16`.
+
+  `overCall`, which POKER_THEORY §2.5.5 deferred *with* this ticket in a trailing clause and
+  which appeared in no ticket at all, is now filed separately as WS-522.
+
+  --- original note ---
   Founder-prioritized child of WS-256, filed 2026-07-25 during that ticket's
   plan review. Founder explicitly raised it above stretch-goal status on
   consequence grounds (huge pot, low SPR, no recovery street). Unblocks when

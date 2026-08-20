@@ -156,6 +156,7 @@ accept_criteria: |
     for this ticket; deciding that it is out of scope, and recording that the surfaced top weakness
     on a thin villain is an order statistic rather than a finding, is not.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/exploitEngine/bucketQueryUtils.js"
   - "src/utils/exploitEngine/weaknessDetector.js"

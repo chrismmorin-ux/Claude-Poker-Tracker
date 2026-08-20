@@ -114,6 +114,7 @@ accept_criteria: |
     weeks is a 2-byte file on disk. The evidence that it is fixed should be the same kind: a
     downloaded file with real captured hands in it, hand count stated.
 effort: "S"
+runs_on: "g16"
 files_involved:
   - "ignition-poker-tracker/popup/popup.js"
   - "ignition-poker-tracker/background/service-worker.js"

@@ -55,6 +55,7 @@ accept_criteria: |
   - Update the ranked table in docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md — the
     drift test asserts it matches the module.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/standardOfRecord/faultRegister.js"
   - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"

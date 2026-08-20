@@ -1,0 +1,51 @@
+id: "ses-20260817-0514-23279d72"
+status: "abandoned"
+started_at: "2026-08-17T05:14:08.354Z"
+ended_at: "2026-08-17T09:18:01Z"
+mode: auto
+last_heartbeat: "2026-08-17T05:15:26.922Z"
+pid: 33524
+pid_recorded_at: "2026-08-17T05:15:26.922Z"
+host: MorinComputer
+agent_session_id: "23279d72-fc52-4267-a7c4-5d7ec0f59aff"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-504"
+  - "WS-521"
+
+files_locked:
+  - "scripts/backtest/corpusFiles.mjs"
+  - "scripts/backtest/stratifiedSelect.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/dealBook.mjs"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/__tests__/corpusFiles.test.js"
+  - "scripts/backtest/run-river-flip-replicate.mjs"
+  - "scripts/backtest/run-hole-map.mjs"
+  - "scripts/backtest/probeFrequency.mjs"
+  - "scripts/backtest/probe-foldcurve-reach.mjs"
+  - "scripts/backtest/run-study-ladder.mjs"
+  - "scripts/backtest/entryCensus.mjs"
+  - "scripts/backtest/run-atoms.mjs"
+  - "scripts/foldCurve/mine-fold-vs-sizing.mjs"
+  - "scripts/foldCurve/emit-result-card.mjs"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - "docs/domain/readiness/scorecard-history.yaml"
+  - "docs/runbooks/baseline-ev-run.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-17.
+  Original start: 2026-08-17T05:14:08.354Z.
+  Last heartbeat: 2026-08-17T05:15:26.922Z.
+
+  Released 2 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

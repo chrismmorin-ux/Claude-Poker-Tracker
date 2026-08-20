@@ -90,6 +90,7 @@ accept_criteria: |
   - NO NUMBER IN THE VIEW IS A LITERAL. Related and tracked separately as WS-420; noted here because
     the same discipline (one renderer, one source) is what makes freshness-at-read meaningful.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/holeMapFreshness.mjs"
   - "scripts/backtest/holeMapGit.mjs"

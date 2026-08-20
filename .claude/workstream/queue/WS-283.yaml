@@ -76,8 +76,7 @@ blocked_by: []
 blocked_by_legacy: []
 enables: []
 sprint_id: null
-decision_flags:
-  - "Refit the fold curve globally from the corpus, or keep the founder-estimate shape and correct only the online segments? The corpus is online-only and live/online separation is RATIFIED (WS-259)."
+decision_flags: []
 source:
   type: measurement
   created_by: ai
@@ -90,3 +89,5 @@ status_note: |
   live/online caveat: the corpus is online cash July 2009 and the founder plays
   live 1/2 — the live-vs-online separation is ratified doctrine, so a global
   refit is a decision, not a default.
+resolved_by_rule: ".claude/rules/corpus-transfer-is-earned.md"
+resolved_on: "2026-08-20"

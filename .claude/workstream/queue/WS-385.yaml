@@ -127,6 +127,7 @@ accept_criteria: |
     different fields but they want them for the same reason and at the same cost. Adding them one at
     a time means five register-version bumps and five migrations of the same kind.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "src/utils/standardOfRecord/faultRegister.js"
   - "src/utils/standardOfRecord/schemas.js"

@@ -181,6 +181,7 @@ accept_criteria: |
     point of instance 1 is that the misfiring cells are the full-ring ones nearest his game:
     the transfer is being leaned on precisely where it is being disclaimed.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/exploitEngine/villainObservations.js"
   - "src/utils/exploitEngine/preflopFoldQuantities.js"

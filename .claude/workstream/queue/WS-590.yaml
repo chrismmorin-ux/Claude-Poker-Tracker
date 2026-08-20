@@ -1,0 +1,88 @@
+id: "WS-590"
+title: "The dependency resolver can never clear an archived or superseded blocker — ten items were permanently unselectable, one of them P0"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 85
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "self-compliance"
+finding_id: ""
+description: |
+  MEASURED 2026-08-20. Ten open items were sitting behind gates that no amount of work could
+  ever clear. The data was fixed in the same session; this item is the CAUSE, which lives in
+  `kit/` and would be lost on the next `/kit-upgrade` if patched locally.
+
+  TWO INDEPENDENT GAPS, BOTH IN `depsClear` (kit/scripts/cwos-next.js, ~line 950).
+
+  GAP 1 - ARCHIVED BLOCKERS ARE INVISIBLE. `depsClear` builds its done-set from
+  `store.queue.all()`, which is the live queue domain. An item that was completed and then
+  moved to `queue/archive/` is absent from that domain entirely, so every dependent of it is
+  blocked forever.
+
+    VERIFIED EMPIRICALLY, not read off the code: `.claude/workstream/state/queue.json` holds
+    393 items; WS-055, WS-199, WS-428 and WS-184 are ABSENT from it, while each sits in
+    `queue/archive/` with `status: done`. Their dependents were WS-208, WS-200, WS-410 and
+    WS-187.
+
+    WS-410 is a P0 - "The Scored Readout: persist the decision-level record, then serve six
+    EV-denominated views" - and it was unselectable because of an archive lookup, not because
+    of any real dependency. All four of its blockers are done.
+
+    NOTE THE REPORTING GAP TOO: `cwos-reconcile` reports these as "blocked_by WS-428, which
+    does not exist". That message is wrong and it is what makes the bug hard to see - the item
+    DOES exist, it is archived and complete. A message that says "does not exist" invites
+    someone to delete a real dependency.
+
+  GAP 2 - SUPERSEDED BLOCKERS NEVER RESOLVE. `depsClear` clears a dependency only on
+  `status === 'done'`. WS-389 is `status: dismissed` with `superseded_by: WS-432`, and WS-432
+  is done - i.e. the work its five dependents were waiting on SHIPPED, under a different id.
+  WS-387, WS-388, WS-390, WS-391 and WS-400 stalled anyway.
+
+  GAP 3 - MALFORMED ENTRIES ARE ACCEPTED SILENTLY. WS-186 and WS-187 carried entire PROSE
+  PARAGRAPHS in `blocked_by` (a May refactor-sprint charter sentence, and a description of
+  WS-184). No resolver can match a charter sentence against an item id, so those gates were
+  permanently closed and nothing ever complained. Nothing validates that a `blocked_by` entry
+  is shaped like an id.
+
+  WHY THIS IS WORSE THAN TEN STALLED ITEMS. A permanently-closed gate is invisible from the
+  inside: the item simply never appears in a sprint, and its absence reads as low priority
+  rather than as a defect. That is the same self-concealing shape as the inline-simulation
+  failure - the system keeps reporting a clean state while the work quietly cannot happen.
+  Ten items over an unknown number of months, and the only reason it surfaced was a manual
+  scan.
+accept_criteria: |
+  - `depsClear` resolves a blocker against archived items as well as live ones; an archived
+    `done` blocker clears its dependents.
+  - A blocker with `status: dismissed` and `superseded_by: X` resolves against X, recursively,
+    with a cycle guard.
+  - `blocked_by` entries are validated as item-id-shaped at reconcile time; a malformed entry
+    is a named warning, not silence.
+  - `cwos-reconcile`'s message distinguishes "archived and done" from "does not exist" — the
+    current wording invites deleting a real dependency.
+  - A check enumerates every open item whose gate can never clear, and reports it. This class
+    of defect must not require a manual scan to find again.
+  - THE FIX LANDS IN HOMEBASE, not in this repo's `kit/`. A local patch is overwritten by the
+    next `/kit-upgrade` — the recorded sidecar-skew failure mode. Verify by re-running the
+    upgrade and confirming the fix survives.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "kit/scripts/cwos-next.js"
+  - "kit/scripts/cwos-reconcile.js"
+  - "kit/scripts/core/state-store.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410", "WS-387", "WS-388", "WS-390", "WS-391", "WS-400"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-20 dead-gate sweep; data fixed same session, cause filed here"
+created_at: "2026-08-20T00:00:00.000Z"

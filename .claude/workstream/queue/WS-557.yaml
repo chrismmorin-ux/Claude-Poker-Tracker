@@ -1,0 +1,55 @@
+id: "WS-557"
+title: "Give the product an error sink - nothing in src/ can tell the founder that anything failed"
+legacy_id: ""
+type: infrastructure
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 60.0
+priority_label: "P0"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+runs_on: g16
+effort: M
+finding_id: ""
+description: |
+  Grep for Sentry / captureException / window.onerror / unhandledrejection across src/ returns
+  ZERO files (verified twice: by the cross-critic and by the orchestrator directly).
+  `src/utils/errorHandler.js:187-199` terminates at `console.error`. `postHogAdapter.js:92` is an
+  opt-in EVENT adapter, not an error channel.
+
+  Nobody reads a console on a phone at a poker table.
+
+  WHY THIS IS THE STRUCTURAL ITEM, not one finding among many. It is the enabling condition beneath
+  WS-556 (silent save), WS-560 (silent migration clobber), WS-561 (silent model poisoning), and the
+  quota class - six findings from six different lenses, all with UNBOUNDED time-to-detect, all
+  downstream of the same absence. It is the single cheapest lever that shortens time-to-detect
+  across all of them simultaneously.
+
+  LOCAL-FIRST CONSTRAINT: the sink must be ON-DEVICE - an IndexedDB errors store plus a visible
+  badge. NOT a remote service. No server exists and none is wanted.
+accept_criteria:
+  - "A single app-level error channel captures window.onerror, unhandledrejection, and every logError call, persisting to an IndexedDB errors store with timestamp, message, stack and context tag"
+  - "A visible indicator appears when unacknowledged errors exist; Settings exposes the log and can clear it"
+  - "The store is bounded (ring buffer) and is included in the WS-559 export manifest"
+  - "A deliberately thrown error in a view is visible in the UI within one interaction at the S22 profile, verified by screenshot"
+files_involved:
+  - "src/utils/errorHandler.js"
+  - "src/utils/persistence/"
+  - "src/components/ErrorBoundary.jsx"
+  - "src/components/ui/"
+decision_flags: []
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  dedup_key: "eng-engine-infrastructure-src-utils-errorHandler.js-187-199"
+  facilitator_ref: "B"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

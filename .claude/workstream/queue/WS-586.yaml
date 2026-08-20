@@ -1,0 +1,75 @@
+id: "WS-586"
+title: "The register lags the code — `realization` is load-bearing in 67 files and has zero entries in the register built to stop two numbers from evading each other"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 86
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  MEASURED 2026-08-20 (docs/standard-of-record/NAMING-HISTORY.md §4). Count of files
+  mentioning the concept across `src/utils/` and `.claude/workstream/queue/`, against
+  entries in VOCABULARY.md:
+
+    equity/line realization      register 0   code+queue 67
+    poolBaseline                 register 0   code+queue 35
+    perceived range              register 0   code+queue 19
+    held-out scoring             register 0   code+queue 18
+    importance weight            register 0   code+queue 12
+    trajectory (of a subject)    register 0   code+queue 11
+    hero self-observation        register 0   code+queue  2
+
+  `realization` is the sharpest case: a first-class POKER_THEORY §1.4 concept, load-bearing
+  on every EV number the engine produces, named in 67 files, absent from the register.
+
+  THE MECHANISM, AND IT IS THE ONE ADR-009 EXISTS TO STOP. The Standard of Record was
+  created because "nothing forced two numbers onto the same axis, so a wrong number never
+  had to meet a right one." An object that ships without a register term is that condition
+  one level up - it cannot be compared because it has no name to be compared under. WS-291
+  survived the life of the project through exactly this. The register itself now has
+  un-registered objects, so the mechanism has recurred at the level of the register.
+
+  VOCABULARY.md already states the obligation in its own header: "If you need a word for
+  something not below, add it here in the same change." The obligation exists and nothing
+  enforces it. That is the gap - not the missing entries, which are a symptom.
+
+  SCOPE IS BOTH HALVES. Backfilling the entries without building the gate leaves the same
+  drift to re-accumulate; building the gate without backfilling makes it fire on day one
+  against a backlog nobody wrote. Do both in this item.
+accept_criteria: |
+  - Every concept in the measured table above either has a register entry or a recorded
+    reason it does not need one.
+  - A repo-scan check enumerates load-bearing nouns in `src/utils/standardOfRecord/` and
+    `src/utils/exploitEngine/` exports and reports which have no register entry. Advisory
+    on first ship, with the enforcing flip named and dated (same staging pattern ADR-009
+    used for Strategy Card loading).
+  - The scan's own false-positive discipline is stated: it reports candidates, a human
+    promotes them; it never auto-writes the register.
+  - Re-running the NAMING-HISTORY.md §4 measurement is one command, so the lag is a
+    tracked quantity rather than a one-off finding.
+  - The three terms already known-defined-but-unimplemented (Stratum, Appraisal, Read) are
+    marked as such in the register rather than reading as though they ship.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "docs/standard-of-record/NAMING-HISTORY.md"
+  - "src/utils/standardOfRecord/"
+  - "scripts/standardOfRecord/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-20 naming-history exercise; this finding overturned the exercise's own initial projection"
+created_at: "2026-08-20T00:00:00.000Z"

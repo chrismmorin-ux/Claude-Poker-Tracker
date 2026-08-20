@@ -62,6 +62,80 @@ description: |
   Note the budget was tuned for ALLOCATION fairness between stages (refinementWork.js records
   the measured first-come-first-served failure where one stage took 82% of the budget). Nobody
   asked whether the TOTAL was enough to finish. It is not.
+  ── SHIPPED IN SPR-193, 2026-08-20 ──
+  1. `onFastResult` wired in BOTH production consumers. The ticket named only
+     `useActionAdvisor`; the LIVE Ignition path had the identical single-`setAdvice` shape
+     (`computeHelpers.js` buildPostflopAdvice <- useLiveActionAdvisor) and is the one that
+     matters at the table. The provisional payload OMITS villainRanges / multiwayEquity /
+     narrowingLog rather than nulling them — the extension's `validateActionAdvice` checks
+     `!== undefined`, so an explicit null FAILS validation while an absent key passes.
+  2. `refinementBudgetMs` default 2000 -> 20000. Chosen from the curve, not guessed: 16000 and
+     24000 both reach `budgetGated: 0` with meanWeightConsumed 1.000 over 40 boards, and the
+     curve is flat above 16000. 20000 is that with headroom. ENGINE_VERSION bumped to v129 —
+     this changes every postflop recommendation.
+  3. The probe was fixed FIRST, and that is what made the rest legible. It tallied stages by
+     ARRAY INDEX, and the index is not a stable identifier (`raiseResponseDepth2` is gated
+     inside a per-bet-candidate loop), so the per-stage table was aggregating different stages
+     together. Named tallies + gated-by-budget split from gated-by-street. That fix is what
+     identified `depth3Barrel` — barrel planning — as budget-gated on EVERY board: it had never
+     run in production at any budget, ever.
+  4. UI: `REFINING` badge while provisional, `WAS <ACTION>` when refinement moves the top
+     action. Surface artifact authored at docs/design/surfaces/live-advice-refinement-state.md
+     and registered in CATALOG.md (Design Guardrail Gate 4).
+  5. Tests: 7 new across three layers, each verified to FAIL when its own layer is reverted.
+     The hook-layer tests passed with the `computeHelpers` pass-through DELETED, which is why
+     there is now a separate pass-through test — that file previously had exactly one tested
+     symbol (`computeTrialCount`).
+
+  ── ACCEPT CRITERION 4 IS MEASURED, NOT ASSUMED (2026-08-20) ──
+  The claim under test was that the two-phase fast path absorbs the budget rise, so time to
+  FIRST advice is unchanged. That is directly checkable: `onFastResult` fires before refinement
+  starts, so its latency must be INDEPENDENT of `refinementBudgetMs`.
+
+      budget      first advice    refined advice    stages completed
+           0             100ms             113ms                   0
+        2000              75ms            1440ms                   0
+       20000              63ms            4127ms                   4
+
+  (median of 3, G16, through the backtest loader.) First advice is FLAT across a 10x budget
+  change — the variation is noise and the trend is if anything downward. The criterion holds.
+  Refined advice costs ~4.1s at the shipped budget.
+
+  The third column is an independent confirmation of this ticket's whole premise: at the
+  budget that shipped for the life of the project, ZERO refinement stages completed.
+
+  DELIBERATELY NOT TURNED INTO A WALL-CLOCK TEST. This suite's own doctrine
+  (depthReachability.test.js) is that a wall-clock assertion is machine-dependent and fails for
+  reasons unrelated to the defect. The STRUCTURAL guarantee — the fast result fires before any
+  stage has run — is already pinned by the existing `onFastResult` test asserting
+  `fast.treeMetadata.latency.ranStages` is empty. These numbers are evidence for the criterion,
+  not a regression gate.
+
+  STILL UNMEASURED: the S22 wall clock. `REFINEMENT_UNITS_PER_MS = 319` is calibrated on the
+  G16, and coverage is deterministic across machines while wall time is not. Per
+  `.claude/rules/unmeasured-constants.md` the device factor gets measured, not guessed.
+
+  ── THE COST THE BUDGET CHANGE CARRIES, MEASURED ──
+  ~4.4s per evaluation at 20000 (vs ~0.4s at 2000). 15 test files reached the real engine
+  without pinning a budget and 9 of them blew their timeout; they are now pinned to 2000 with
+  a comment stating that 2000 is their VERIFICATION POINT and not a claim about production.
+  `computeDepth2Plan` gained a `refinementBudgetMs` passthrough so a drill surface can state
+  its own latency budget instead of silently inheriting the engine default.
+
+  ── NOT DONE, AND NAMED ──
+  - VISUAL VERIFICATION OF THE BADGES IS OUTSTANDING. `npm run devshot` confirms the app boots
+    clean (0 page errors) but CANNOT show them: TableView's advice comes from
+    `OnlineAnalysisContext` (`useAnalysisContext` IS the online context), so the plain dev table
+    has no game-tree advisor to produce a provisional payload. Render-level coverage exists in
+    LiveAdviceBar.test.jsx; the on-device check belongs on the online/extension path.
+  - EXTENSION FLICKER, unresolved: `OnlineAnalysisContext` pushes EVERY advice object to the
+    extension, so there are now two wire pushes per decision, and the side panel draws its
+    static GTO-grid fallback on the first (no villainRanges yet) then swaps. Either suppress
+    the range section while provisional, or do not push the provisional payload.
+  - WS-594 (the node1 60-board sweep) is BLOCKED on the probe reaching origin/main.
+  - WS-575's fix ships as `depthParity: 'common-depth'` — WITHOUT it, this budget change makes
+    the engine recommend raise on 100% of boards. The two must not be separated.
+
 accept_criteria: |
   - `onFastResult` is wired in `useActionAdvisor` so the depth-1 answer renders immediately and
     the refined answer replaces it. Asserted by a test that fails on the current single-setAdvice

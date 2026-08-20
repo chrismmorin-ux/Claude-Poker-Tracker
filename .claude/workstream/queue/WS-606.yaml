@@ -1,0 +1,99 @@
+id: "WS-606"
+title: "Sizing sub-rules ride on the card unvalidated and unscored — `sizingProblems` checks only `bands`, and the held-out score still measures action lift alone"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 74
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 by the WS-552 implementing agent, reported rather than papered over. Two gaps,
+  same root: sizing rules are now PRODUCED but the read path and the scoring path both predate
+  them and neither was extended.
+
+  (Originally filed as WS-605; that id was handed to two sessions at once by the allocator and
+  this ticket was overwritten. Re-filed here. The WS-605 that survives is a different, unrelated
+  and legitimate ticket about test-suite determinism.)
+
+  GAP 1 - UNVALIDATED ON READ. `checkAgainstSchema` deliberately allows unknown extra fields, so
+  `sizing.subRules` / `altSubRules` and `sizingBanding.induction` are additive-legal and ride on
+  the card without complaint. But `sizingProblems` validates only `bands` and `altBands`. So the
+  sub-rule bands - the output of the new induction - are UNCHECKED on the read path: their
+  residues are not summed, their regimes are not checked for legality, their band names are not
+  checked against the card's own boundary table.
+
+  The implementing agent built them in the identical shape to the validated bands (`regime`, `k`,
+  `n`, `pRaw`, `p`, `shrunk`, `shrunkToward`, `ci`, `shape`) precisely so a validator extension
+  passes unchanged. That is good hygiene and it is not a validator. A card whose validated half
+  is checked and whose newest half is not is the shape of every "two representations that never
+  have to agree" defect in this repo.
+
+  GAP 2 - UNSCORED. `scoreHeldOut.mjs` measures ACTION lift only. The whole argument for WS-552
+  was that sizing carries the sharpest reads; the held-out score cannot currently see any of it.
+  This bites hard right now: the measured result on 2026-08-20 is that an 18-rule card LOSES to a
+  four-cell legality table out of sample (0.9302 vs 0.8651 bits/dec, interval [-0.1099, -0.0209]).
+  The obvious hypothesis for why is that the induction was blind to sizing - and WS-552 has now
+  fixed that blindness. **We cannot test the hypothesis, because the scorer still only scores the
+  thing that was already there.** The instrument that would answer the most important open
+  question about this whole cluster is one extension away and does not have it.
+
+  ALSO NOTED BY THE SAME AGENT, and belongs here: there is NO STRUCTURAL PRE-SPLIT FOR SIZING
+  LEGALITY. A min-raise floor and a stack ceiling truncate what sizes are even available, and no
+  field records the legal interval. It is currently a `knownLimitation` string on the card. A rule
+  induced across a truncation boundary is describing the rules of poker, not the villain.
+
+  AND: the sizing search is strictly MORE CONSERVATIVE than the action search, because its
+  Bonferroni family counts strata. The asymmetry is stated on the card rather than smoothed over -
+  correct - but it means a sizing rule and an action rule on the same card cleared different bars,
+  and nothing downstream knows that.
+
+  ONE MORE, found 2026-08-20 while testing the `score` field and reported not fixed: `scoreProblems`
+  never cross-checks that a `verdict` VALUE agrees with its own interval. A card stamping
+  `card-better` on `[-0.1099, -0.0209]` validates. The producer derives the verdict from the
+  interval so they cannot disagree today, but nothing on the RECORD FORM would catch a
+  hand-authored or re-serialised card that did - which is the whole point of a record form.
+accept_criteria: |
+  - `sizingProblems` validates sub-rule bands with the SAME clauses it applies to `bands`: residue
+    sums to the parent k, regime legality, band names checked against the card's own boundary
+    table, scheme-version match, shrink-flag presence.
+  - A test asserts a malformed sub-rule band is REFUSED. Building them in the right shape is not
+    the same as checking them, and the test is what distinguishes the two.
+  - `scoreProblems` rejects a verdict that contradicts its own interval (an interval entirely
+    below zero cannot carry `card-better`, and vice versa).
+  - `scoreHeldOut.mjs` scores SIZING prediction beside action prediction, as a separate reported
+    quantity - never silently pooled into one number. A card that predicts actions well and sizes
+    badly must be distinguishable from the reverse.
+  - **Re-score the card that lost.** With sizing rules present and sizing scored, re-run the
+    comparison against the `legality-conditioned` baseline and report whether the card still
+    loses. Pre-register before running: `sizing-aware induction closes the -0.0650 bits/dec gap
+    and the card beats the legality baseline`. Record the result unhedged either way - if it
+    still loses, that is a much more important finding than if it wins.
+  - The legal sizing interval (min-raise floor, stack ceiling) is carried as DATA, and the
+    induction cannot split across a truncation boundary. Coordinate with `WS-601`, which adds the
+    all-in flag and touches the same records.
+  - The Bonferroni asymmetry between the action search and the sizing search is carried as data on
+    the card, not only as prose, so a downstream consumer can tell which bar a rule cleared.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "scripts/villainArchetype/sizingBands.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-604"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-20 WS-552 implementation; sizingProblems covers bands only, scoreHeldOut measures action lift only"
+created_at: "2026-08-20T00:00:00.000Z"

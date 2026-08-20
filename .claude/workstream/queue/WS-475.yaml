@@ -33,4 +33,5 @@ accept_criteria: |
   - Downstream surfaces render a visible no-read state where they previously rendered the constant
     (spot-checked on the rake tier and empty-range sites).
 effort: "L"
+runs_on: "any"
 created_at: "2026-08-13"

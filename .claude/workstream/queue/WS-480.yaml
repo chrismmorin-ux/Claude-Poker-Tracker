@@ -32,6 +32,7 @@ accept_criteria: |
     each pinning a preflop and a postflop case.
   - UX-visible copy change on primary advice controls → Design Gate 1 applies to the render half.
 effort: "M"
+runs_on: "g16"
 files_involved:
   - "src/utils/exploitEngine/heroActionBuilder.js"
   - "src/utils/exploitEngine/preflopAdvisor.js"

@@ -90,6 +90,7 @@ accept_criteria: |
     DISCLAIMER-AND-FAULT-REGISTER.md §7, a new entry needs a matcher and a falsifier; state both, or
     state why neither can be written yet.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/holeMap.mjs"
   - "scripts/backtest/holeMapHtml.mjs"

@@ -33,4 +33,4 @@ source:
 created_at: "2026-05-01"
 updated_at: "2026-06-13"
 deferred_at: "2026-06-13"
-deferred_reason: "LSW authored flop-root plans; PAUSED-INDEFINITELY (SPR-071)  deferred to LSW-v2 (not yet ticketed). Reclaim at P=15 when LSW-v2 opens."
+deferred_reason: "LSW authored flop-root plans; PAUSED-INDEFINITELY (SPR-071) — deferred to LSW-v2 (not yet ticketed). Reclaim at P=15 when LSW-v2 opens."

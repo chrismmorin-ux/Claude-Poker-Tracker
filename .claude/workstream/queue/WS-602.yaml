@@ -1,0 +1,76 @@
+id: "WS-602"
+title: "An emitted card drops `predicate` and keeps English `when` — so two stored Conduct Cards can never compete, and rankCards can only see in-process objects"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 84
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 while wiring the held-out scorer (WS-551). Measured on disk:
+
+      predicate present on any rule of any emitted card?   FALSE
+
+  `emitConductCard.mjs` renders each rule's condition to `when` - an ENGLISH SENTENCE - and drops
+  the machine-readable `predicate` it was rendered from. `ruleMatch.mjs` exists precisely to
+  evaluate a predicate against a decision, and its docstring says so, but no emitted card carries
+  anything for it to evaluate.
+
+  THE CONSEQUENCE, precisely. `rankCards` is BUILT and TESTED and cannot be pointed at two files.
+  Scoring a stored card requires deciding which rule fires on a held-out decision, and a card
+  that carries only prose cannot answer that. The scorer refuses with `card-not-evaluable` rather
+  than faking it, which is correct and is also the whole problem: "two Conduct Cards compete" -
+  the thing WS-551 was for - works IN-PROCESS ONLY, on objects that never touched disk.
+
+  WHY THAT IS WORSE THAN IT SOUNDS. A card is the record form of a Read surface. Its entire point
+  is to outlive the run that produced it: to be stored, cited, re-scored later, and compared to a
+  card emitted next month. A card that can only be scored by the process that built it is not a
+  record - it is a return value. Every downstream item that assumes stored cards are comparable
+  (WS-554 rebase/divergence, the archetype trajectory work, any card-vs-card claim) is resting on
+  a capability that does not exist.
+
+  IT ALSO SILENTLY BOUNDS WS-551 OWN RESULT. The measured finding that an 18-rule card is beaten
+  out of sample by a four-cell legality table was produced in-process. It cannot currently be
+  reproduced from the artifact, which is exactly the property ADR-009 exists to guarantee.
+
+  NOT A SCHEMA GAP - A SERIALISATION GAP. The predicate exists at emit time; it is rendered to
+  prose and discarded. Same shape as WS-578 (`my_raise_to_bb` computed, dropped before the card)
+  and WS-601 (all-in computed by the labeller, absent from the decision record). Third instance
+  of one mechanism: a producer holds a machine-readable fact, renders it for humans, and keeps
+  only the rendering.
+accept_criteria: |
+  - Every emitted rule carries its machine-readable `predicate` (or `feature`/`op`/`value`/
+    `siblings`, whichever `ruleMatch.mjs` actually consumes - read it, do not guess).
+  - `when` STAYS. Prose is for the human reader and is not the defect; keeping only the prose is.
+    Both ride, and the card states which one is authoritative for evaluation.
+  - `ruleMatch.mjs` evaluates a rule loaded FROM A FILE against a held-out decision, proven by a
+    test that reads a card off disk rather than building one in memory.
+  - `rankCards` is demonstrated on TWO STORED CARD FILES, not two in-process objects. That is the
+    acceptance test for this item; anything less reproduces the gap.
+  - WS-551 measured result is REPRODUCED from the stored artifact and the two numbers are shown
+    to agree. If they disagree, that divergence is the finding and it outranks this ticket.
+  - The seven existing cards in `.tmp-arch/` are confirmed unevaluable and their pointers say so
+    (WS-599 already records provenance; this adds the evaluability verdict).
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "scripts/villainArchetype/ruleMatch.mjs"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-554"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-20 WS-551 implementation; predicate absent from every rule of every emitted card on disk"
+created_at: "2026-08-20T00:00:00.000Z"

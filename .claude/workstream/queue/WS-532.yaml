@@ -1,0 +1,56 @@
+id: "WS-532"
+title: "teachable-arms figures have no Result Card — emit one"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 74
+priority_label: "P2"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Found while authoring docs/standard-of-record/FIELD-STRATEGY-CARD-50NL-ONLINE-2009.md
+  on 2026-08-17.
+
+  docs/standard-of-record/data/teachable-arms-{ps,ftp}.json carry a3Table, a4Table, arms
+  scores and counts — but NO Result Card and no replication manifest. Keys are exactly:
+  handsRead, nPlayersPool, nPlayersEval, nMinedDecisions, nScoredDecisions, a3Table, a4Table,
+  arms. scripts/backtest/teachableArmsProbe.mjs imports buildResultCard, so a card is
+  producible; none is committed.
+
+  WHY THIS MATTERS RATHER THAN BEING TIDINESS. These figures are now load-bearing in two
+  places — the villain Strategy Card §1/§4, and WS-529's F5 bar (A3 recovers 53.3%/54.9% of
+  the engine's narrowing gain). Under ADR-009 a comparative claim about model quality
+  resolves to a Result Card or it is not a claim. Both documents currently cite provenance
+  with no manifest, and both say so explicitly rather than implying otherwise.
+
+  Without a card there is also no disclaimerRegisterVersion stamp, which is the mechanism
+  that lets a fault confirmed tomorrow find the results that depended on it yesterday.
+accept_criteria: |
+  - Result Card emitted for both PS and FTP arms, with full replication manifest: engine
+    commit, Deal Book hash, partition, every seed, every load-bearing constant.
+  - manifest.disclaimerRegisterVersion stamped (registerVersion() from faultRegister.js).
+  - Estimand states the showdown conditioning and the ACTION-DEPENDENT selection explicitly.
+  - Committed figures reproduce the existing JSON, or the difference is explained.
+  - The two citing documents updated to reference the card.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/teachableArmsProbe.mjs"
+  - "scripts/backtest/run-teachable-arms.mjs"
+  - "docs/standard-of-record/data/teachable-arms-ps.json"
+  - "docs/standard-of-record/data/teachable-arms-ftp.json"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-17 — gap found while authoring the villain Strategy Card"
+created_at: "2026-08-17T00:00:00.000Z"

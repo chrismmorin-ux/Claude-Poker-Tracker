@@ -117,25 +117,17 @@ accept_criteria: |
     this ticket's job becomes wiring rather than authoring. Both invariances are the test of whether
     the three are properly separated.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/standardOfRecord/"
   - "src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js"
   - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
 blocked_by:
-  - "WS-389"
+  - "WS-432"
 blocked_by_legacy: []
 enables: []
 sprint_id: null
-decision_flags:
-  - |
-    OPEN — WHETHER AN ERROR BUDGET WITH FOUR UNMEASURED TERMS SHOULD BE SHOWN TO THE FOUNDER AT ALL,
-    OR WHETHER THE FIGURE SHOULD SHIP WITH NO INTERVAL UNTIL THE TERMS ARE MEASURED. The roundtable's
-    argument for showing it is that a reader with no disclosure knows he does not know, which is
-    safer than a narrow wrong interval — but that argument cuts both ways, and a budget listing four
-    `unmeasured` terms may read as rigour and be treated as one. The third option, and probably the
-    right one: show the terms, and refuse to print a single ± number at all until every dominant term
-    is at least BOUNDED. A list of named unmeasured terms cannot be mistaken for an interval; a
-    number with a ± can.
+decision_flags: []
 source:
   type: code-review
   created_by: ai
@@ -183,3 +175,10 @@ status_note: |
   the machine was" is not a budget worth publishing, and refinement-depth variability is listed as
   one of the terms. WS-384 is deliberately NOT a blocker: this ticket is about declaring the
   denominator, which is possible at 2 of 6 and at 6 of 6 alike.
+gate_resolution: |
+  2026-08-20: gate re-pointed. WS-389 is status=dismissed with superseded_by: WS-432,
+  and WS-432 is done — the reproducibility work this item waited on SHIPPED. The resolver
+  only clears a blocker on status=='done', so a dismissed-and-superseded blocker never
+  resolves and its dependents stall forever. Second resolver gap, filed as WS-590.
+resolved_by_rule: ".claude/rules/sparsity-refuse-or-shrink.md"
+resolved_on: "2026-08-20"

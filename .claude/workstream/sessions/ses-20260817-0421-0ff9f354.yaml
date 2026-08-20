@@ -1,0 +1,99 @@
+id: "ses-20260817-0421-0ff9f354"
+status: completed
+started_at: "2026-08-17T04:21:30.672Z"
+ended_at: "2026-08-17T05:10:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-17T05:12:27.791Z"
+pid: 33524
+pid_recorded_at: "2026-08-17T05:12:27.791Z"
+host: MorinComputer
+agent_session_id: "0ff9f354-0434-4e0c-b1c4-a82dbc96d878"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-513"
+  - "WS-512"
+  - "WS-496"
+
+files_locked:
+  - ".claude/workstream/queue/WS-503.yaml"
+  - "kit/scripts/cwos-fleet-compute.js"
+  - ".claude/workstream/queue/WS-504.yaml"
+  - ".claude/workstream/queue/WS-512.yaml"
+
+
+handoff_notes: |
+  SPR-188 "unblock node1's compute pipeline". 1 of 3 done; the other two turned out to be
+  bigger than the harvester's default S and are back in backlog with their causes fully
+  diagnosed in-ticket. Nothing was submitted to cm-node1 — deliberately, see below.
+
+  DONE — WS-513 (WS-503 ENOENT).
+    Cause: `--behavior-policy out/behavior-policy.json` is an INPUT nothing in the job
+    produces; it exists on G16 only because it was hand-mined 2026-07-28. Fixed by adding a
+    `compute_job.inputs` block — compute-runner.js:277 stageInputs() has supported
+    {from,to,sha256} all along and the spec simply never declared one. Artifact scp'd to
+    cm-node1:C:\Users\chris\fleet\compute-inputs\behavior-policy-ws503.json, hash verified
+    identical both ends. Job re-keyed ba60a65f0e87 -> e97df7829490. First use of
+    compute_job.inputs in this repo (DEC-091).
+
+  THE HEADLINE — WS-503 must NOT run, and the reason invalidates a shipped baseline.
+    Two defects found before submitting, both measured, both now recorded on WS-503:
+    (1) `--max-files 60` makes the 1200-player target unreachable. The k=308 row read 296
+        players from exactly those 60 files, 4 short of its own 300 target. Raising the
+        target alone returns ~296 again after 4-5h — the "shortfall a third time" outcome
+        the ticket's own pre-registered falsifier forbids.
+    (2) THE k=308 BASELINE IS FTP-ONLY. Sorted discovery returns FTP 525 then PS 1231; the
+        first PS file is at index 525, so ANY --max-files <= 525 is 100% FTP. Confirmed in
+        the artifact: out/hero-ev-c3-20260816.json has 4,640 `FTP:` and ZERO `PS:`.
+    This FALSIFIES two load-bearing sentences in WS-504 ("did NOT corrupt anything measured
+    so far" and "WS-503 is pinned with --sites FTP,PS to sidestep it") — both corrected
+    in-ticket. A site filter is upstream of a sorted prefix and cannot correct it; no value
+    of --max-files yields a two-site sample. WS-503 is now blocked_by:[WS-504].
+
+  FEEDER GATE (DEC-092). blocked_by was recorded but INERT — compute_ready stayed true and
+    the dry-run still picked WS-503, so the 2-hourly autonomous Fleet-ComputeFeeder would
+    have burned 4-5h producing a knowingly-confounded result. cwos-fleet-compute.js now
+    refuses to submit on unmet blockers (blockersNotDone). Verified both directions.
+
+  WS-512 (WS-293 heap OOM) — cause found, fix NOT written, re-scoped S -> M.
+    runner.mjs:544-561 indexEvalPlayers retains every full hand object for every eval player
+    before scoring anything. maxPlayers/maxHandsPerPlayer are the only memory controls and
+    the spec passes neither. MEASURED: bounded run (--max-players 1300) indexed 1,070,493
+    hands at peak 3.16 GB in 16 min, with the player count pinned at 1300 the whole way;
+    the unbounded node1 run died at 12 GB on ~250k hands. Memory tracks PLAYER COUNT, not
+    hands. Raising the ceiling cannot work — node1 has ~10.1 GB free. Fix is the batched
+    iterator the ticket's own comment pre-committed to. Touches shared code the villain-side
+    runner also uses, hence M.
+
+  WS-496 (WS-295 underpowered) — diagnosed, plan not presented.
+    It is mechanism (a), a wiring bug, and it is a regression from FIND-074.
+    gameTreeEvaluator.js:968-973 — when equityFn is null (what the probe passes) the RNG is
+    boardDerivedRng([...board, ...heroCards]), i.e. seeded from inputs that are FIXED per
+    scenario. So all 200 replicates draw an identical stream and the probe's only varying
+    input (a monkey-patched Math.random) reaches nothing. That is exactly the observed
+    noiseSd=0.0 and meanArgmaxStability=1.0. Fix seam already exists: makeSeededEquityFn(seed),
+    used this way at heroPolicy.mjs:332.
+
+  NEXT SESSION, in order:
+    1. WS-504 stratified corpus selection. It is now a hard prerequisite of WS-503 AND the
+       reason a shipped C3 row is mislabelled. Closing it should also re-run or explicitly
+       re-label that row.
+    2. WS-512 batched iterator (M). Accept criterion added: batching must not change a number.
+    3. WS-496 — needs a founder decision before coding: fixing the seeding gives a POWERED
+       run that still cannot conclude, because n=8 hand-picked scenarios gave
+       informativeClusters=0. How many scenarios, drawn from where?
+
+  UNCOMMITTED: .claude/workstream/queue/WS-503.yaml, WS-504.yaml, WS-512.yaml (new),
+  kit/scripts/cwos-fleet-compute.js. Nothing committed this session — founder did not ask.
+
+context_notes: |
+  cm-node1 is IDLE and correctly so: every ready node1 item has either already run or is now
+  blocked. Do NOT read "RUNWAY EMPTY" as "nothing to do" — it currently means three of four
+  runs produced no answer. The 6 harvested review items are 4 distinct subjects; the two
+  WS-320 pairs are separate runs that produced the SAME Result Card id, which is determinism
+  holding, not a duplicate-filing bug (I checked — distinct job hashes).
+  G16 and cm-node1 have effectively identical RAM (15.7 vs 15.8 GB), so memory results
+  transfer between them; the corpus is mirrored on node1 at the same G16 default path with
+  all 27 dirs, so no --corpus-root is needed there.

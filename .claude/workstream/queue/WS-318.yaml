@@ -153,6 +153,7 @@ accept_criteria: |
     finding cannot be lost, and it MUST fail once the producers are repaired — that is its
     purpose, not a regression.
 effort: "S"
+runs_on: "any"
 files_involved:
   - "src/utils/handAnalysis/heroAnalysis.js"
   - "src/utils/handAnalysis/handSignificance.js"

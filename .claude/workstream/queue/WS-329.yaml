@@ -81,6 +81,7 @@ accept_criteria: |
   - The proportionality guard is expressed IN the check (comparative claims only), so the
     script does not flag every integer in the repo.
 effort: "M"
+runs_on: "any"
 files_involved:
   - "system/invariants.md"
   - "CLAUDE.md"

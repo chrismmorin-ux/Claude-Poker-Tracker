@@ -1,0 +1,77 @@
+id: "WS-603"
+title: "`enrichDecisions` fits entry widths over held-out hands, so 27 situation columns saw the eval fold — measured delta zero on one subject, which is not a clearance"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 77
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND 2026-08-20 during the WS-551 leakage investigation. Two results, and the SECOND one is
+  the ticket - the first is good news that should be recorded so nobody re-investigates it.
+
+  GOOD NEWS, MEASURED: the hazard already in our notes does NOT apply to a Conduct Card.
+  `induceCore.mjs` imports only `decisionSchema` and `mixTest`; `populationBaseline.mjs` is
+  reached only by `foldToOpenCurve.mjs`. Corpus-mined population priors therefore do not touch a
+  card's rule bodies, and the POOL/EVAL level of the two-level split is VACUOUS for this object.
+  That is worth knowing - the recorded guidance implies otherwise and would send the next reader
+  building a split that protects against nothing here.
+
+  THE ACTUAL LEAK. `enrichDecisions.mjs:56-76` fits `entryWidthOf(decisions)` over ALL of a
+  subject's decisions - held-out ones included - and `strengthAt` fills the `assumed` arm from
+  that fit. The 27 resulting `str_*` / `str_d_*` / `draw_completed` columns are declared
+  `group: 'situation'` (`decisionSchema.mjs:146+`), which means THE INDUCTION IS ALLOWED TO SPLIT
+  ON THEM. A rule can therefore condition on a statistic estimated with knowledge of the fold it
+  is about to be scored against.
+
+  THE PRECEDENT IS IN THIS REPO. `decisionSchema.mjs:137` records `str_basis` as the
+  second-highest-lift rule at 0.717 bits/decision before it was demoted to `provenance`. A
+  strength-derived column has already once looked like the best signal on the card and turned out
+  to be an artifact of how it was computed. This is the same family of column.
+
+  THE MEASUREMENT, AND WHY IT IS NOT A CLEARANCE. Two arms per `unmeasured-constants.md`: the
+  leak-free arm strips `d.strength`, collapsing all 27 columns so `buildFeatures` cannot offer
+  them. Delta = 0.0000 EXACTLY. The reason is mundane and does not generalise: 903 of 1156
+  decisions in that run are PREFLOP, where `str_*` is empty anyway, so no rule used one. On a
+  postflop-heavy subject, or a longer run, the columns are live and the delta is unmeasured.
+  A zero delta measured where the mechanism cannot fire says nothing about where it can.
+
+  ADJACENT AND NOT YET A LEAK: `rangeInference.mjs:156` also fits a showdown prior over all
+  decisions, but its outputs (`d.excluded`, `d.implied`) are not schema columns, so nothing can
+  condition on them. They become a leak the moment they are promoted - note it there.
+accept_criteria: |
+  - `enrichDecisions` accepts a `fitRows` parameter so entry widths are estimated on the FIT block
+    only, and every held-out row is enriched from that fit rather than from itself.
+  - The scorer passes its fit fold through. A parameter nothing supplies is the shipped-but-inert
+    failure and does not count as done.
+  - Re-measure the two arms on a POSTFLOP-HEAVY subject where `str_*` is actually populated, and
+    report the delta. That is the run that tests the mechanism; the preflop-heavy one cannot.
+  - The good-news finding is written where the next reader will hit it: population priors do not
+    reach a Conduct Card rule body, so the POOL/EVAL level is vacuous FOR THIS OBJECT. State
+    the scope - it is not a general statement about the repo.
+  - `rangeInference.mjs:156` carries a note that promoting `excluded`/`implied` to schema columns
+    creates a leak, sited at the line that would have to change.
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/enrichDecisions.mjs"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+  - "scripts/villainArchetype/decisionSchema.mjs"
+  - "scripts/villainArchetype/rangeInference.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-20 WS-551 leakage investigation; two-arm delta 0.0000 on a 903/1156-preflop run"
+created_at: "2026-08-20T00:00:00.000Z"

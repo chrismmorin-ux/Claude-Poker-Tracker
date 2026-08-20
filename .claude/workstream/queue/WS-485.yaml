@@ -42,6 +42,7 @@ accept_criteria: |
     admissible nor quotable, instead of passing it.
   - All 12 producers migrated; heroEvReport computes the verdict once.
 effort: "M"
+runs_on: "node1"
 files_involved:
   - "src/utils/standardOfRecord/schemas.js"
   - "src/utils/standardOfRecord/resultCard.js"

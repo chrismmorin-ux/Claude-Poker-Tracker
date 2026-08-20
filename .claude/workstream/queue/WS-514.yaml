@@ -1,0 +1,150 @@
+id: "WS-514"
+title: "`buildHandForRelay` whitelists away `captureId`, so the app can never ACK — the journal never prunes, dedup never runs, and every app page load re-inserts the same hands into IndexedDB"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 60.0
+priority_label: "P0"
+category: "data-integrity"
+capability: "extension"
+program: "data-provenance"
+finding_id: "FIND-083"
+description: |
+  FOUND 2026-08-16 by two independent source audits of the Ignition capture extension. Every
+  file:line below was re-verified against HEAD by reading the code, not taken from the audit
+  reports. Corrections made during that re-verification are recorded in `status_note`.
+
+  THE DEFECT, IN ONE LINE. `ignition-poker-tracker/shared/wire-schemas.js:200-232` —
+  `buildHandForRelay()` constructs the wire record as an explicit object literal plus three
+  whitelist `pick()` calls. `captureId` appears nowhere in it:
+
+      const wire = {                                          (:203-209)
+        timestamp: hand.timestamp,
+        version: hand.version,
+        source: hand.source,
+        tableId: hand.tableId,
+        seatPlayers: hand.seatPlayers,
+      };
+
+  The whitelists — `GAME_STATE_FIELDS` (:180), `CARD_STATE_FIELDS` (:181),
+  `ACTION_ENTRY_FIELDS` (:182), `IGNITION_META_FIELDS` (:183-187) — do not contain it either.
+  The extension mints a `captureId` and uses it internally (both `enqueueHand` and
+  `journalAppend` dedup on it, `storage-writer.js:198` and `:78`), and then the relay strips it
+  on the way out.
+
+  AND NOTHING CATCHES THAT. `validateHandForRelay` (:238-309) never references `captureId`. The
+  token appears exactly twice in the 492-line file: once in the omitting builder, once in a
+  JSDoc comment at :476. Both validators return valid for a hand with no `captureId`. A field
+  the entire delivery protocol is keyed on is absent from the schema that is supposed to police
+  the wire.
+
+  THE CHAIN THIS OPENS. Each link is verified independently.
+
+    1. `src/hooks/useSyncBridge.js:121` — `if (hand.captureId) handledIds.push(hand.captureId);`
+       The ACK sent at :141-147 carries only `handledIds`. A hand with no `captureId` is
+       silently never acknowledged. The guard is not a bug; it is correct defensive code
+       reporting an upstream failure it cannot see past.
+
+    2. `shared/storage-writer.js:233-254` — `dequeueHands(captureIds)` early-returns on an empty
+       id list, so the queue never drains and `journalPrune(idSet)` at `:248` never runs.
+
+    3. THE JOURNAL THEREFORE NEVER PRUNES. `journalPrune` is the ONLY path that removes a
+       journal entry — pruning on ACK rather than on enqueue is what the code's own comment
+       (`:250-251`) says makes the journal "a safety net rather than a log". With ACK dead it is
+       an append-only log that grows for the life of the install. This is the direct feeder for
+       WS-515 (the quota ceiling), which is why these two ship together or not at all.
+
+    4. THE APP'S DEDUP IS SKIPPED ENTIRELY. `src/utils/persistence/handsStorage.js:549` gates
+       the whole dedup block on `if (handRecord.captureId) {`. No id, no dedup, unconditional
+       insert. (The block is also `sessionId`-scoped, which is a second and separate narrowness
+       — see FIND-083.)
+
+    5. SO EVERY COLD-START DRAIN RE-INSERTS. `content/app-bridge.js:232-248` drains the session
+       queue on app load. The queue is capped at `MAX_QUEUE = 500` (`storage-writer.js:28`), and
+       because step 2 never removes anything, the same hands are re-delivered and, because of
+       step 4, re-inserted every single time the app page is opened. The corpus of live-observed
+       hands — the thing this extension exists to build — accumulates duplicate rows
+       proportional to how often the founder opens the app.
+
+  WHY IT SURVIVED. `shared/__tests__/integration-pipeline.test.js:126-162` is titled
+  'hand record survives all transformations'. It asserts eleven fields — gameState,
+  currentStreet, dealerButtonSeat, mySeat, actionSequence length, cardState, communityCards,
+  holeCards, tableId, source, and `ignitionMeta.handNumber` (`:161`) — and never asserts
+  `captureId`. The one test written to prove nothing is lost across the wire passes unchanged
+  with the only field that matters for identity missing.
+
+  THE FIX IS ONE LINE, AND IT IS RECONSTRUCTIBLE EVEN FOR HANDS ALREADY ON THE WIRE.
+  `generateCaptureId` (`storage-writer.js:173-177`) returns `` `${tableId}_${handNum}` `` — and
+  BOTH inputs already survive the relay (`tableId` at `:207`, `ignitionMeta.handNumber` via
+  `IGNITION_META_FIELDS`). So the value is recoverable on the app side, which is what makes a
+  cleanup of the existing duplicate rows possible rather than merely desirable.
+
+  CAVEAT ON THAT ID, WHICH THIS TICKET MUST NOT PROPAGATE. `generateCaptureId` falls back to
+  `Date.now()` when `handNumber` is missing (`:175-176`), minting a fresh id on exactly the
+  replay/reconnect deliveries most likely to BE duplicates. FIND-083 already names this. Adding
+  `captureId` to the wire without addressing the fallback ships a dedup key that is
+  non-deterministic on the one path where dedup matters most.
+
+  CONTAMINATES SCORED FIGURE: Yes, prospectively. Duplicate hand rows inflate every k and n
+  computed over the live corpus. Nothing downstream can distinguish a villain who did something
+  twice from a villain whose hand was inserted twice.
+accept_criteria:
+  - "`captureId` is on the wire. `buildHandForRelay` carries it, and a hand round-tripped through the relay is byte-identical on that field to the record `enqueueHand` stamped."
+  - "BOTH validators REJECT a relay hand with no `captureId`. Today they return valid; a schema blind to the protocol's own primary key is the reason this shipped, and adding the field without closing the validator leaves the hole open for the next field."
+  - "`integration-pipeline.test.js`'s 'hand record survives all transformations' asserts `captureId`, and that assertion FAILS against HEAD. A test that passes before the fix has not tested the fix."
+  - "The ACK loop is verified end to end, not inferred: enqueue N hands, drain via `app-bridge`, and assert the session queue is empty AND `journalPrune` removed all N journal entries. The journal shrinking is the observable proof; queue drain alone does not prove pruning."
+  - "EXISTING DUPLICATE ROWS ARE REMOVED, not just prevented. A migration reconstructs `captureId` from `tableId` + `ignitionMeta.handNumber` on stored rows that lack one, collapses the duplicates, and reports how many rows it removed. Every hand captured to date is already affected; a fix that only stops new duplicates leaves the corpus permanently wrong and undated."
+  - "The migration is idempotent and reports a count of ZERO on a second run. A dedup pass that cannot be run twice safely cannot be trusted once."
+  - "Rows that cannot be assigned an id (no `handNumber`, so no reconstructable key) are COUNTED AND REPORTED rather than dropped or silently kept. The founder is told how much of the existing corpus is unrecoverable, as a number."
+  - "The `Date.now()` fallback at `storage-writer.js:175-176` is replaced with a deterministic content hash (`src/utils/contentHash.js` exists) or the ticket states explicitly why it was left, with the residual duplicate risk named. Shipping the wire fix on top of a non-deterministic key reproduces the defect on the replay path."
+  - "Dedup at `handsStorage.js:549` no longer depends on a field that can be absent — the id is required at the write boundary, per `feedback_action_dispatch_legality` (prefer unrepresentable to validated)."
+  - "Verified against a REAL capture, not only tests: run the extension, capture hands, load the app twice, and confirm the second load adds zero rows. The defect is 'every page load duplicates', so the falsifier is a second page load."
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "ignition-poker-tracker/shared/wire-schemas.js"
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/content/app-bridge.js"
+  - "ignition-poker-tracker/shared/__tests__/integration-pipeline.test.js"
+  - "src/hooks/useSyncBridge.js"
+  - "src/utils/persistence/handsStorage.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-515"
+sprint_id: ""
+decision_flags: []
+source:
+  type: code-review
+  created_by: ai
+  finding_id: "FIND-083"
+  run_id: "ignition-capture-audit-2026-08-16"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  RELATION TO FIND-083 (2026-08-07, open). FIND-083 named the *consequences* — "no cross-writer
+  captureId dedup" and "captureId degrades to Date.now() on reconnect" — but not the cause. It
+  did not identify that `buildHandForRelay` strips the field before it ever reaches a writer, so
+  the dedup it asks for could not have worked even if implemented. This ticket is the cause under
+  that finding; FIND-083 stays open for its origin-check half (`useSyncBridge.js:238` /
+  `app-bridge.js:149` gate on `event.source` only), which is a security concern and a different
+  fix. NOT a duplicate of WS-370 (dead export handler) or WS-460 (journal retention/purge).
+
+  CITATION CORRECTIONS made while re-verifying against HEAD, recorded because the audits that
+  produced this ticket got them slightly wrong:
+    - The source audit cited the app-side dedup as `src/utils/.../handsStorage.js:549`. Real path
+      is `src/utils/persistence/handsStorage.js`; line 549 is exact.
+    - The integration test was cited as `tests/integration-pipeline.test.js:125-162`. Real path
+      is `ignition-poker-tracker/shared/__tests__/integration-pipeline.test.js`, lines 126-162.
+      Title and the missing assertion are exactly as described.
+    - The audit read `app-bridge.js:234-248` as inserting "up to 500 duplicate rows per app page
+      load". The `500` at `:248` is a MILLISECOND DELAY (`}, 500);`), not a row count. The 500-row
+      bound is real but comes from `MAX_QUEUE = 500` at `storage-writer.js:28`, which caps the
+      session queue the drain reads. The conclusion stands; the mechanism is one file over.
+  Confirmed exactly as cited: `wire-schemas.js:200-232`, `useSyncBridge.js:121`,
+  `storage-writer.js:248`, `:173-177`.

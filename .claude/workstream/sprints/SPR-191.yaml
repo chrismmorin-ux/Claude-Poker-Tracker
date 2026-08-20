@@ -1,0 +1,55 @@
+id: "SPR-191"
+title: "Get the compute pipeline telling the truth again — clear the review debt and unblock cm-node1"
+status: done
+approved_at: "2026-08-19T19:38:24.683Z"
+completed_at: "2026-08-19T21:57:24.750Z"
+completed_by_commit: "db4c7e96"
+program_focus: "infrastructure"
+
+goal: |
+  Get the compute pipeline telling the truth again — clear the review debt and unblock cm-node1
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-19T19:38:24.683Z"
+  matches: []
+
+composition_notes: |
+  Founder-directed focus: review the finished compute runs and prioritize from them (/next args, 2026-08-19). Default anchor WS-548 rejected — it is runs_on:node1 and would have been executed on the G16, the violation WS-569 names. All five items are runs_on:any. Effort ~3 sessions against a 2-session cap; founder approved the full set rather than trimming.
+
+items:
+  - id: "WS-572"
+    title: "A code fix never re-opens the compute job it invalidated — the already-ran fingerprint omits the engine commit"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-19T21:57:24.750Z"
+  - id: "WS-512"
+    title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory (batched iterator in indexEvalPlayers)"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-08-19T21:57:24.750Z"
+  - id: "WS-547"
+    title: "WS-503 FAILED on cm-node1 — no error captured in the step log"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-19T21:57:24.750Z"
+  - id: "WS-497"
+    title: "Review the WS-320 run — RC-study-ladder-d908f09d is superseded; re-run on the fixed scorer"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-19T21:57:24.750Z"
+  - id: "WS-496"
+    title: "Review the WS-295 run — 6x UNDERPOWERED; the curse probe has zero estimator noise by construction"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-08-19T21:57:24.750Z"
+
+decisions_needed:
+  - "[object Object]"
+
+created_at: "2026-08-19T19:38:24.683Z"

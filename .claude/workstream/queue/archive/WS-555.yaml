@@ -1,0 +1,106 @@
+id: "WS-555"
+title: "Verify a Conduct Card can be built from an Ignition import and a live tableview player, not just the corpus"
+legacy_id: ""
+type: verification
+status: done
+claimed_by: "ses-20260820-0451-a16466b3"
+claimed_at: "2026-08-20T05:00:25.421049Z"
+started_at: "2026-08-20T05:00:25.421049Z"
+completed_at: "2026-08-20T05:00:25.421049Z"
+priority_score: 88
+priority_label: "P1"
+category: "data-quality"
+capability: "core"
+program: "data-provenance"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-18: "we need to make sure the foundation is the same as a hand history
+  imported from ignition, or a player in the live app selected from tableview."
+  
+  WHAT IS ESTABLISHED. labelDecisions consumes a narrow, source-agnostic contract - handId,
+  seatPlayers, and gameState.{actionSequence, dealerButtonSeat, blinds} plus board and showdown
+  cards. That is the APP's own hand shape; phhAdapter exists solely to convert corpus hands INTO
+  it. So a live-app player from tableview should already satisfy it by construction.
+  
+  WHAT IS NOT ESTABLISHED, and must not be assumed: the Ignition extension carries an
+  actionSequence concept in shared/hand-format.js and shared/record-builder.js, but NOBODY HAS
+  VERIFIED THE SHAPES MATCH. This item is that verification, and the adapter if they do not.
+  
+  Until it passes, "the foundation is the same" is a hypothesis.
+accept_criteria: |
+  - A Conduct Card built end-to-end from an Ignition-captured hand history.
+  - A Conduct Card built from a live-app tableview player's recorded hands.
+  - Any shape gap closed by an adapter that converts INTO the app shape - never by widening the
+    labeler's contract, which would let three representations drift apart again.
+  - A gate asserting the three sources produce identically-shaped decision rows.
+effort: "S"
+runs_on: "g16"
+files_involved:
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "ignition-poker-tracker/shared/hand-format.js"
+  - "ignition-poker-tracker/shared/record-builder.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-conversation"
+  detail: "2026-08-18/19 Conduct Card + Exploit Card session; three adversarial agent passes"
+created_at: "2026-08-19T00:00:00.000Z"
+
+completion_notes: |
+  VERIFIED, AND THE ANSWER WAS NO. The item's "WHAT IS ESTABLISHED" paragraph was wrong: the
+  labeller's contract is NOT the persisted app hand shape, so neither an Ignition import nor a
+  live-app player satisfied it "by construction". Handing a real captured hand to
+  labelDecisions with its gameState passed through produced 5 rows for one seat, of which 2
+  were `mucked`/`won` (results, not decisions) and all 5 had potBB/spr/sizeBucket/boardCards
+  null. It did not throw. Without `_backtest`, decisionGeometry returns null and the labeller
+  falls back to a big blind of 1, so every chip amount was read as big blinds.
+
+  Three real defects found on real data, all fixed:
+
+  1. protocol-adapter.js recorded the WRONG WIRE FIELD on a raise. `bet` on a CO_SELECT_INFO
+     raise frame is the amount OWED before the raise; `raise` is what the seat put in. Every
+     raise in every captured hand recorded the call price - an open to 3bb stored as 1bb.
+     Reconciled against stack movement across the four spike captures: 119/119 raises match
+     `raise`, 350/350 bets and calls match `bet`. The sidebar's "faced bet" read this number.
+  2. The wire speaks INCREMENTS; the app record speaks TOTAL STREET COMMITMENT for BET/RAISE.
+     Nothing converted. Now converted once, in record-builder.js, DERIVED from the finished
+     hand rather than accumulated from frames - measured that the CO_BLIND_INFO seeding is
+     empty at the first action of all 109 replayed hands, because the blind frames arrive
+     before the hand-start reset. Adapter refusals on real captures fell 16 -> 7 of 109.
+  3. START-OF-HAND STACKS were never kept (`stacks` is overwritten to end-of-hand), so every
+     Ignition decision carried spr: null - losing one of the four WS-333 geometry coordinates.
+     HSM now keeps the first stack reading per seat and record-builder reconstructs the
+     start-of-hand stack from it. 1177/1177 rows now carry spr and stack; 694 reconstructed
+     stacks, zero violating "start >= contributed".
+
+  Also: a DEAD BUTTON (Ignition parks it on an empty seat; 3 of the first 6 replayed hands)
+  made positionOf return 'unknown' and left the blinds unseeded. The adapter re-points the
+  button at the occupied seat that actually acts last, which is what being on the button means.
+
+  SHIPPED
+  - scripts/backtest/appRecordAdapter.mjs - persisted app/extension record -> labeller hand,
+    with `_backtest` derived. Refuses (named reason) rather than defaulting a big blind. Its
+    arithmetic gate is what catches a source speaking the wrong money convention.
+  - scripts/villainArchetype/__checks__/sourceParity.check.mjs - the gate. 3 arms end-to-end
+    (corpus via phhAdapter; Ignition via the real TableManager producer path over a real
+    .jsonl; live-app via a record validated by the app's own validateHandRecord). Asserts
+    identical 65-key row shape both directions, zero showdown rows, non-null geometry on every
+    row, and a Conduct Card built by the REAL emitConductCard from each arm.
+  - ignition-poker-tracker: protocol-adapter.js, hand-state-machine.js, record-builder.js.
+  - .github/workflows/ci.yml - `npm run check:archetype` now runs in CI. It only hung off
+    `preflight`, which CI never invokes; run-all.mjs's own header says nothing ran these.
+  - src/utils/persistence/validation.js - explicit import extensions so the app's hand
+    validator loads under bare Node ESM (same property WS-433 established for the engine).
+
+  NOT CLOSED, named rather than papered over: the live-app arm uses a fixture in the shape
+  usePersistence builds and validated by the app's own validator - NOT the founder's real
+  hands, which live in IndexedDB on the S22 and no node process can reach. 7 of 109 captured
+  hands are still refused (dead/extra blind posts and partial captures); refusal is correct
+  behaviour, but the cause is diagnosed and not fixed.
+
+  VERIFICATION: extension 2389/2389 tests pass; villainArchetype checks 11/11; main suite
+  15950 pass with one timeout-flaky file per run (a different file each run, all passing in
+  isolation, none touching changed code); both builds green.

@@ -1,0 +1,91 @@
+id: "WS-570"
+title: "Undoing Next Hand still advances the stack ledger and the hand counter — decide whether undo should roll back settlement"
+legacy_id: ""
+type: decision
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 36.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "core"
+program: "domain-correctness"
+runs_on: any
+effort: M
+finding_id: ""
+description: |
+  FOUND 2026-08-19 while fixing WS-563, and deliberately left unresolved there because
+  guessing at it could corrupt provenance in a way worse than the gap.
+
+  THE FACTS, read from the reducers.
+  `GAME_ACTIONS.NEXT_HAND` (`src/reducers/gameReducer.js:276-293`) does two things beyond
+  clearing the hand:
+
+      seatStacks: advanceHand(state.seatStacks, { contributions, payouts, estimated }),
+      handNumber: (Number(state.handNumber) || 0) + 1,
+
+  The Next Hand undo toast (`src/components/views/TableView/CommandStrip.jsx`, `handleNextHand`)
+  restores actionSequence, dealerButtonSeat, currentStreet, absentSeats, communityCards,
+  holeCards, handCount — and, since WS-563, potOverride, reviewTag and allPlayerCards.
+  It does NOT roll back `seatStacks` or `handNumber`.
+
+  So an undone hand still settles the stack ledger and still increments the monotonic
+  counter. Press Next Hand by mistake, press Undo, and the hand comes back — but the ledger
+  has already moved as though it completed.
+
+  WHY THIS IS A DECISION AND NOT A BUG FIX.
+    - `handNumber`'s own comment (`gameReducer.js:62-64`) says it is "Monotonic within a
+      session. Drives provenance decay only — deliberately not sessionReducer's handCount,
+      so the ledger never depends on another reducer." A counter that is DELIBERATELY
+      monotonic may be correct to leave alone: an undone hand still happened in time, and
+      provenance decay may legitimately reflect that.
+    - `seatStacks` carries `source` per INV-STK-01 — "only 'entered'/'carried' may disprove
+      a stack-depth claim". Rolling settlement back means re-deriving which observations
+      are still load-bearing. Done naively it could resurrect a stack figure the founder
+      had superseded, which is a WORSE failure than the current one: a wrong number that
+      looks measured.
+    - The two may not have the same answer. `handNumber` staying monotonic is defensible;
+      `seatStacks` silently settling an un-happened hand is harder to defend.
+
+  OPTIONS
+    1. Roll both back on undo — snapshot seatStacks + handNumber like every other field.
+       Cost: must confirm advanceHand is cleanly invertible by snapshot-restore (it should
+       be, since restore replaces rather than recomputes), and re-check INV-STK-01 holds
+       after a restore.
+    2. Roll back seatStacks only; leave handNumber monotonic by design. Cost: document why,
+       so the asymmetry is not read as an oversight next time.
+    3. Leave both; document that undo restores the HAND but not the LEDGER, and surface
+       that in the toast copy so "Hand restored" stops overstating what happened.
+  Option 3 is only acceptable if the toast stops claiming more than it did — that is the
+  same defect class WS-563 and WS-556 just closed.
+
+  `src/reducers/__tests__/destructiveUndoCoverage.test.js` currently EXCLUDES these two
+  fields explicitly, with a comment pointing here, so the exclusion is visible rather than
+  silent. Whichever option is chosen, that exclusion list is the thing to update.
+accept_criteria:
+  - "Founder or domain owner picks option 1, 2 or 3 and the reasoning is recorded"
+  - "If rolled back: the undo snapshot captures seatStacks and handNumber, and a test asserts an undone Next Hand leaves the ledger identical to its pre-action state"
+  - "If NOT rolled back: the toast copy no longer claims more than happened, and the asymmetry is documented at the reducer"
+  - "INV-STK-01 is re-checked against the chosen behaviour — a restored stack figure must not become load-bearing when it was superseded"
+  - "The LEDGER_ADVANCED_NOT_CLEARED exclusion in destructiveUndoCoverage.test.js is updated to match the decision"
+files_involved:
+  - "src/reducers/gameReducer.js"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/reducers/__tests__/destructiveUndoCoverage.test.js"
+  - ".claude/context/INVARIANTS.md"
+decision_flags:
+  - "Ledger rollback semantics vs deliberate monotonicity — INV-STK-01 is load-bearing"
+source:
+  type: engine-run
+  created_by: ai
+  engine: eng-engine
+  run_id: "run-launch-sweep-2026-08-18"
+  protocol: "launch/sweep"
+  parent_item: "WS-563"
+  dedup_key: "eng-engine-data-integrity-src-reducers-gameReducer.js-276-293-undo-ledger"
+  note: "Found while fixing WS-563; left unresolved on purpose rather than guessed at."
+created_at: "2026-08-19"
+updated_at: "2026-08-19"

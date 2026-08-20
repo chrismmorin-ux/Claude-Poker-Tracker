@@ -1,0 +1,161 @@
+id: "WS-594"
+title: "Depth-2 budget sweep on cm-node1 — the coverage curve WS-574's default is chosen from"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 92
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Split out of WS-574, which is `runs_on: g16` (React hook wiring) while this half is long
+  unattended compute. One item cannot be two machines, and mislabelling WS-574 to get the
+  sweep fed would send the wiring work to the wrong box.
+
+  ── WHY THE SWEEP IS NEEDED ──
+  WS-574's accept criteria require the new `refinementBudgetMs` default to be CHOSEN FROM THE
+  COVERAGE CURVE, not guessed, and the chosen value recorded with the curve that justified it.
+  Founder ruling 2026-08-20: budget is "always finish, no cap" — set above the worst observed
+  case so no stage is ever budget-gated on any board. That ruling needs a curve to name a
+  number against.
+
+  ── MEASURED ON G16 2026-08-20, NOT GUESSED ──
+  `probe-depth2-coverage.mjs --boards 6 --budget 2000` after the WS-574 probe fix:
+
+      stage                  ran  partial  gated:budget  gated:other  meanWeight
+      raiseResponseDepth2     10        6             4            0       0.232
+      riverPerCombo            6        0             0            6         n/a
+      callDepth2               6        6             0            0       0.494
+      checkCheckDepth2         6        0             0            0         n/a
+      betCallDepth2            6        6             0            0       0.306
+      checkRaiseDepth2         6        0             6            0         n/a
+      depth3Barrel             6        0             6            0         n/a
+
+  `depth3Barrel` — barrel planning — is budget-gated on EVERY board. It has never run in
+  production. `checkRaiseDepth2` likewise. This is the structural consequence of `gateStage`
+  appending 'budget' to blockedBy in call order: exhaustion deletes whichever stages come last,
+  it does not thin them evenly.
+
+  Timing basis for maxJobHours: 40 boards @ budget 2000 took 93s on the G16, 6 boards took 14s
+  (~2.3 s/board). Wall time scales with the budget while the clock binds, so the six arms at 60
+  boards project to ~1.5h on the G16. cm-node1 is a Surface Pro 8 and slower, so the cap is set
+  at a pessimistic multiple rather than at the figure the G16 suggests.
+
+  ── BLOCKED 2026-08-20, and the blocker is not in this item's code ──
+  First submission (job ws-594-4de0a32e99b8) failed immediately:
+
+      Cannot find module 'C:/cj/ws-594-4de0a32e99b8/scripts/backtest/probe-depth2-coverage.mjs'
+
+  cwos-fleet-compute cuts the job worktree from HEAD of the repo clone ON CM-NODE1
+  (`computeHead()` -> `git -C <REMOTE_REPO> rev-parse HEAD`). `probe-depth2-coverage.mjs` was
+  committed to this branch on 2026-08-19 (ec0d251d) and is NOT on origin/main — the session
+  start banner reported 36 commits unpushed, oldest 3.1 days. So node1's clone genuinely does
+  not contain the script, and no amount of re-feeding will change that.
+
+  THIS ITEM CANNOT RUN UNTIL THE PROBE REACHES THE REF NODE1 PULLS FROM. That is a push, which
+  is a founder decision, not a retry. Auto-filed failure record: WS-595.
+
+  Note the general shape, which is worth a look beyond this item: any node1 compute_job whose
+  script is newer than origin/main fails this way, and the failure message names a missing
+  module rather than a stale worktree — so it reads like a broken spec.
+
+  ── THAT DIAGNOSIS IS NOW STALE, AND THE REAL BLOCKER IS WORSE (WS-595, 2026-08-20) ──
+  cm-node1 has since advanced to 446ab938, where `probe-depth2-coverage.mjs` IS present
+  (`git cat-file -e 446ab938:scripts/backtest/probe-depth2-coverage.mjs` succeeds). So the
+  missing-module cause above would clear on a re-key, and the item would look ready.
+
+  It is not ready. This item's first accept criterion requires artifacts carrying
+  `totals.budgetGated` and `totals.budgetGatedStages`. Those fields exist ONLY in the
+  working-tree copy of the probe (blob a93cd980, lines 210-239). At BOTH 446ab938 and
+  b5e54400 the blob is 5f8bf40c, which emits
+  `totals: { stageRuns, partial, partialShare, meanWeightConsumed }` — neither field. That
+  version also keys per-stage rows on the array index rather than on `rec.stage`, so the rows
+  are misattributed across boards.
+
+  A run pinned to either commit would therefore SUCCEED and write plausible artifacts that
+  cannot satisfy this item — strictly worse than the loud MODULE_NOT_FOUND it was filed for.
+  Four `src/utils/exploitEngine/` files in the probe's import closure are uncommitted too
+  (gameTreeDepth2, gameTreeEvaluator, gameTreeSampling, refinementWork), so the evaluator
+  itself would be the old one.
+
+  The gate that now refuses this is `worktreeDrift` in kit/scripts/cwos-fleet-compute.js.
+  UNBLOCKED BY: committing the WS-574 working-tree changes, then advancing the ref cm-node1
+  pulls (origin/main -> chris@100.120.209.34). Both, in that order — pushing alone does
+  nothing while the edits are uncommitted.
+
+accept_criteria: |
+  - Six arms complete and write their artifacts, each carrying `totals.budgetGated` and
+    `totals.budgetGatedStages`.
+  - The smallest budget at which `budgetGated == 0` on all 60 boards is identified by name.
+  - The curve is recorded somewhere WS-574 can cite when it changes the default.
+  - An arm that still gates at the top budget is reported as such, not rounded away — that
+    would mean the budget is not the only binding constraint and the hardcoded sample counts
+    (16 per depth-2 sampler; DEPTH3_TURN_CARDS 6, DEPTH3_RIVER_CARDS 8,
+    DEPTH3_TURN_D3_RIVER_CARDS 10) are also in play.
+effort: "S"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/probe-depth2-coverage.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-574"
+sprint_id: null
+decision_flags: []
+source:
+  kind: "split"
+  detail: "split from WS-574 during SPR-193 — compute half of a g16 item"
+created_at: "2026-08-20T05:55:00.000Z"
+compute_job:
+  # Six arms, one step each, so a single arm failing does not lose the others. Board count is
+  # 60 rather than WS-574's 40: `drawBoards` is seeded, so the first 40 are the SAME boards and
+  # 60 is a strict superset — more curve for the same comparability.
+  maxJobHours: 8
+  steps:
+    - name: coverage-budget-2000
+      cmd: node
+      args: ["scripts/backtest/probe-depth2-coverage.mjs", "--boards", "60", "--budget", "2000", "--out", "out/depth2-coverage-02000.json"]
+      expectFiles: ["out/depth2-coverage-02000.json"]
+      maxAttempts: 2
+    - name: coverage-budget-8000
+      cmd: node
+      args: ["scripts/backtest/probe-depth2-coverage.mjs", "--boards", "60", "--budget", "8000", "--out", "out/depth2-coverage-08000.json"]
+      expectFiles: ["out/depth2-coverage-08000.json"]
+      maxAttempts: 2
+    - name: coverage-budget-12000
+      cmd: node
+      args: ["scripts/backtest/probe-depth2-coverage.mjs", "--boards", "60", "--budget", "12000", "--out", "out/depth2-coverage-12000.json"]
+      expectFiles: ["out/depth2-coverage-12000.json"]
+      maxAttempts: 2
+    - name: coverage-budget-16000
+      cmd: node
+      args: ["scripts/backtest/probe-depth2-coverage.mjs", "--boards", "60", "--budget", "16000", "--out", "out/depth2-coverage-16000.json"]
+      expectFiles: ["out/depth2-coverage-16000.json"]
+      maxAttempts: 2
+    - name: coverage-budget-20000
+      cmd: node
+      args: ["scripts/backtest/probe-depth2-coverage.mjs", "--boards", "60", "--budget", "20000", "--out", "out/depth2-coverage-20000.json"]
+      expectFiles: ["out/depth2-coverage-20000.json"]
+      maxAttempts: 2
+    # The bracket arm. If 40000 still gates a stage, the budget is not the only constraint and
+    # the hardcoded sample counts are implicated — a different fix, so it must not be silently
+    # absorbed into "pick the biggest number that finished".
+    - name: coverage-budget-40000
+      cmd: node
+      args: ["scripts/backtest/probe-depth2-coverage.mjs", "--boards", "60", "--budget", "40000", "--out", "out/depth2-coverage-40000.json"]
+      expectFiles: ["out/depth2-coverage-40000.json"]
+      maxAttempts: 2
+  artifacts:
+    - "out/depth2-coverage-02000.json"
+    - "out/depth2-coverage-08000.json"
+    - "out/depth2-coverage-12000.json"
+    - "out/depth2-coverage-16000.json"
+    - "out/depth2-coverage-20000.json"
+    - "out/depth2-coverage-40000.json"

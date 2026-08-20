@@ -28,4 +28,5 @@ accept_criteria: |
   - Plain English: if the app has no idea what the opponent could hold, it says "no read"
     instead of showing a confident 50/50.
 effort: "M"
+runs_on: "any"
 created_at: "2026-08-13"
