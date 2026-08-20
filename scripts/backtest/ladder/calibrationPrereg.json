@@ -1,0 +1,117 @@
+{
+  "id": "PREREG-WS-546-SUPPORT",
+  "declaredAt": "2026-08-20",
+  "ticket": "WS-546",
+  "purpose": "Measure the INSTRUMENT, not the poker. Every arm below has a sign fixed before the run by domination or by construction, so a result that contradicts it is an instrument defect and not a discovery about the pool.",
+  "whyNow": "The hero-EV estimator carries three named distortions (one-decision horizon; decision-weighted rather than hand-weighted, measured at a factor of 3.17; a selected scored population) and one assumption its own header records as FALSE BY CONSTRUCTION: 'a hand belongs to exactly one scored player ... measured at 2.91 EVAL players per hand ... the cluster bootstrap's independence assumption does not hold.' Every confidence interval this harness has produced is therefore too narrow by an unknown factor. Ladder v1's two 'resolved' deltas rest on those intervals. Nothing may be built on them until the error is measured.",
+  "arms": {
+    "clone-the-pool": {
+      "definition": "Abstains at every decision, with fallback 'pool'. Therefore pi_ours = pi_pool identically, and every importance weight is exactly 1.",
+      "expected": "EXACTLY ZERO",
+      "rationale": "edge = wisValue - poolValue, and with all weights 1 the weighted mean IS the plain mean. This is an algebraic identity, not an empirical prediction.",
+      "reading": "Any deviation from 0 is PURE INSTRUMENT ERROR and is the error floor every other figure in this harness must be read against. This is the sharpest arm here and the reason the set exists."
+    },
+    "never-fold": {
+      "definition": "Never folds; mass split over the remaining legal responses.",
+      "expected": "NEGATIVE",
+      "rationale": "Folding is sometimes strictly correct. A policy that never folds pays off every value bet it faces."
+    },
+    "call-every-large-bet": {
+      "definition": "Calls 100% facing sBucket 100-150 or 150+.",
+      "expected": "NEGATIVE",
+      "rationale": "Founder, 2026-08-18: overcalls exactly where the field value-bets and is nutted. Large bets in this pool are the most polarised to value.",
+      "note": "The most directly interpretable dominated arm, and the one whose magnitude is most informative about how punishing the pool's large bets actually are."
+    },
+    "fold-every-small-bet": {
+      "definition": "Folds 100% facing sBucket 0-33.",
+      "expected": "NEGATIVE",
+      "rationale": "Folding at the best price on offer forfeits equity that a small bet is laying odds to realise."
+    },
+    "raise-everything": {
+      "definition": "Raises 100% wherever raise is a legal response.",
+      "expected": "NEGATIVE",
+      "rationale": "Raising the whole range turns every marginal holding into a bluff against a range that has already shown strength."
+    },
+    "always-fold": {
+      "definition": "Existing control (strategyArm.mjs). Folds wherever folding is legal.",
+      "expected": "NEGATIVE",
+      "rationale": "Already measured at -1.9942 bb (n=45). Included so the calibration set contains one arm with a prior measurement to reproduce."
+    },
+    "never-fold-mixed": {
+      "definition": "never-fold with a floor of mass kept on every legal response, fold included. Ships ALONGSIDE never-fold, never replacing it.",
+      "expected": "NEGATIVE",
+      "rationale": "Same domination as never-fold: a policy that folds far too rarely pays off value bets. Mixing changes the magnitude, not the sign.",
+      "note": "The trade, stated rather than hidden: softening keeps support broad, which is what makes the arm estimable, and it changes the rung being modelled. This buys instrument validity with fidelity to the rule."
+    },
+    "raise-everything-mixed": {
+      "definition": "raise-everything with the same mixing floor. Ships alongside raise-everything.",
+      "expected": "NEGATIVE",
+      "rationale": "Same domination as raise-everything; mixing changes magnitude, not sign."
+    }
+  },
+  "clusterCheck": {
+    "question": "How much wider do the intervals get when the cluster unit is corrected?",
+    "method": "Recompute every arm's CI with the bootstrap resampling HANDS instead of PLAYERS, on the identical scored set, and report the ratio of interval widths.",
+    "reading": "The ratio is the factor by which every prior figure's precision was overstated. Ladder v1's R2 delta has a lower bound of +0.0048; a widening ratio above ~1.05 removes its claim to resolution.",
+    "note": "Hand-level clustering is not obviously the RIGHT unit either (sessions and tables also correlate), so this is a lower bound on the correction, not the final answer."
+  },
+  "verdicts": {
+    "FIX_CONFIRMED": "clone-the-pool returns EXACTLY 0.0000 under BOTH estimands, AND every dominated arm returns its pre-registered sign under edgeBBSupportMatched at ESS < 40 percent, AND no previously-correct arm flips.",
+    "FIX_INSUFFICIENT": "clone-the-pool holds but at least one dominated arm still contradicts its sign. The support mismatch was not the whole defect, and the doubly-robust follow-up becomes the critical path.",
+    "FIX_REJECTED": "clone-the-pool no longer returns exactly zero, or a previously-correct arm flips. The candidate has traded one bias for another and is rejected regardless of what else it repaired."
+  },
+  "reportedRegardlessOfVerdict": [
+    "each arm edge under BOTH estimands, with the delta between them",
+    "each arm CI, ESS, clipped share, mean weight and coverage",
+    "each arm support share -- the fraction of scored rows with w > 0",
+    "player-clustered and hand-clustered intervals side by side, with the width ratio",
+    "the scored n and the share of decisions each arm actually covered",
+    "both mixing-floor values and the delta between them",
+    "any arm that NEVER FIRED, reported as unexamined with that reason -- never as a clean arm. call-every-large-bet never fired in WS-543 and has no verdict to date."
+  ],
+  "supersedes": {
+    "id": "PREREG-WS-543-CALIBRATION",
+    "sha256": "9e2711c69848e1c5",
+    "why": "WS-543 ran under that document and returned INSTRUMENT_FALSIFIED. It is superseded rather than edited so that run stays replicable against the text it actually ran under. Every arm definition and expected sign below is UNCHANGED from it: domination does not care which baseline the estimator differences against, so a fix is not allowed to move the goalposts it is being judged by."
+  },
+  "whatChanged": "WS-543 measured the defect; WS-546 removes it. weightFor returns ok with w = 0 when our policy assigns zero probability to the observed action (ipsEstimator.mjs, and its own comment says so). Those rows enter `scored`. wisValue divides by the weight sum so they vanish; poolValue is a plain mean over scored.length so they count. edge = wisValue - poolValue therefore differences two DIFFERENT POPULATIONS whenever support is narrow.",
+  "estimands": {
+    "edgeBB": {
+      "definition": "wisValue(scored) - poolValue(scored), the baseline over EVERY scored row.",
+      "status": "UNCHANGED. Kept so any historical figure can be re-read and the movement seen.",
+      "conditioningSet": "all scored decisions"
+    },
+    "edgeBBSupportMatched": {
+      "definition": "wisValue(scored) - poolValue(scored restricted to w > EPSILON).",
+      "status": "NEW. A DIFFERENT ESTIMAND, renamed rather than silently substituted.",
+      "conditioningSet": "the decisions where our policy could have produced the observed action",
+      "warning": "This conditioning set is chosen by our own policy and may be a COLLIDER. It puts both terms on one population, which is what it is for; it does not make the resulting number the true edge, and it must never be reported without this conditioning set on its face."
+    },
+    "edgeBBSupportDelta": {
+      "definition": "edgeBBSupportMatched - edgeBB, reported for every arm INCLUDING where it is zero.",
+      "reading": "The size of the bias the all-rows baseline was carrying at this support. A delta of zero is a finding: it says support-matching is not load-bearing on that arm, which is worth knowing and is expected to be exactly true for clone-the-pool."
+    }
+  },
+  "mixingFloor": {
+    "status": "UNMEASURED CONSTANT",
+    "method": "Run at two values and report the delta between them, per .claude/rules/unmeasured-constants.md. Neither is the answer by default.",
+    "values": [
+      0.05,
+      0.15
+    ],
+    "reading": "If the sign is stable across both floors, the verdict does not depend on a number nobody measured. If it flips, the floor is load-bearing and is promoted to its own measurement target."
+  },
+  "pairedDeltaCheck": {
+    "question": "Does the paired-delta construction survive the support problem? It is currently ASSUMED to and that assumption is untested.",
+    "mechanism": "pairedDelta (depthAblationReport.mjs:204) differences two WEIGHTED means, so it does NOT have the weighted-vs-unweighted mismatch. It has a distinct one: vA averages over rows where arm A has support and vB over rows where arm B has support, so when the supports differ the difference is still cross-population.",
+    "method": "Pair each dominated arm against clone-the-pool, whose support is every row.",
+    "expected": "NEGATIVE for every dominated arm, by the same domination that fixes their sign in isolation.",
+    "reading": "A positive paired delta is an instrument defect, not a discovery about the pool."
+  },
+  "contaminationIdentity": {
+    "formula": "edgeBBSupportMatched - edgeBB = (|E| / (|S|+|E|)) * (mean_E - mean_S)",
+    "where": "S = rows the policy has support on; E = rows it does not.",
+    "signIsNotFixed": "The delta takes BOTH signs depending on whether the excluded rows are better or worse than the supported ones. An earlier draft of this pre-registration asserted a direction without deriving it and had it backwards. Verified numerically in both directions in scripts/__tests__/ipsSupportMatched.test.js.",
+    "thisCorpus": "For never-fold the excluded rows are the observed FOLDS, an all-loss population (a fold never wins) while the support rows carry the wins too. So mean_E < mean_S, the delta is negative, and edgeBB is inflated UPWARD. That is the positive sign observed. It is a property of this arm on this corpus, established by the identity, not a general fact about narrow support."
+  }
+}

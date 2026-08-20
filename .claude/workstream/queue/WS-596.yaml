@@ -1,0 +1,114 @@
+id: "WS-596"
+title: "The estimator's bias is a function of ESS, not of the policy — r = -0.95 across 8 arms"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 94
+priority_label: "P1"
+category: "methodology-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  WS-546 removed the narrow-support bias and the dominated arms STILL come back positive.
+  The verdict was pre-registered as FIX_INSUFFICIENT and that is what it returned. This item
+  carries the localization that run produced, which is much sharper than "the estimator is
+  wrong".
+
+  WHAT WAS ELIMINATED. Each of these is now ruled out by measurement, not by argument:
+
+    - THE BASELINE POPULATION. `poolValue` averaged over every scored row while `wisValue`
+      averaged over the support. Real, and now fixed: `edgeBBSupportMatched` ships beside
+      `edgeBB` with the delta. It moved `never-fold` from +2.8478 to +1.9849 and
+      `raise-everything` from +4.3176 to +3.2963 — a 30% bite, and both still POSITIVE where
+      domination guarantees negative.
+    - NARROW SUPPORT ITSELF. The mixed arms hold a probability floor on every legal response,
+      so their support share is 100% and `edgeBBSupportDelta` is EXACTLY 0.0000 — the two
+      estimands coincide, as they must. `never-fold-mixed-low` still returns +2.6652,
+      CI [+1.11, +4.39]. Full support does not rescue the sign.
+    - THE WEIGHT CAP. `clippedShare` is 0.0-0.4% on every arm. Nothing is hitting the cap.
+    - EXPLODING WEIGHTS. `meanWeight` is 1.0076-1.0954 across the whole set.
+    - THE CLUSTER UNIT. Hand-clustering widens the intervals by a median 1.01x. It cannot
+      turn a resolved positive into a negative.
+    - THE CORE PATH. `clone-the-pool` returns EXACTLY +0.0000 under BOTH estimands at ESS
+      2155/2155. The identity is reproduced to the last digit.
+
+  WHAT IS LEFT, AND IT IS ONE THING. The edge tracks EFFECTIVE SAMPLE SIZE and almost nothing
+  else. Across the eight arms with coverage:
+
+      ESS 87%  ->  -0.2520      ESS 39%  ->  +2.6652
+      ESS 74%  ->  -0.8217      ESS 37%  ->  +1.9849
+      ESS 45%  ->  +2.2787      ESS 32%  ->  +3.2225
+      ESS 24%  ->  +3.9439      ESS 21%  ->  +3.2963
+
+      Pearson r(ESS share, support-matched edge) = -0.9493
+
+  Within every arm family the relation is monotone: raising the mixing floor raises ESS and
+  lowers the edge, in both families, in the same direction. `raise-everything` at ESS 21% is
+  the one point off the trend (+3.30 where the fit wants more), so this is a strong signal
+  rather than a clean law. The eight arms are also only FOUR independent families, and the
+  correlation should be read with that n, not with n=8.
+
+  THAT IS THE SIGNATURE OF SELF-NORMALIZED IPS FINITE-SAMPLE BIAS. `wisValue` divides by the
+  realized weight sum, so the denominator is correlated with the numerator, and the resulting
+  bias scales with weight concentration -- i.e. with 1/ESS. It is not a property of the arm's
+  poker. It is the estimator reporting its own weight distribution.
+
+  ACCEPT CRITERION 5 IS ALREADY ANSWERED, IN THE NEGATIVE. The paired-delta construction was
+  ASSUMED to survive this and does not. Paired against `clone-the-pool` it reproduces `edgeBB`
+  to four decimals on every arm (`never-fold` +2.8478, `raise-everything` +4.3176,
+  `always-fold` -1.1751). That is algebra: clone's weights are all exactly 1, so
+  `wis_arm - wis_clone` IS `wis_arm - poolValue`. Pairing cancels bias only when both sides
+  share a weight concentration, and against clone there is nothing to cancel. The pre-registered
+  expectation that pairing would absorb much of the bias was WRONG and is recorded as wrong.
+
+  WHAT TO BUILD. This is the doubly-robust item WS-546 deferred, now with a brief:
+
+    1. A correction whose magnitude scales with 1/ESS is the shape to look for. The candidates
+       are a doubly-robust estimator with an outcome model, a control variate on the weight
+       sum, or a bias-corrected SNIS.
+    2. The outcome model does not exist yet. `holeMap.mjs:buildOutcomeArm` prices holes from
+       pot geometry and a measured fold curve and is not a general Q-function over scored
+       decisions -- but `holeMap.mjs`'s own header already argues this exact case ("the lines
+       he most wants priced are precisely where importance-weighted estimation is structurally
+       weakest"), so the rationale is written and waiting.
+    3. THE LEAKAGE QUESTION IS LOAD-BEARING and must be settled before anything is fitted: a
+       Q-function fitted on the same decisions the IPS arm consumes leaks by construction. See
+       the two-level split discipline already established for per-villain models.
+    4. THE TEST IS ALREADY BUILT AND ALREADY CALIBRATED. Run against the same set:
+       `node scripts/backtest/run-calibration.mjs --behavior-policy out/behavior-policy.json
+       --stakes 50NLH --max-files 200 --max-players 500 --max-decisions 2500 --workers 16`.
+       12 seconds. The pass condition is FIX_CONFIRMED in `ladder/calibrationPrereg.json`.
+accept_criteria: |
+  - Every dominated arm returns its pre-registered sign at ESS < 40%, including the four mixed
+    arms, which have full support and therefore no support excuse left.
+  - `clone-the-pool` still returns EXACTLY 0.0000 under BOTH estimands. A candidate that breaks
+    the identity is rejected regardless of what else it repairs.
+  - The residual correlation between ESS share and the reported edge is measured and reported.
+    Driving |r| toward zero is the actual objective; the sign flips are a symptom of it.
+  - The outcome model states what it was fitted on and how it is partitioned from the decisions
+    the IPS arm scores. An unstated split is a leak.
+  - `call-every-large-bet` is either made to fire on this slice or reported `unexamined` with
+    its reason. It has NEVER had a verdict -- not in WS-543 and not in WS-546.
+effort: "L"
+runs_on: "g16"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/holeMap.mjs"
+  - "scripts/backtest/ladder/calibrationArms.mjs"
+  - "scripts/backtest/run-calibration.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags:
+  - "What the outcome model is fitted on, and the partition that keeps it out of the decisions the IPS arm scores."
+source:
+  kind: "measurement"
+  detail: "2026-08-20 — WS-546 returned FIX_INSUFFICIENT; out/calibration-ws546.json under PREREG-WS-546-SUPPORT"
+created_at: "2026-08-20T11:15:00.000Z"

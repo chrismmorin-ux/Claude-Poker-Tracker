@@ -1,0 +1,71 @@
+id: "WS-546"
+title: "Remove the narrow-support bias — an ESS gate warns, it does not fix"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 92
+priority_label: "P1"
+category: "methodology-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  WS-543 measured the defect; this removes it.
+
+  THE DEFECT. `edge = wisValue - poolValue`, where `wisValue` averages over the decisions the
+  policy's support reaches and `poolValue` averages over EVERY scored decision. A policy whose
+  support excludes a commonly-observed action is therefore graded against a different population
+  than its own baseline. Measured 2026-08-18 at n=2,155: dominated arms return the CORRECT sign
+  at ESS 74-100% and confidently WRONG signs at ESS 21-37% -- `never-fold` at +2.85 bb
+  CI [+1.21, +4.67] where domination guarantees negative.
+
+  WHY AN ESS FLAG IS NOT ENOUGH. `lowSupport` now rides on every result, which stops a reader
+  being misled. It does not let the ladder score R0, whose support is narrow BY DESIGN -- a rung
+  that mostly folds is the floor the whole ladder is differenced against. Warning about a number
+  we still cannot compute is accommodation, not removal.
+
+  CANDIDATE REMOVALS, to be measured rather than chosen by argument:
+    1. SUPPORT-MATCHED BASELINE. Compute poolValue over the same rows wisValue uses (non-zero
+       weight only). Puts both on one population. CHANGES THE ESTIMAND -- it becomes "on the
+       decisions where our policy could have produced the observed action" -- which is a
+       conditioning set that must be named, and may itself be a collider. Cheap to test: the
+       dominated arms must flip to negative.
+    2. STOCHASTIC ARMS. A mixed policy keeps support broad. R1-R4 already mix; R0 is
+       deterministic. Softening R0 changes the rung, so this trades instrument validity against
+       fidelity to the rule being modelled, and that trade must be stated not hidden.
+    3. A DIFFERENT ESTIMATOR for narrow support -- doubly-robust, or the pot-geometry pricing
+       path `holeMap.mjs` already uses for exactly this reason ("the lines he most wants priced
+       are precisely where importance-weighted estimation is structurally weakest").
+
+  THE TEST FOR ANY CANDIDATE IS ALREADY BUILT: run it against the WS-543 calibration set. A fix
+  is a fix when every dominated arm returns its pre-registered sign AND `clone-the-pool` still
+  returns exactly zero. Anything that fixes the first while breaking the second has traded one
+  bias for another.
+accept_criteria: |
+  - Every dominated arm in the WS-543 set returns its pre-registered sign at ESS < 40%.
+  - `clone-the-pool` still returns EXACTLY 0.0000. A candidate that breaks the identity is
+    rejected regardless of what else it repairs.
+  - If the estimand changes, it is RENAMED and its conditioning set stated on every figure;
+    silently redefining `edgeBB` is refused.
+  - Ladder v1's rung levels are re-reported under the fix, or explicitly withdrawn.
+  - The paired-delta construction gets its own dominated-arm check -- it is currently ASSUMED to
+    survive the support problem and that assumption is untested.
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/ladder/calibrationArms.mjs"
+  - "scripts/backtest/holeMap.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536", "WS-596"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-18 — WS-543 calibration returned INSTRUMENT_FALSIFIED"
+created_at: "2026-08-18T00:00:00.000Z"

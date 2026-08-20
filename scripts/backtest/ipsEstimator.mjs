@@ -268,6 +268,73 @@ export const poolValue = (scored) => {
 };
 
 /**
+ * The behaviour-policy value over the rows the treatment policy's SUPPORT actually reaches.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * WS-546. WHY `poolValue` AND `wisValue` ARE NOT OVER THE SAME POPULATION
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `weightFor` returns `{ok: true, w: 0}` when our policy assigns zero probability to the
+ * action that was actually observed — deliberately, and its own comment says why: the hand
+ * carries no evidence about our policy's value. Those rows still enter `scored`. Then:
+ *
+ *   - `wisValue` divides by the weight sum, so a w = 0 row contributes nothing to either the
+ *     numerator or the denominator. It is ABSENT from the weighted mean.
+ *   - `poolValue` is a plain mean over `scored.length`, so the same row contributes its `net`
+ *     and a full count. It is PRESENT in the baseline mean.
+ *
+ * So `edge = wisValue - poolValue` differences a mean over the support against a mean over
+ * everything, and the two coincide only when support is total. Measured 2026-08-18 at
+ * n = 2,155: arms whose sign is FIXED IN ADVANCE by domination returned the correct sign at
+ * ESS 74-100% and confidently wrong signs at ESS 21-37% — `never-fold` at +2.8478 bb,
+ * CI [+1.207, +4.670], and `raise-everything` at +4.3176, where domination guarantees
+ * negative.
+ *
+ * THE CONTAMINATION IS EXACT, AND ITS SIGN IS NOT FIXED A PRIORI. Writing S for the support
+ * rows and E for the excluded ones:
+ *
+ *     edgeSupportMatched - edgeBB  =  (|E| / (|S|+|E|)) x (mean_E - mean_S)
+ *
+ * That identity is verified numerically in `scripts/__tests__/ipsSupportMatched.test.js`, in
+ * both directions. It matters that the sign is not fixed, because the tempting story — "the
+ * excluded rows are cheap, so the baseline is dragged down" — gets the direction BACKWARDS
+ * half the time, and an earlier draft of this comment asserted exactly that without deriving
+ * it. Cheap excluded rows pull the all-rows baseline UP and make `edgeBB` too LOW.
+ *
+ * For `never-fold` the excluded rows are the observed FOLDS, and a fold never wins: they are
+ * an all-loss population, while the support rows carry the wins as well. So mean_E < mean_S,
+ * the delta is negative, and `edgeBB` is inflated UPWARD — which is the positive sign that
+ * was actually observed. The direction is a property of THIS arm on THIS corpus, established
+ * by the identity above, not a general fact about narrow support.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * THIS CHANGES THE ESTIMAND, WHICH IS WHY IT IS A SEPARATE FUNCTION AND A SEPARATE FIELD
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * Restricting the baseline answers a NARROWER question: "on the decisions where our policy
+ * could have produced the observed action, how much better is it?" That conditioning set is
+ * chosen by our own policy and may be a COLLIDER. It buys one population for both terms; it
+ * does not buy the true edge. `edgeBB` therefore keeps its meaning untouched and the new
+ * quantity travels under its own name with its conditioning set attached — silently
+ * redefining `edgeBB` is refused by WS-546's accept criteria, and by ADR-009 generally.
+ */
+export const poolValueOverSupport = (scored) => {
+  let sr = 0;
+  let k = 0;
+  for (const s of scored) {
+    if (s.w > EPSILON) { sr += s.net; k++; }
+  }
+  return k > 0 ? sr / k : null;
+};
+
+/** How many scored rows the policy's support actually reaches. */
+export const supportCount = (scored) => {
+  let k = 0;
+  for (const s of scored) if (s.w > EPSILON) k++;
+  return k;
+};
+
+/**
  * Score a set of decisions and produce the edge with a cluster-bootstrapped CI.
  *
  * @param {Array} decisions - { piOurs, piPool, observedAction, netBB, playerId, handId }
@@ -280,7 +347,23 @@ export const estimateEdge = (decisions, {
   alpha = DEFAULT_BOOTSTRAP_ALPHA,
   seed = DEFAULT_BOOTSTRAP_SEED,
   label = null,
+  // WS-543 — THE CLUSTER UNIT IS NOW A PARAMETER, because the default one is known to be wrong.
+  //
+  // This file's own header records it: "a hand belongs to exactly one scored player ... is
+  // false by construction -- measured at 2.91 EVAL players per hand -- and the cluster
+  // bootstrap's independence assumption does not hold." Player-clustering therefore treats
+  // correlated decisions as independent evidence and every interval this harness has produced
+  // is TOO NARROW by an unmeasured factor.
+  //
+  // `clusterBy: 'hand'` resamples hands instead. It is not obviously the RIGHT unit either
+  // (sessions and tables also correlate), so the widening it reveals is a LOWER BOUND on the
+  // correction, never the final answer. The default stays 'player' so every existing caller is
+  // bit-identical; the point is to make the two comparable, not to silently switch.
+  clusterBy = 'player',
 } = {}) => {
+  if (clusterBy !== 'player' && clusterBy !== 'hand') {
+    throw new Error(`estimateEdge: clusterBy must be 'player' or 'hand', got ${clusterBy}`);
+  }
   const scored = [];
   const byPlayer = new Map();
   const skipped = {};
@@ -292,8 +375,14 @@ export const estimateEdge = (decisions, {
     if (r.clipped) clippedCount++;
     const rec = { w: r.w, raw: r.raw, net: r.net, playerId: d.playerId };
     scored.push(rec);
-    let bucket = byPlayer.get(d.playerId);
-    if (!bucket) byPlayer.set(d.playerId, (bucket = []));
+    // The cluster key. Under `clusterBy: 'hand'` a hand's decisions land in ONE bucket
+    // regardless of how many scored players shared it — which is the correlation the
+    // player-keyed default cannot see.
+    const clusterKey = clusterBy === 'hand'
+      ? `h:${d.handId ?? d.playerId}`
+      : d.playerId;
+    let bucket = byPlayer.get(clusterKey);
+    if (!bucket) byPlayer.set(clusterKey, (bucket = []));
     bucket.push(rec);
   }
 
@@ -314,6 +403,14 @@ export const estimateEdge = (decisions, {
   const vIps = ipsValue(scored);
   const edge = (vOurs !== null && vPool !== null) ? vOurs - vPool : null;
 
+  // WS-546: the support-matched arm, computed ALWAYS rather than behind a flag. Both estimands
+  // come from one pass over the same `scored` array, so there is nothing to buy by making it
+  // optional — and a figure that only appears when someone remembers to ask for it is how the
+  // all-rows baseline went unexamined for the life of the harness.
+  const nSupport = supportCount(scored);
+  const vPoolSupport = poolValueOverSupport(scored);
+  const edgeSupport = (vOurs !== null && vPoolSupport !== null) ? vOurs - vPoolSupport : null;
+
   // The CI is taken on the EDGE, not on the two values separately: the same decisions
   // feed both, so the difference is far better determined than either level, and C3
   // asks whether the DIFFERENCE excludes zero.
@@ -324,10 +421,24 @@ export const estimateEdge = (decisions, {
   };
   const ci = clusterBootstrapCI(byPlayer, edgeStat, { resamples, alpha, seed });
 
+  // The support-matched edge gets its OWN bootstrap over the same clusters and the same seed,
+  // never a difference of two independently-drawn intervals. The reason is already written
+  // down in `pairedDelta`'s docblock and applies identically here: differencing independent
+  // intervals throws away the pairing that makes the quantity well determined and reports an
+  // interval several times too wide.
+  const edgeSupportStat = (chunk) => {
+    const a = wisValue(chunk);
+    const b = poolValueOverSupport(chunk);
+    return (a !== null && b !== null) ? a - b : null;
+  };
+  const ciSupport = clusterBootstrapCI(byPlayer, edgeSupportStat, { resamples, alpha, seed });
+
   return {
     treatment: TREATMENT,
     label,
     n,
+    clusterBy,
+    clusters: byPlayer.size,
     players: byPlayer.size,
     ess: Number(ess.toFixed(1)),
     essShare: Number((ess / n).toFixed(4)),
@@ -338,6 +449,37 @@ export const estimateEdge = (decisions, {
     valuePoolBB: vPool === null ? null : Number(vPool.toFixed(4)),
     valueOursPlainIpsBB: vIps === null ? null : Number(vIps.toFixed(4)),
     edgeBB: edge === null ? null : Number(edge.toFixed(4)),
+    // ── WS-546: THE SUPPORT-MATCHED ESTIMAND, AND THE DELTA BETWEEN THE TWO ──
+    // A DIFFERENT QUANTITY from `edgeBB`, not a corrected version of it, which is why it has
+    // its own name and carries its own conditioning set. See `poolValueOverSupport`.
+    //
+    // Both ship, and the delta ships with them, per `.claude/rules/unmeasured-constants.md`:
+    // a value that is merely tagged gets read by nobody, and a delta is a number that can be
+    // tracked and made to cross a threshold. A delta of EXACTLY zero is a finding rather than
+    // an absence — it says support-matching is not load-bearing here, which is true by
+    // construction for `clone-the-pool` (every weight is 1, so the support set is every row)
+    // and is the regression test for this whole change.
+    edgeBBSupportMatched: edgeSupport === null ? null : Number(edgeSupport.toFixed(4)),
+    edgeBBSupportDelta: (edge === null || edgeSupport === null)
+      ? null
+      : Number((edgeSupport - edge).toFixed(4)),
+    edgeSupportCiLowBB: ciSupport ? Number(ciSupport.lo.toFixed(4)) : null,
+    edgeSupportCiHighBB: ciSupport ? Number(ciSupport.hi.toFixed(4)) : null,
+    supportMatchedConditioningSet:
+      'the decisions where our policy could have produced the observed action',
+    // The conditioning set as DATA, not prose: how many rows it kept, and what share. A reader
+    // cannot infer either from the edge, and `supportShare` is the quantity that says how far
+    // apart the two estimands were entitled to be.
+    supportN: nSupport,
+    supportShare: n > 0 ? Number((nSupport / n).toFixed(4)) : null,
+    // WS-543 — THE SUPPORT FLAG. Measured 2026-08-18: dominated arms return the CORRECT sign at
+    // ESS >= 74% and confidently WRONG signs at ESS <= 37% (`never-fold` +2.85 where domination
+    // guarantees negative; `raise-everything` +4.32). The mechanism is that `wisValue` averages
+    // over the decisions the policy's support reaches while `poolValue` averages over ALL scored
+    // decisions, so a narrow-support policy is graded on a different population than its
+    // baseline. The flag rides on the figure because a reader cannot infer it from the edge.
+    lowSupport: n > 0 ? (ess / n) < 0.5 : true,
+    essShareThreshold: 0.5,
     // WS-428: renamed from `edgeBBPer100`, which the spec called a landmine — "a bare
     // rescale with no denominator change". The diagnosis was wrong and the name was the
     // whole problem. `edge` IS per scored decision, so `edge x 100` is denominator-
