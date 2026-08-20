@@ -31,6 +31,11 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
+// Imported, not restated. This file previously carried the production budget as a
+// PROSE comment naming a line number; by 2026-08-20 both halves were wrong — the value
+// (v129 moved it 2000 -> 20000) and the location (gameTreeEvaluator.js:701 is now
+// unrelated code). A constant that is quoted rather than imported drifts silently.
+import { DEFAULT_REFINEMENT_BUDGET_MS } from '../../src/utils/exploitEngine/refinementWork.js';
 // WS-435 — static, not loader-loaded: the gate fires before the loader spends anything.
 import {
   preflightForPlan, gateVerdict, extractPowerRows, buildLedgerEntry, appendLedgerEntry,
@@ -76,8 +81,20 @@ const main = async () => {
   let rakeConfig = { pct: 0.05, cap: 3, noFlopNoDrop: true };
   if (args.rake === 'none') rakeConfig = null;
 
-  // The depth-2 arm's budget. Production default is 2000ms (gameTreeEvaluator.js:701).
+  // The depth-2 arm's budget. The DEFAULT STAYS 2000 deliberately: every ablation already
+  // recorded — FIND-139, WS-411, WS-433 — was run at 2000, and silently redefining the
+  // default would change what those results mean retroactively. But 2000 is no longer
+  // production, so a bare run measures the PRE-v129 engine while looking like it measures
+  // the shipped one. That is said out loud below rather than left in a comment nobody
+  // reads at the moment they need it.
   const refinementMs = int(args['refinement-ms'], 2000);
+  if (refinementMs !== DEFAULT_REFINEMENT_BUDGET_MS) {
+    console.warn(
+      `NOTE: --refinement-ms is ${refinementMs}, production is ${DEFAULT_REFINEMENT_BUDGET_MS} `
+      + `(refinementWork.js DEFAULT_REFINEMENT_BUDGET_MS). This run does NOT measure the `
+      + 'shipped engine. Intended for an arm that pins the budget; wrong if you meant production.',
+    );
+  }
   if (!(refinementMs > 0)) {
     console.error('Refused: --refinement-ms must be > 0. A zero budget would make both arms depth-1 and the contrast vacuous.');
     process.exit(2);
