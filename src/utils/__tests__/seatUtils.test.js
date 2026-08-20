@@ -16,6 +16,7 @@ import {
   getActiveSeatCount,
 } from '../seatUtils';
 import { hasSeatFolded } from '../sequenceUtils';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 // Helper to create action entries
 const entry = (seat, action, street = 'flop', order = 0) => ({
@@ -577,5 +578,64 @@ describe('getActiveSeatCount', () => {
   it('combines absent and folded', () => {
     const seq = [entry(3, 'fold', 'preflop')];
     expect(getActiveSeatCount(seq, [1, 2], 9)).toBe(6);
+  });
+});
+
+/**
+ * WS-548 side-finding, 2026-08-20. A LIVE bug in the founder's own game.
+ *
+ * `isStreetActionComplete` decrements `pendingCount` for EVERY entry it walks, including a
+ * STRADDLE — treating the blind post as though the straddler had taken his turn. But the
+ * reset branch that says "everyone must respond to aggression" tests only BET and RAISE, so
+ * a straddle raises the price without re-opening the action.
+ *
+ * Consequence at the table: hero straddles, the field limps around, the big blind calls, and
+ * the street is declared complete WITHOUT hero ever being offered his option — the one thing
+ * a straddler is guaranteed. `useAutoStreetAdvance` then deals the flop.
+ *
+ * Any preflop raise masks it, because the raise branch resets `pendingCount` and pulls the
+ * straddler back in. That is why it survived: it only fires in a limped pot, which is exactly
+ * the most common shape of a straddled hand in a live game.
+ */
+describe('isStreetActionComplete — the straddler is owed an option (WS-548 side-finding)', () => {
+  const mk = (seat, action, amount) => ({ seat, action, street: 'preflop', ...(amount != null ? { amount } : {}) });
+  const complete = (entries) => isStreetActionComplete('preflop', entries, [], 9);
+
+  it('does NOT complete the street when everyone limps to a straddler who has not acted', () => {
+    const limped = [
+      mk(3, PRIMITIVE_ACTIONS.STRADDLE, 4),
+      ...[4, 5, 6, 7, 8, 9, 1].map((s) => mk(s, PRIMITIVE_ACTIONS.CALL, 4)),
+      mk(2, PRIMITIVE_ACTIONS.CALL, 4),
+    ];
+    expect(complete(limped)).toBe(false);
+  });
+
+  it('completes once the straddler has exercised the option', () => {
+    const limped = [
+      mk(3, PRIMITIVE_ACTIONS.STRADDLE, 4),
+      ...[4, 5, 6, 7, 8, 9, 1].map((s) => mk(s, PRIMITIVE_ACTIONS.CALL, 4)),
+      mk(2, PRIMITIVE_ACTIONS.CALL, 4),
+      mk(3, PRIMITIVE_ACTIONS.CHECK),
+    ];
+    expect(complete(limped)).toBe(true);
+  });
+
+  it('re-opens the action for everyone when the straddler raises his own option', () => {
+    const raised = [
+      mk(3, PRIMITIVE_ACTIONS.STRADDLE, 4),
+      ...[4, 5, 6, 7, 8, 9, 1].map((s) => mk(s, PRIMITIVE_ACTIONS.CALL, 4)),
+      mk(2, PRIMITIVE_ACTIONS.CALL, 4),
+      mk(3, PRIMITIVE_ACTIONS.RAISE, 16),
+    ];
+    expect(complete(raised)).toBe(false);
+  });
+
+  it('control: a raise by someone else re-opens the action', () => {
+    const raised = [
+      mk(3, PRIMITIVE_ACTIONS.STRADDLE, 4),
+      mk(4, PRIMITIVE_ACTIONS.CALL, 4),
+      mk(5, PRIMITIVE_ACTIONS.RAISE, 12),
+    ];
+    expect(complete(raised)).toBe(false);
   });
 });

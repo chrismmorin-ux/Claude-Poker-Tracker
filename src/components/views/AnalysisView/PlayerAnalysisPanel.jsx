@@ -395,7 +395,7 @@ export const PlayerAnalysisPanel = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {advice.recommendations.map((rec, i) => {
+                {(advice.recommendations || []).map((rec, i) => {
                   const isPositive = rec.ev > 0;
                   const isTop = i === 0;
                   return (
@@ -432,11 +432,11 @@ export const PlayerAnalysisPanel = () => {
                 <div className="mt-2 pt-2 border-t border-gray-700">
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>Fold Equity (bet)</span>
-                    <span className="font-semibold">{Math.round(advice.foldPct.bet * 100)}%</span>
+                    <span className="font-semibold">{advice.foldPct?.bet != null ? `${Math.round(advice.foldPct.bet * 100)}%` : '—'}</span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>Fold Equity (raise)</span>
-                    <span className="font-semibold">{Math.round(advice.foldPct.raise * 100)}%</span>
+                    <span className="font-semibold">{advice.foldPct?.raise != null ? `${Math.round(advice.foldPct.raise * 100)}%` : '—'}</span>
                   </div>
                 </div>
               </div>

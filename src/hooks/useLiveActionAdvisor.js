@@ -190,6 +190,90 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
     try {
       let result;
 
+      // WS-574 ── two-phase delivery ────────────────────────────────────────────────────
+      // `evaluateGameTree` has handed back a depth-1 answer before refinement since WS-334,
+      // and no production caller ever took it. That inert fast path is the reason
+      // `refinementBudgetMs` sat at a table-latency floor of 2000, and at 2000 depth-2 never
+      // once finished: mean runout coverage 0.380, with `depth3Barrel` (barrel planning) and
+      // `checkRaiseDepth2` budget-gated on EVERY board measured. Taking the fast answer is
+      // what buys refinement the clock it needs.
+      //
+      // Gating is shared by both phases so the provisional and refined recommendations are
+      // filtered identically — a rec suppressed for thin data must not reappear on refine.
+      const gateRecs = (res) => {
+        const recs = res.recommendations || [];
+        if (sampleSize === 0) {
+          // No player data: tag all recs as population-based
+          return recs.map(r => ({ ...r, reasoning: r.reasoning + ' [population estimate]' }));
+        }
+        if (sampleSize < 10) {
+          // Suppress pure bluff recommendations (fold-equity-only raises with marginal EV)
+          return recs.filter(r => !(r.action === 'raise' && r.sizing?.foldPct > 0.6 && r.ev < 2));
+        }
+        return recs;
+      };
+
+      // Captured at fast time so the refined delivery can say the recommendation CHANGED
+      // rather than swapping silently. WS-496 measured depth-2 flipping the top action on
+      // 35.3% of flops, so this is the common case, not an edge case. `assembleResult` sorts
+      // both phases with the same comparator, so [0] is comparable across them.
+      let fastTopAction = null;
+
+      const onFastResult = (fast) => {
+        // Same staleness guard the refined path uses. A fast result from a superseded
+        // compute must never overwrite a newer one.
+        if (!isCurrent(callId)) return;
+        const fastRecs = gateRecs(fast);
+        fastTopAction = fastRecs[0]?.action ?? null;
+        setAdvice({
+          handNumber: liveHandState?.handNumber ?? null,
+          villainSeat: targetSeat,
+          villainStyle: villainData.style || null,
+          villainSampleSize: sampleSize,
+          villainProfile: villainData.villainProfile || null,
+          confidence,
+          dataQuality,
+          heroAlreadyActed,
+          situation,
+          situationLabel: SITUATION_LABELS[situation] || situation,
+          heroEquity: fast.heroEquity,
+          boardTexture: fast.boardTexture ? {
+            texture: fast.boardTexture.texture,
+            wetScore: fast.boardTexture.wetScore,
+            isPaired: fast.boardTexture.isPaired,
+            flushDraw: fast.boardTexture.flushDraw,
+            monotone: fast.boardTexture.monotone,
+          } : null,
+          segmentation: fast.segmentation ? {
+            buckets: fast.segmentation.buckets,
+            handTypes: fast.segmentation.handTypes,
+            isCapped: fast.segmentation.isCapped,
+            totalCombos: fast.segmentation.totalCombos,
+            totalWeight: fast.segmentation.totalWeight,
+          } : null,
+          foldPct: fast.foldPct,
+          flopBreakdown: fast.flopBreakdown || null,
+          foldMeta: fast.foldMeta || null,
+          recommendations: fastRecs,
+          currentStreet,
+          potSize: adjustedPot,
+          villainBet: villainBet || 0,
+          playerStats,
+          bucketEquities: fast.bucketEquities || null,
+          modelQuality: fast.modelQuality || null,
+          treeMetadata: fast.treeMetadata || null,
+          // `villainRanges`, `multiwayEquity` and `narrowingLog` are DELIBERATELY ABSENT, not
+          // null. They are computed after the game tree returns, so at fast time they do not
+          // exist yet — and `validateActionAdvice` in the extension's wire schema checks with
+          // `!== undefined`, so an explicit null FAILS validation while an absent key passes.
+          // A hard-rejecting Ignition validator silently dropping HUD updates is a failure
+          // this repo has already lived through once.
+          timestamp: Date.now(),
+          isProvisional: true,
+          changedOnRefine: null,
+        });
+      };
+
       if (currentStreet === 'preflop') {
         result = await buildPreflopAdvice({
           liveHandState, heroSeat, targetSeat, dealerSeat,
@@ -208,6 +292,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
           villainRange, encodedHero, adjustedPot,
           detectedSituation, playerStats, villainData, villainModel,
           tendencyMap, dataQuality, sampleSize, rakeConfig, equityFn,
+          onFastResult,
         });
         if (!result) return;
 
@@ -279,19 +364,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
         active: true,
       }));
 
-      // Gate recommendations based on data quality
-      let gatedRecs = result.recommendations || [];
-      if (sampleSize === 0) {
-        // No player data: tag all recs as population-based
-        gatedRecs = gatedRecs.map(r => ({
-          ...r, reasoning: r.reasoning + ' [population estimate]',
-        }));
-      } else if (sampleSize < 10) {
-        // Suppress pure bluff recommendations (fold-equity-only raises with marginal EV)
-        gatedRecs = gatedRecs.filter(r =>
-          !(r.action === 'raise' && r.sizing?.foldPct > 0.6 && r.ev < 2)
-        );
-      }
+      const gatedRecs = gateRecs(result);
 
       const assembledAdvice = {
         // WS-470 (FIND-131): the hand this advice was computed FOR, snapshotted from the
@@ -340,6 +413,14 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
         multiwayEquity: multiway,
         narrowingLog: [...streetRangesRef.current.log],
         timestamp: Date.now(),
+        // WS-574: this is the REFINED delivery. The provisional one above it (fired from
+        // `onFastResult`) carries isProvisional: true and omits the three fields above.
+        isProvisional: false,
+        changedOnRefine: (fastTopAction
+          && (gatedRecs[0]?.action ?? null)
+          && fastTopAction !== (gatedRecs[0]?.action ?? null))
+          ? fastTopAction
+          : null,
       };
 
       // PMC Phase 5b hand-end integration point (SPR-080):

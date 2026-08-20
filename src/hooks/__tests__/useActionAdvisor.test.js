@@ -83,9 +83,115 @@ describe('useActionAdvisor', () => {
       await result.current.compute(validInput);
     });
 
-    expect(result.current.advice).toEqual(mockResult);
+    // WS-574: the advice object now carries its own phase. `toMatchObject` rather than
+    // `toEqual` because the two-phase markers are part of every delivery.
+    expect(result.current.advice).toMatchObject(mockResult);
+    expect(result.current.advice.isProvisional).toBe(false);
     expect(result.current.isComputing).toBe(false);
     expect(result.current.error).toBeNull();
+  });
+
+  // ── WS-574 ────────────────────────────────────────────────────────────────────────
+  // These are the tests whose ABSENCE let the defect exist. `evaluateGameTree` has been
+  // two-phase since WS-334, the hook never passed `onFastResult`, and nothing failed —
+  // because the suite mocks the evaluator with a bare `vi.fn()` that cannot fire the
+  // callback and nothing counts state writes. A capability with no production caller and
+  // no consumer-side test is invisible by construction.
+  describe('two-phase delivery (WS-574)', () => {
+    /**
+     * An evaluator mock that behaves like the real two-phase one — including the macrotask
+     * yield. That yield is not decoration: refinement is synchronous CPU work on the same
+     * thread, so without a real `setTimeout(0)` the host never paints and two-phase is
+     * cosmetic. A mock that resolves immediately would not exercise the thing under test.
+     */
+    const twoPhase = (fast, refined) => async (args) => {
+      args.onFastResult?.(fast);
+      await new Promise((r) => setTimeout(r, 0));
+      return refined;
+    };
+
+    it('passes onFastResult to the engine at all', async () => {
+      evaluateGameTree.mockResolvedValue(mockResult);
+      const { result } = renderHook(() => useActionAdvisor());
+
+      await act(async () => { await result.current.compute(validInput); });
+
+      expect(evaluateGameTree).toHaveBeenCalledWith(
+        expect.objectContaining({ onFastResult: expect.any(Function) })
+      );
+    });
+
+    it('renders the fast answer as provisional, then replaces it with the refined one', async () => {
+      const fast = { heroEquity: 0.55, recommendations: [{ action: 'bet', ev: 20 }] };
+      const refined = { heroEquity: 0.62, recommendations: [{ action: 'check', ev: 31 }] };
+      evaluateGameTree.mockImplementation(twoPhase(fast, refined));
+      const { result } = renderHook(() => useActionAdvisor());
+
+      // The two phases have to be observed ACROSS the macrotask boundary, not inside one
+      // `act()` — React batches everything in a single act into one render, which would
+      // hide the very thing under test. This split mirrors what actually happens at the
+      // table: fast answer paints, then refinement lands later.
+      let pending;
+      await act(async () => {
+        pending = result.current.compute(validInput);
+        await Promise.resolve(); // microtask only — the mock's setTimeout(0) has NOT fired
+      });
+
+      // FAILS on the old single-`setAdvice` shape: nothing is rendered until the very end.
+      const provisional = result.current.advice;
+      expect(provisional).not.toBeNull();
+      expect(provisional.isProvisional).toBe(true);
+      expect(provisional.recommendations[0].action).toBe('bet');
+
+      await act(async () => { await pending; });
+
+      expect(result.current.advice.isProvisional).toBe(false);
+      expect(result.current.advice.recommendations[0].action).toBe('check');
+    });
+
+    it('reports the action refinement moved OFF, and stays silent when it agrees', async () => {
+      // WS-496 measured depth-2 flipping the top action on 35.3% of flops, so a silent swap
+      // is the common case, not an edge case.
+      const flipped = { heroEquity: 0.62, recommendations: [{ action: 'check', ev: 31 }] };
+      evaluateGameTree.mockImplementation(
+        twoPhase({ heroEquity: 0.55, recommendations: [{ action: 'bet', ev: 20 }] }, flipped)
+      );
+      const { result } = renderHook(() => useActionAdvisor());
+      await act(async () => { await result.current.compute(validInput); });
+      expect(result.current.advice.changedOnRefine).toBe('bet');
+
+      const agreed = { heroEquity: 0.62, recommendations: [{ action: 'bet', ev: 31 }] };
+      evaluateGameTree.mockImplementation(
+        twoPhase({ heroEquity: 0.55, recommendations: [{ action: 'bet', ev: 20 }] }, agreed)
+      );
+      const { result: r2 } = renderHook(() => useActionAdvisor());
+      await act(async () => { await r2.current.compute(validInput); });
+      expect(r2.current.advice.changedOnRefine).toBeNull();
+    });
+
+    it('a fast result from a superseded call cannot overwrite a newer one', async () => {
+      // The staleness guard has to cover the fast phase too, or a slow first compute
+      // repaints stale advice over a newer refined answer.
+      const { result } = renderHook(() => useActionAdvisor());
+      let releaseFirst;
+      evaluateGameTree
+        .mockImplementationOnce((args) => new Promise((res) => {
+          releaseFirst = () => { args.onFastResult?.({ heroEquity: 0.1, recommendations: [{ action: 'fold', ev: 0 }] }); res({ heroEquity: 0.1, recommendations: [{ action: 'fold', ev: 0 }] }); };
+        }))
+        .mockImplementationOnce(twoPhase(
+          { heroEquity: 0.9, recommendations: [{ action: 'raise', ev: 50 }] },
+          { heroEquity: 0.9, recommendations: [{ action: 'raise', ev: 55 }] },
+        ));
+
+      await act(async () => {
+        const first = result.current.compute(validInput);
+        await result.current.compute(validInput);
+        releaseFirst();
+        await first;
+      });
+
+      expect(result.current.advice.recommendations[0].action).toBe('raise');
+    });
   });
 
   it('compute() with invalid hero cards sets error', async () => {

@@ -36,6 +36,15 @@
  * footer string changes.
  */
 
+// v129 (WS-574, 2026-08-20): `refinementBudgetMs` default 2000 -> 20000, and the two-phase
+// fast path wired into both production consumers. This is a BEHAVIOUR change on every
+// postflop recommendation, not a tuning nudge: at 2000 the depth-2/3 refinement never once
+// completed (mean runout coverage 0.380 over 40 boards) and `depth3Barrel` — barrel planning
+// — was budget-gated on every board, so it had never run in production at all. Records
+// stamped engine-v128 and earlier carry advice from a tree whose deepest stages were
+// truncated mid-stratum; they are not comparable to v129 advice on any depth-sensitive
+// question.
+//
 // v128 (2026-08-17, WS-521 / WS-270): FACING A 3-BET IS A THIRD DECISION TREE. Preflop line
 // classification is now selected by the RAISE COUNT in the sequence (0 / 1 / 2+) rather than by
 // the `facedRaise` boolean, which can separate two trees and not three. New parents `call4` and
@@ -107,5 +116,5 @@
 // DEC-022 guard; CR fallback fold aligned to MODEL_CONFIDENCE_THRESHOLD +
 // POPULATION_PRIORS.raise.fold) and WS-315 blocker tie-break in the final ranking
 // (blockerScore.excess breaks EV ties within 1% of pot).
-export const ENGINE_VERSION = 'v128';
+export const ENGINE_VERSION = 'v129';
 export const APP_VERSION = 'v123';

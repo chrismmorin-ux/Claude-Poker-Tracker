@@ -96,6 +96,11 @@ describe('computeDepth2Plan — bad-input handling', () => {
 describe('computeDepth2Plan — happy path on K72r fixture', () => {
   // BTN open vs BB defend, hero pins A♠Q♣ on K72r (top pair good kicker).
   const baseInput = () => ({
+    // WS-574: pinned. These assertions are about the PLAN's shape — reason strings, caveats,
+    // heroCombo passthrough — not about refinement depth, and they were verified at the old
+    // 2000ms default. The production default is now 20000; leaving this implicit made every
+    // test in this file exceed the 30s timeout.
+    refinementBudgetMs: 2000,
     heroCombo: 'A♠Q♣',
     villainRange: archetypeRangeFor({ position: 'BB', action: 'call', vs: 'BTN' }),
     board: flop('K♠', '7♥', '2♦'),

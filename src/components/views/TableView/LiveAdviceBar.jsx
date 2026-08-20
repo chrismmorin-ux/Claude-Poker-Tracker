@@ -219,6 +219,17 @@ export const LiveAdviceBar = ({
 
   const advantage = gameTreeAdvice?.treeMetadata?.advantage;
 
+  // WS-574 two-phase advice. `isProvisional` marks the depth-1 answer that renders at table
+  // speed while depth-2/3 refinement is still running; `changedOnRefine` names the action the
+  // provisional answer recommended, when refinement moved off it.
+  //
+  // The flip is SHOWN rather than silently applied because it is the common case, not an edge
+  // case: WS-496 measured depth-2 changing the top action on 35.3% of flops. A recommendation
+  // that swaps under the founder's eyes with no signal is a recommendation he cannot trust,
+  // and trusting it is the entire point of putting it on the table.
+  const isProvisional = useGameTree && gameTreeAdvice.isProvisional === true;
+  const changedFrom = useGameTree ? gameTreeAdvice.changedOnRefine : null;
+
   return (
     <div
       style={{
@@ -228,7 +239,7 @@ export const LiveAdviceBar = ({
         padding: '6px 10px',
         // WS-471 (FIND-132): an in-flight game-tree recompute dims the previous
         // recommendation until the replacement lands — same tier as AGING.
-        opacity: isStale ? 0.5 : (isFading || adviceComputing) ? 0.75 : 1,
+        opacity: isStale ? 0.5 : (isFading || adviceComputing || isProvisional) ? 0.75 : 1,
         transition: 'opacity 0.5s ease',
       }}
     >
@@ -278,6 +289,29 @@ export const LiveAdviceBar = ({
                   background: '#78350f', color: '#fbbf24', letterSpacing: 0.5,
                 }}>
                   HIGH VARIANCE
+                </span>
+              )}
+              {isProvisional && (
+                <span
+                  className="animate-pulse"
+                  title="Depth-1 answer. Deeper refinement is still running and may change it."
+                  style={{
+                    fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                    background: '#1e3a5f', color: '#7dd3fc', letterSpacing: 0.5,
+                  }}
+                >
+                  REFINING
+                </span>
+              )}
+              {!isProvisional && changedFrom && (
+                <span
+                  title={`Refinement changed this from ${changedFrom.toUpperCase()}.`}
+                  style={{
+                    fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                    background: '#3b2f0b', color: '#fcd34d', letterSpacing: 0.5,
+                  }}
+                >
+                  {`WAS ${changedFrom.toUpperCase()}`}
                 </span>
               )}
               {useGameTree && isStale && (

@@ -225,6 +225,27 @@ export const isStreetActionComplete = (
   for (const entry of streetEntries) {
     if (!livePlayers.has(entry.seat)) continue;
 
+    /**
+     * A STRADDLE IS A BLIND POST, NOT A TURN. It must not consume the straddler's pending slot.
+     *
+     * THE BUG THIS FIXES, which reached the founder's live table. The loop decremented for
+     * every entry it walked, so the straddle entry was counted as though the straddler had
+     * already acted, while the aggression branch below tested only BET/RAISE and so never
+     * re-opened the action. Hero straddles, the field limps around, the big blind calls —
+     * pendingCount hits zero and the street is declared complete WITHOUT hero being offered
+     * the option, which is the one thing posting a straddle guarantees him.
+     * `useAutoStreetAdvance` then deals the flop over it.
+     *
+     * It only fires in a LIMPED pot: any raise resets pendingCount to livePlayers.size - 1,
+     * which pulls the straddler back in. A limped pot is also the most common shape of a
+     * straddled hand in a live game, which is why this mattered and why nothing caught it —
+     * the five existing straddle tests all cover `getFirstActionSeat`, never street completion.
+     *
+     * No reset is needed here: the straddle is posted before anyone has acted, so the count is
+     * already full. Every seat that owes a response produces its own entry and decrements then.
+     */
+    if (entry.action === PRIMITIVE_ACTIONS.STRADDLE) continue;
+
     pendingCount--;
 
     if (entry.action === PRIMITIVE_ACTIONS.FOLD) {

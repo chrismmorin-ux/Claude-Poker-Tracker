@@ -293,3 +293,59 @@ describe('WS-471: recomputing affordance', () => {
     expect(container.querySelector('.animate-pulse')).not.toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// WS-574 / WS-575 — two-phase advice state
+//
+// The main-app table's advice comes from `OnlineAnalysisContext` (see
+// CommandStrip.jsx: `useAnalysisContext` IS the online context), so this surface cannot be
+// driven to a badge state by `npm run devshot` against the plain dev table — there is no
+// game-tree advisor on that path. These render tests are the verification of the badge
+// logic; the visual check belongs on the online/extension path.
+// ---------------------------------------------------------------------------
+
+describe('WS-574: refinement state is on the face of the recommendation', () => {
+  test('a provisional answer says so', () => {
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={{ ...baseGameTreeAdvice, isProvisional: true }} />
+    );
+    expect(container.textContent).toContain('REFINING');
+  });
+
+  test('a finished answer does not', () => {
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={{ ...baseGameTreeAdvice, isProvisional: false }} />
+    );
+    expect(container.textContent).not.toContain('REFINING');
+  });
+
+  test('advice with no phase marker at all renders unchanged — the badge is additive', () => {
+    // Every pre-WS-574 caller and every fixture omits these fields. If their absence produced
+    // a badge, the surface would be lying about work that never happened.
+    const { container } = render(<LiveAdviceBar gameTreeAdvice={baseGameTreeAdvice} />);
+    expect(container.textContent).not.toContain('REFINING');
+    expect(container.textContent).not.toContain('WAS ');
+  });
+
+  test('when refinement changes the action, the bar names what it changed FROM', () => {
+    // WS-496 measured depth-2 flipping the top action on 35.3% of flops. A silent swap is the
+    // common case, so the callout is the default, not an exception path.
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={{
+        ...baseGameTreeAdvice, isProvisional: false, changedOnRefine: 'bet',
+      }} />
+    );
+    expect(container.textContent).toContain('WAS BET');
+  });
+
+  test('the flip callout is suppressed while still provisional', () => {
+    // Reporting "WAS BET" next to a BET that has not been superseded yet would be nonsense.
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={{
+        ...baseGameTreeAdvice, isProvisional: true, changedOnRefine: 'bet',
+      }} />
+    );
+    expect(container.textContent).toContain('REFINING');
+    expect(container.textContent).not.toContain('WAS BET');
+  });
+});

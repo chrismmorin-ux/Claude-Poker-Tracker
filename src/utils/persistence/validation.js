@@ -7,8 +7,12 @@
  * Part of Phase C.1 - Audit Fixes (Persistence Hardening)
  */
 
-import { logger } from '../errorHandler';
-import { handProvenanceProblems } from './handProvenance';
+// Extensions are explicit so this module loads under BARE Node ESM as well as Vite — the
+// same property WS-433's codemod established for the engine closure, and the reason
+// `scripts/backtest/check-engine-bare-import.mjs` exists. WS-555's source-parity check runs
+// the app's own hand validator over its live-app fixture, under plain `node`.
+import { logger } from '../errorHandler.js';
+import { handProvenanceProblems } from './handProvenance.js';
 
 const MODULE_NAME = 'persistence/validation';
 

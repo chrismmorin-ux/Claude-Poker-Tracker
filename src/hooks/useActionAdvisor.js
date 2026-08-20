@@ -56,6 +56,12 @@ export const useActionAdvisor = () => {
         throw new Error('At least 3 board cards required');
       }
 
+      // WS-574: the fast (depth-1) action, captured so the refined answer can say whether it
+      // CHANGED the recommendation rather than swapping under the founder's eyes. WS-496
+      // measured depth-2 flipping the top action on 35.3% of flops — the common case.
+      // `assembleResult` sorts both phases with the same comparator, so [0] is comparable.
+      let fastTopAction = null;
+
       const { treeMetadata, ...result } = await evaluateGameTree({
         villainRange,
         board,
@@ -67,11 +73,34 @@ export const useActionAdvisor = () => {
         villainModel,
         trials,
         rakeConfig,
+        // WS-574: `evaluateGameTree` has been two-phase since WS-334 and NO production caller
+        // ever passed this, so the depth-1 answer was computed, discarded, and the founder
+        // waited for the whole refinement anyway. That inert fast path is why
+        // `refinementBudgetMs` was pinned at a table-latency floor of 2000 — and at 2000,
+        // depth-2 never once finished (mean runout coverage 0.380, barrel planning gated on
+        // every board). Wiring this is what lets the budget rise.
+        onFastResult: (fast) => {
+          // Same staleness guard as the refined path: a fast result from a superseded call
+          // must never overwrite a newer one.
+          if (!isCurrent(callId)) return;
+          const { treeMetadata: _fastMeta, ...fastAdvice } = fast;
+          fastTopAction = fastAdvice.recommendations?.[0]?.action ?? null;
+          setAdvice({ ...fastAdvice, isProvisional: true, changedOnRefine: null });
+        },
       });
 
       // Only update if this is still the latest call
       if (isCurrent(callId)) {
-        setAdvice(result);
+        const refinedTopAction = result.recommendations?.[0]?.action ?? null;
+        setAdvice({
+          ...result,
+          isProvisional: false,
+          // The action the fast answer recommended, IF refinement moved off it. null means
+          // "nothing to report" — either it agreed, or there was no fast phase to compare.
+          changedOnRefine: (fastTopAction && refinedTopAction && fastTopAction !== refinedTopAction)
+            ? fastTopAction
+            : null,
+        });
       }
     } catch (err) {
       if (isCurrent(callId)) {

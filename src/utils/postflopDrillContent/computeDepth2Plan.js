@@ -175,6 +175,12 @@ export const computeDepth2Plan = async (input) => {
       effectiveStack,
       villainModel,
       playerStats,
+      // WS-574: threaded so a caller can state its own latency budget instead of silently
+      // inheriting the engine default. The default moved 2000 -> 20000 when the two-phase
+      // fast path was wired (at 2000, depth-2 never once COMPLETED), and a drill surface that
+      // cannot express "I do not need full depth here" has no way to opt out of paying for it.
+      // Omitted => engine default, which is the pre-existing behaviour.
+      ...(input.refinementBudgetMs != null ? { refinementBudgetMs: input.refinementBudgetMs } : {}),
     });
   } catch (err) {
     return errorPlan(heroCombo, decisionKind, 'engine-internal',

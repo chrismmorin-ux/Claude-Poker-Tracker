@@ -225,6 +225,12 @@ export const buildPostflopAdvice = async ({
   villainRange, encodedHero, adjustedPot,
   detectedSituation, playerStats, villainData, villainModel,
   tendencyMap, dataQuality, sampleSize, rakeConfig, equityFn,
+  // WS-574: the live table's own two-phase hook. `evaluateGameTree` has produced a depth-1
+  // answer before refinement since WS-334, and this path — the one the founder actually plays
+  // behind — never asked for it, so the whole refinement clock had to fit inside table latency.
+  // Passing this through is what lets `refinementBudgetMs` rise past the point where depth-2
+  // finishes. Optional: callers that do not pass it keep the single-result semantics exactly.
+  onFastResult = null,
 }) => {
   const { villainAction, villainBet } = detectedSituation;
   const communityCards = liveHandState.communityCards || [];
@@ -269,5 +275,6 @@ export const buildPostflopAdvice = async ({
     contextHints,
     rakeConfig,
     equityFn,
+    onFastResult,
   });
 };

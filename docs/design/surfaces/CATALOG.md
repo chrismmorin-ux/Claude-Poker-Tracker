@@ -64,6 +64,7 @@ The Ignition extension sidebar is its own surface system with dedicated doctrine
 | ID | Name | Parent | State |
 |----|------|--------|-------|
 | live-exploit-citation | Live Exploit Citation | sidebar-zone-2 + TableView/LiveAdviceBar | ● (exploit-deviation Phase 5) |
+| live-advice-refinement-state | Live Advice Refinement State | TableView/LiveAdviceBar Row 1 + extension Z2 | ● (WS-574 / WS-575 Gate 4; extension harness-verified, main-app badges render-tested) |
 | bucket-ev-panel-v2 | Bucket EV Panel v2 | PostflopDrillsView / LineWalkthrough | ● (LSW-G4) |
 | presession-drill | Presession Drill | PresessionDrillView | ● (exploit-deviation Phase 6) |
 | hand-replay-observation-capture | Hand-Replay Observation Capture (Tier 0) | HandReplayView / ReviewPanel Section G | ● (EAL Gate 4 S3) |
