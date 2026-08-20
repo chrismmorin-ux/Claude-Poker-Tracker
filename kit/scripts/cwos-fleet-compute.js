@@ -294,6 +294,31 @@ function localCodeDigest(wsId, commitish) {
   return line || null;
 }
 
+/**
+ * What the compute node's checkout actually TRACKS -- `{branch, remote}` or null.
+ *
+ * Do not assume GitHub. Measured 2026-08-20: cm-node1's `origin` is
+ * `chris@100.120.209.34:C:/...` -- G16 itself, over the tailnet -- so it pulls this machine's
+ * LOCAL `main`, and `origin/main` on GitHub is a different commit entirely (same subject line,
+ * which is exactly how the two got confused). A refusal message that says "push to origin/main"
+ * sends someone to the wrong remote, and the fix they make there changes nothing here.
+ */
+function computeTracking() {
+  const q = (k) => {
+    const r = onTarget()
+      ? run('git', ['-C', REMOTE_REPO, 'config', k])
+      : run('ssh', [TARGET, `git -C ${quote(REMOTE_REPO)} config ${quote(k)}`]);
+    if (!r.ok) return null;
+    return r.stdout.split(String.fromCharCode(10)).map((l) => l.trim())
+      .filter((l) => l && !/post-quantum|store now|upgraded|^\*\*/.test(l))[0] || null;
+  };
+  const branchRef = q('branch.main.merge');
+  const remoteName = q('branch.main.remote') || 'origin';
+  const url = q(`remote.${remoteName}.url`);
+  if (!branchRef && !url) return null;
+  return { branch: (branchRef || '').replace('refs/heads/', '') || 'main', remote: remoteName, url };
+}
+
 /** HEAD of the repo on the compute node — the commit a worktree can actually be cut from. */
 function computeHead() {
   if (onTarget()) {
@@ -393,6 +418,11 @@ function feed({ dryRun }) {
   }
 
   const commit = computeHead();
+  // Named once and reused by every refusal below, so no message can invent a remote.
+  const tracking = computeTracking();
+  const trackDesc = tracking
+    ? `${tracking.remote}/${tracking.branch}${tracking.url ? ` (${tracking.url})` : ''}`
+    : 'the branch it tracks';
   if (!commit) return { ok: false, action: 'none', reason: `cannot read HEAD of ${REMOTE_REPO} on ${TARGET}`, status };
 
   // Walk DOWN the ranking rather than only considering the top item. The top-ranked node1
@@ -431,14 +461,14 @@ function feed({ dryRun }) {
       // Name the likely remedy: the overwhelmingly common cause is a local commit that has
       // not been pushed, so the file is on the author's disk and absent from the pinned tree.
       // A message that only said "missing" would send someone looking for a deleted file.
-      skipped.push(`${cand.id}: ${scripts.missing.join(', ')} absent at pinned commit ${commit.slice(0, 8)} — ${TARGET} tracks origin/main, so push the commit that adds it (or fix the path in compute_job)`);
+      skipped.push(`${cand.id}: ${scripts.missing.join(', ')} absent at pinned commit ${commit.slice(0, 8)} — ${TARGET} pulls ${trackDesc}, so advance that branch (or fix the path in compute_job)`);
       continue;
     }
     if (scripts.stale.length) {
       // Not "might be different" -- IS different, by blob hash. WS-293 passed an existence
       // check and then ran a version of the probe that had never heard of the flag the job
       // depended on. See missingScriptsAtCommit.
-      skipped.push(`${cand.id}: ${scripts.stale.join(', ')} differs at pinned commit ${commit.slice(0, 8)} from the version here — ${TARGET} would run OLD code and answer a different question; push first`);
+      skipped.push(`${cand.id}: ${scripts.stale.join(', ')} differs at pinned commit ${commit.slice(0, 8)} from the version here — ${TARGET} would run OLD code and answer a different question; advance ${trackDesc} first`);
       continue;
     }
     // Whole import closure, not just the entry script. Both digests are priced locally so
@@ -446,7 +476,7 @@ function feed({ dryRun }) {
     const digAt = localCodeDigest(cand.id, commit);
     const digHere = localCodeDigest(cand.id, 'HEAD');
     if (digAt && digHere && digAt !== digHere) {
-      skipped.push(`${cand.id}: code closure differs at pinned commit ${commit.slice(0, 8)} (${digAt}) from HEAD (${digHere}) — ${TARGET} would run OLD code; push first`);
+      skipped.push(`${cand.id}: code closure differs at pinned commit ${commit.slice(0, 8)} (${digAt}) from HEAD (${digHere}) — ${TARGET} would run OLD code; advance ${trackDesc} first`);
       continue;
     }
     // Dedupe on the FINGERPRINT of the work, not on the job id. Both sides are fingerprinted
@@ -885,7 +915,11 @@ function panel(status, ranked, already) {
     L.push(`  SKEW     ${TARGET} is ${skew.behind} commit(s) behind (${skew.remoteHead} vs ${skew.localHead})`);
     L.push(`           and runs pipeline code from its own checkout, so ${skew.files.length} unpushed file(s) are NOT live there:`);
     L.push(`           ${skew.files.slice(0, 3).join(', ')}${skew.files.length > 3 ? ', ...' : ''}`);
-    L.push('           push to origin/main, or the fix you just shipped is not the code that runs.');
+    const tr = computeTracking();
+    // Name the ACTUAL source. node1's `origin` is this machine over the tailnet, not GitHub,
+    // and the two `main`s carry the same subject line -- which is how they got confused.
+    L.push(`           advance ${tr ? `${tr.remote}/${tr.branch}` : 'the branch it pulls'}${tr && tr.url ? ` -> ${tr.url}` : ''},`);
+    L.push('           or the fix you just shipped is not the code that runs.');
   }
 
   return L.join('\n');
