@@ -239,9 +239,59 @@ function missingScriptsAtCommit(commit, steps) {
     : run('ssh', [TARGET, cmd]);
   // A check that cannot run must not silently pass — but it also must not block the queue on
   // a transient ssh failure, so it reports its own inconclusiveness and the caller decides.
-  if (!r.ok) return { ok: false, missing: [], unchecked: true };
+  if (!r.ok) return { ok: false, missing: [], stale: [], unchecked: true };
   const present = new Set(r.stdout.split('\n').map((l) => l.trim()).filter(Boolean));
-  return { ok: true, missing: wanted.filter((w) => !present.has(w)) };
+  const missing = wanted.filter((w) => !present.has(w));
+
+  // -- PRESENT IS NOT ENOUGH: it must be the SAME code (ws-293-3408793574cc, 2026-08-20) --
+  // WS-293 was submitted with `--shards 12`, the flag WS-512 added precisely to stop this
+  // probe exhausting memory on the full corpus. At the pinned commit the script EXISTS, so an
+  // existence check passes it -- but that version imports only `indexEvalPlayers`, has no
+  // `shards` parameter, and never shards. The unknown flag was silently ignored, all 27,809
+  // players were indexed into one Map, and it died at 8 GB after reading 2.02M hands. The run
+  // had LESS headroom than the unbounded run WS-512 was written to fix.
+  //
+  // A job running different code than its author reasoned about does not return a wrong
+  // number, it returns AN ANSWER TO A DIFFERENT QUESTION -- and nothing downstream can tell,
+  // because the spec, the flags and the artifact names all still look right. So compare the
+  // blob at the pinned commit against the blob here, and refuse on any difference.
+  const live = wanted.filter((w) => !missing.includes(w));
+  const stale = [];
+  if (live.length) {
+    const hashAt = (rev) => {
+      const h = run('git', ['-C', REPO_ROOT, 'rev-parse', ...live.map((w) => rev + ':' + w)]);
+      return h.ok ? h.stdout.split('\n').map((l) => l.trim()).filter(Boolean) : null;
+    };
+    const atCommit = hashAt(commit);
+    const atHead = hashAt('HEAD');
+    if (atCommit && atHead && atCommit.length === live.length && atHead.length === live.length) {
+      live.forEach((w, idx) => { if (atCommit[idx] !== atHead[idx]) stale.push(w); });
+    }
+  }
+  return { ok: true, missing, stale };
+}
+
+/**
+ * The code digest for an item's job at a commit-ish, computed HERE.
+ *
+ * `codeDigestFor` asks cm-node1, because the dedupe's other side lives there and both sides
+ * must use one function. This one is deliberately local: it prices the SAME import closure at
+ * two commits on one machine, which is the only way to ask "would the compute node run
+ * different code than I am looking at" without trusting the compute node's checkout to answer
+ * a question about its own staleness.
+ *
+ * Entry-script comparison alone is not enough. WS-293's entry script did change, so it was
+ * caught -- but a change confined to `rangeCalibrationProbe.mjs` with an untouched
+ * `run-range-calibration.mjs` would have passed, and that is the more common shape.
+ */
+function localCodeDigest(wsId, commitish) {
+  if (!wsId || !commitish) return null;
+  const script = path.join(REPO_ROOT, 'scripts', 'fleet', 'code-digest.cjs');
+  if (!fs.existsSync(script)) return null;
+  const r = run(process.execPath, [script, commitish, wsId, REPO_ROOT], { cwd: REPO_ROOT });
+  if (!r.ok) return null;
+  const line = r.stdout.split(String.fromCharCode(10)).map((l) => l.trim()).filter((l) => /^[0-9a-f]{12}$/.test(l))[0];
+  return line || null;
 }
 
 /** HEAD of the repo on the compute node — the commit a worktree can actually be cut from. */
@@ -382,6 +432,21 @@ function feed({ dryRun }) {
       // not been pushed, so the file is on the author's disk and absent from the pinned tree.
       // A message that only said "missing" would send someone looking for a deleted file.
       skipped.push(`${cand.id}: ${scripts.missing.join(', ')} absent at pinned commit ${commit.slice(0, 8)} — ${TARGET} tracks origin/main, so push the commit that adds it (or fix the path in compute_job)`);
+      continue;
+    }
+    if (scripts.stale.length) {
+      // Not "might be different" -- IS different, by blob hash. WS-293 passed an existence
+      // check and then ran a version of the probe that had never heard of the flag the job
+      // depended on. See missingScriptsAtCommit.
+      skipped.push(`${cand.id}: ${scripts.stale.join(', ')} differs at pinned commit ${commit.slice(0, 8)} from the version here — ${TARGET} would run OLD code and answer a different question; push first`);
+      continue;
+    }
+    // Whole import closure, not just the entry script. Both digests are priced locally so
+    // node1's own staleness cannot be what answers the question about node1's staleness.
+    const digAt = localCodeDigest(cand.id, commit);
+    const digHere = localCodeDigest(cand.id, 'HEAD');
+    if (digAt && digHere && digAt !== digHere) {
+      skipped.push(`${cand.id}: code closure differs at pinned commit ${commit.slice(0, 8)} (${digAt}) from HEAD (${digHere}) — ${TARGET} would run OLD code; push first`);
       continue;
     }
     // Dedupe on the FINGERPRINT of the work, not on the job id. Both sides are fingerprinted
