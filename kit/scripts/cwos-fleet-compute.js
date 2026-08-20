@@ -272,6 +272,78 @@ function missingScriptsAtCommit(commit, steps) {
 }
 
 /**
+ * Closure files that differ between the PINNED COMMIT and the WORKING TREE on this machine.
+ *
+ * ── WHY THIS EXISTS (WS-595, 2026-08-20) ──
+ * `missingScriptsAtCommit` and the `localCodeDigest` pair below both already ask "would node1
+ * run different code than I am looking at". Both answered it by comparing the pinned commit
+ * against `HEAD` — and HEAD is not what anyone is looking at. The spec is authored against the
+ * WORKING TREE, which is where an uncommitted edit lives, and a commit-to-commit comparison
+ * cannot see one by construction.
+ *
+ * Measured on the run that produced this fix. WS-594's accept criteria require artifacts
+ * carrying `totals.budgetGated` and `totals.budgetGatedStages`. Those fields exist only in the
+ * working-tree copy of `probe-depth2-coverage.mjs` (blob a93cd980). At both cm-node1's HEAD
+ * (446ab938) and G16's HEAD (b5e54400) the blob is 5f8bf40c — identical, so `stale` was empty,
+ * the closure digests matched, and the job submitted CLEAN. It would have run to completion and
+ * written plausible artifacts that cannot satisfy the item, and the per-stage rows would have
+ * been keyed by array index rather than by `rec.stage` — misattributed across boards.
+ *
+ * That is strictly worse than the MODULE_NOT_FOUND this item was filed for. A missing module
+ * fails loudly and costs minutes; this returns an answer to a different question and nothing
+ * downstream can tell. Third instance of the class (5e4aaabe, 446ab938 are the other two).
+ *
+ * ── WHY `git diff` AND NOT `hash-object` ──
+ * Comparing blob shas by hand means reimplementing the checkout filters. `git diff` applies
+ * .gitattributes exactly as git does, so a CRLF working tree does not read as universal drift.
+ * Untracked files need their own probe because `diff` has nothing to diff them against — and a
+ * closure file that is untracked is certainly not at the pinned commit.
+ *
+ * `repoRoot` is injected rather than read from `REPO_ROOT` directly for the same reason
+ * `codeDigest` injects `lsTree`: vitest workers forbid `process.chdir`, so a gate that could
+ * only be exercised against the real checkout would be a gate nobody ever tested.
+ */
+function worktreeDrift(commit, steps, repoRoot = REPO_ROOT) {
+  let files = [];
+  try {
+    const { entryScripts, importClosure } = require('./lib/cwos-code-digest');
+    const entries = entryScripts(steps, repoRoot);
+    if (!entries.length) return { ok: true, drift: [] };
+    files = importClosure(entries, repoRoot);
+  } catch {
+    // The lib is the same one the digest path uses; if it cannot load, that path is already
+    // degrading to the legacy key and this gate has nothing to add. Do not block on it.
+    return { ok: true, drift: [] };
+  }
+  if (!files.length) return { ok: true, drift: [] };
+
+  const nameOnly = (rev) => {
+    const r = run('git', ['-C', repoRoot, 'diff', '--name-only', rev, '--', ...files]);
+    return r.ok ? new Set(r.stdout.split('\n').map((l) => l.trim()).filter(Boolean)) : null;
+  };
+  const vsCommit = nameOnly(commit);
+  const vsHead = nameOnly('HEAD');
+  const untrackedR = run('git', ['-C', repoRoot, 'ls-files', '--others', '--exclude-standard', '--', ...files]);
+  if (!vsCommit || !vsHead || !untrackedR.ok) {
+    // A check that cannot run must not silently pass. Same contract as missingScriptsAtCommit:
+    // report inconclusiveness and let the caller refuse rather than guess.
+    return { ok: false, unchecked: true, drift: [] };
+  }
+  const untracked = new Set(untrackedR.stdout.split('\n').map((l) => l.trim()).filter(Boolean));
+
+  // Classify, because the remedy differs and naming the wrong one sends someone to the wrong
+  // command. Uncommitted -> the edit is not in ANY commit yet, so pushing changes nothing.
+  // Unpushed -> it is committed here and simply has not reached the ref node1 pulls from.
+  const drift = [];
+  for (const f of files) {
+    const changed = vsCommit.has(f) || untracked.has(f);
+    if (!changed) continue;
+    drift.push({ file: f, kind: (vsHead.has(f) || untracked.has(f)) ? 'uncommitted' : 'unpushed' });
+  }
+  return { ok: true, drift };
+}
+
+/**
  * The code digest for an item's job at a commit-ish, computed HERE.
  *
  * `codeDigestFor` asks cm-node1, because the dedupe's other side lives there and both sides
@@ -477,6 +549,26 @@ function feed({ dryRun }) {
     const digHere = localCodeDigest(cand.id, 'HEAD');
     if (digAt && digHere && digAt !== digHere) {
       skipped.push(`${cand.id}: code closure differs at pinned commit ${commit.slice(0, 8)} (${digAt}) from HEAD (${digHere}) — ${TARGET} would run OLD code; advance ${trackDesc} first`);
+      continue;
+    }
+    // ...and the same question asked against the WORKING TREE, which is the thing the spec was
+    // actually authored against. Both checks above compare commit to commit and are blind to an
+    // uncommitted edit by construction — that blindness is WS-595. See worktreeDrift.
+    const wt = worktreeDrift(commit, built.spec.steps);
+    if (wt.unchecked) {
+      skipped.push(`${cand.id}: cannot compare the working tree against pinned commit ${commit.slice(0, 8)} — refusing rather than guessing`);
+      continue;
+    }
+    if (wt.drift.length) {
+      // Name the remedy per file, because they are different commands and guessing wrong wastes
+      // a cycle: an uncommitted edit is not fixed by pushing, and a pushed commit is not fixed
+      // by committing. Uncommitted is listed first — it is the case no earlier gate could see.
+      const un = wt.drift.filter((d) => d.kind === 'uncommitted').map((d) => d.file);
+      const up = wt.drift.filter((d) => d.kind === 'unpushed').map((d) => d.file);
+      const parts = [];
+      if (un.length) parts.push(`UNCOMMITTED here: ${un.join(', ')} — commit them, then advance ${trackDesc}`);
+      if (up.length) parts.push(`committed but unpushed: ${up.join(', ')} — advance ${trackDesc}`);
+      skipped.push(`${cand.id}: ${TARGET} would run code that differs from this working tree, so the run would answer a different question than the spec was written for. ${parts.join(' | ')}`);
       continue;
     }
     // Dedupe on the FINGERPRINT of the work, not on the job id. Both sides are fingerprinted
@@ -1016,4 +1108,4 @@ if (require.main === module) main();
 // written to fix a misdiagnosis, and a fix to a diagnostic is worthless unless the
 // diagnostic itself can be run against the job it got wrong.
 module.exports = { computeStatus, rankNode1, feed, humanStatusLine, panel, reviewDebt, doneJobIds,
-                   failureDetail, missingScriptsAtCommit, checkoutSkew, computeHead };
+                   failureDetail, missingScriptsAtCommit, worktreeDrift, checkoutSkew, computeHead };

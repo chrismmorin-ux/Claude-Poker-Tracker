@@ -922,6 +922,25 @@ function loadProgramCapsByProgram() {
   return out;
 }
 
+// WS-594: ids held by a DIFFERENT session that is still alive. The gate already
+// computes this and treats it as a hard stop — but the gate SHORT-CIRCUITS on an
+// active sprint (see runGate step 1), so the claim-conflict block below it never
+// runs in exactly the state where resuming would collide. Ranking never consulted
+// claims at all, so `compose` would re-anchor on a contended item every time and
+// hand two sessions the same work. Measured 2026-08-20: SPR-192 held WS-548 under
+// a live claim, and compose re-proposed WS-548 on a second session.
+function foreignClaimedIds() {
+  try {
+    const wsDir = findWorkstreamDir(process.cwd());
+    const mySession = resolveSessionId(wsDir);
+    return new Set(findClaimConflicts(wsDir, mySession, null).map((c) => c.id));
+  } catch {
+    // A broken registry must never fence the queue — same doctrine as the gate's
+    // `claim-conflicts-unknown` branch. Rank everything and let the gate speak.
+    return new Set();
+  }
+}
+
 function runCandidates(args) {
   const limit = parseInt(readFlag(args, 'limit') || '30', 10);
   const store = loadStore();
@@ -958,9 +977,12 @@ function runCandidates(args) {
     return deps.every((depId) => doneIds.has(depId));
   }
 
+  const contended = foreignClaimedIds();
+
   const ranked = [];
   for (const item of backlog) {
     if (!depsClear(item)) continue;
+    if (contended.has(item.id)) continue; // WS-594: another live session holds it
     const sourceClass = item.source_class || classifySource(item);
     const rawDeclared = typeof item.priority_score === 'number' ? item.priority_score : 0;
 
@@ -1179,10 +1201,12 @@ function candidatesInline(store) {
   for (const item of (store.queue.all() || [])) {
     if (item && item.status === 'done') doneIds.add(item.id);
   }
+  const contended = foreignClaimedIds();
   const ranked = [];
   for (const item of backlog) {
     const deps = Array.isArray(item.blocked_by) ? item.blocked_by : [];
     if (!deps.every((d) => doneIds.has(d))) continue;
+    if (contended.has(item.id)) continue; // WS-594: another live session holds it
     const sourceClass = item.source_class || classifySource(item);
     const rawDeclared = typeof item.priority_score === 'number' ? item.priority_score : 0;
     let raw = rawDeclared;
