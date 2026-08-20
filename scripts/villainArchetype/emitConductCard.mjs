@@ -140,10 +140,30 @@ export const emitConductCard = async ({
   ).size;
 
   const ordered = [...rules].sort((a, b) => b.n - a.n);
-  const ruleId = (r, i) => `r${String(i + 1).padStart(2, '0')}`;
 
-  const mixes = ordered.map((r, i) => buildMix({
-    ruleId: ruleId(r, i),
+  /**
+   * RULE IDENTITY IS THE PREDICATE, NOT THE RANK.
+   *
+   * `ruleId` was `r01..rNN` assigned by position after sorting by n. So identity was RANK BY
+   * SIZE: add a hundred hands, let one leaf overtake another, and `r08` silently denotes a
+   * different spot. Every citation of a rule — `unresolved[].ruleId`, `residual.ruleId`, an
+   * EV appraisal, an archetype parent link, a longitudinal comparison of one villain against
+   * himself — points through that id, and every one of them rebinds on the next run with no
+   * error anywhere. Measured: two cards for the same subject over the same 3,386 decisions,
+   * from different engine commits, shared ONE ruleId out of 25 while 21 rules had no
+   * counterpart at all.
+   *
+   * Hashing the canonical predicate makes the id a property of the SPOT. The same spot keeps
+   * its id across runs, corpus growth and instrument changes; a spot that genuinely changed
+   * gets a new id, which is the correct behaviour and is visible in a diff.
+   */
+  const canonicalPredicate = (r) => (r.predicate || [])
+    .map((c) => `${c.feature}|${c.op}|${c.value}|${[...(c.siblings || [])].sort().join(",")}`)
+    .join(" AND ");
+  const ruleId = (r) => `r-${createHash("sha256").update(canonicalPredicate(r)).digest("hex").slice(0, 10)}`;
+
+  const mixes = ordered.map((r) => buildMix({
+    ruleId: ruleId(r),
     when: r.conds.map((c) => c.value).join(' AND ') || 'everything else',
     n: r.n,
     actions: r.mix.dist.map(([action, k]) => ({ action, k, ci: wilson(k, r.n) })),
@@ -154,15 +174,31 @@ export const emitConductCard = async ({
     streets: r.pool.reduce((m, d) => { m[d.street] = (m[d.street] || 0) + 1; return m; }, {}),
   }));
 
-  // The enclosure clause: the leaf that catches whatever the named conditions did not reach.
-  const residualIdx = ordered.findIndex((r) => r.conds.some((c) => c.value === 'everything else'));
-  const residual = residualIdx >= 0
-    ? { ruleId: ruleId(ordered[residualIdx], residualIdx), kind: 'named-everything-else' }
-    // A tree whose leaves partition the decision set is enclosed by construction: every
-    // decision reaches exactly one leaf. Stated rather than assumed, because "enclosed" is a
-    // claim and this is the reason it holds.
-    : { ruleId: mixes[mixes.length - 1].ruleId, kind: 'partition-is-total',
-        note: 'The induced leaves partition every decision, so the ruleset is enclosed by construction rather than by a named fallback.' };
+  /**
+   * THE ENCLOSURE CLAUSE — and the branch that used to find the wrong rule is deleted.
+   *
+   * The old code searched for a leaf whose path contained the literal `everything else` and
+   * called it the fallback. But `everything else` is a branch label at an INTERNAL node — the
+   * pooled remainder of the siblings at that split — not a root-level catch-all. Scanning
+   * n-descending therefore returned the LARGEST leaf carrying that label anywhere on its path.
+   * Measured: villain 2 declared `r08`, a 330-decision c-bet rule, as its enclosure clause,
+   * while the real catch-all (n=25) sat unnamed; villain 1 declared a 34-decision leaf, 1.0%
+   * of his decisions, as the fallback for 3,386.
+   *
+   * There is no need to guess, because the property is now PROVEN rather than assumed: the
+   * round-trip gates in `profileVillain` check that every decision matches exactly one rule
+   * and that each rule re-derives its own decision counts. A partition needs no fallback, and
+   * saying so is more honest than naming a rule that is not one.
+   */
+  const residual = {
+    ruleId: mixes[mixes.length - 1].ruleId,
+    kind: 'partition-is-total',
+    note: 'The induced leaves partition every decision this card was built from, so the ruleset '
+      + 'is enclosed by the partition rather than by a named fallback. This is CHECKED, not '
+      + 'assumed: the round-trip gates verify that every decision matches exactly one rule and '
+      + 'that each rule re-derives its own action counts. Off-support is a property of decisions '
+      + 'the card never saw and is reported separately.',
+  };
 
   const unresolved = mixes
     .filter((m) => m.verdict === 'hidden-cond' || m.verdict === 'needs-cards')
@@ -184,8 +220,21 @@ export const emitConductCard = async ({
     note: 'The card describes only these situations. A best-response computed outside this occupancy measures the card\'s holes, not the subject\'s weakness.',
   };
 
+  // The ruleset as an identity: the sorted set of predicate ids. Order-independent, so two
+  // runs that find the same spots in a different order produce the same hash.
+  const rulesetHash = createHash("sha256")
+    .update(mixes.map((m) => m.ruleId).sort().join("|")).digest("hex");
+
   const card = buildConductCard({
-    cardId: `CC-${subjectId.replace(/[^A-Za-z0-9]/g, '').slice(0, 12)}`,
+    /**
+     * `cardId` was a slug of the SUBJECT, so every re-derivation carried the same one. Five
+     * cards for one subject sit in `.tmp-arch/` with 19, 25, 18, 18 and 25 rules from five
+     * engine commits, all four of them claiming to be `CC-SO0OmHLLvkJp`. An id that cannot
+     * tell two cards apart cannot be cited. The ruleset hash makes it identify the card;
+     * `subjectId` remains the join key for "all cards about this player".
+     */
+    cardId: `CC-${subjectId.replace(/[^A-Za-z0-9]/g, '').slice(0, 12)}-${rulesetHash.slice(0, 8)}`,
+    rulesetHash,
     subjectId,
     dealBook: {
       dealBookHash: dealBookHashOf(files),

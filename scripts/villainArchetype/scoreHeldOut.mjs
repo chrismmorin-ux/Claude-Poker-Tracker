@@ -149,7 +149,61 @@ for (const [name, model] of rungs) {
 }
 const legalityBits = logLoss(evalRows, legality);
 const cardBits = logLoss(evalRows, cardModel);
-console.log(`\nTHE NUMBER THAT MATTERS: the card beats legality-only by `
+console.log(`\nTHE NUMBER THAT MATTERS: the card beats the legality control by `
   + `${(legalityBits - cardBits).toFixed(4)} bits/decision.`);
-console.log(`Pre-registered falsifier: the villain layer beats the legality baseline by more than`);
+console.log(`Pre-registered falsifier: the villain layer beats the legality control by more than`);
 console.log(`0.05 bits/decision held out. ${(legalityBits - cardBits) > 0.05 ? 'MET.' : 'NOT MET.'}`);
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * WHERE THE LIFT ACTUALLY IS.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ *
+ * The aggregate is a mean over every held-out decision, and a mean is exactly the wrong summary
+ * for the question anyone has. A small average lift is compatible with two very different
+ * worlds: the card knows a little about everything, or it knows a great deal about a handful of
+ * spots and nothing about the rest. Only the second is worth acting on, and only the second
+ * would let a modest average become a large edge in the spots actually played.
+ *
+ * So: per rule, the bits it saves against the legality control on the decisions it governs.
+ * `bits/dec` is the lift where that rule applies. `share` is how much of the card's TOTAL
+ * advantage that one rule accounts for — the concentration measure, and the one that decides
+ * whether "the card is worth 0.07 bits" is the right way to describe it at all.
+ */
+const perRule = new Map();
+evalRows.forEach((d, i) => {
+  const ri = index[i];
+  if (ri < 0) return;
+  const t = ruleTallies[ri];
+  const c = legality(d);
+  const pOf = (tally) => {
+    const total = ACTIONS.reduce((s, a) => s + (tally.get(a) || 0) + ALPHA, 0);
+    return ((tally.get(d.action) || 0) + ALPHA) / total;
+  };
+  const saved = -Math.log2(pOf(c)) - (-Math.log2(pOf(t)));
+  if (!perRule.has(ri)) perRule.set(ri, { n: 0, saved: 0 });
+  const e = perRule.get(ri);
+  e.n++; e.saved += saved;
+});
+
+const totalSaved = [...perRule.values()].reduce((s, e) => s + e.saved, 0);
+const ranked = [...perRule.entries()]
+  .map(([ri, e]) => ({ ri, n: e.n, perDec: e.saved / e.n, total: e.saved,
+    share: e.saved / totalSaved, when: rules[ri].conds.map((c) => c.value).join(' AND ') || 'everything else' }))
+  .sort((a, b) => b.total - a.total);
+
+console.log(`\nPER-RULE LIFT over the legality control, on held-out decisions`);
+console.log(`   n   bits/dec   total   share  spot`);
+for (const r of ranked) {
+  console.log(`${String(r.n).padStart(5)}  ${r.perDec.toFixed(3).padStart(8)}  `
+    + `${r.total.toFixed(1).padStart(6)}  ${(100 * r.share).toFixed(1).padStart(5)}%  ${r.when.slice(0, 72)}`);
+}
+const top3 = ranked.slice(0, 3).reduce((s, r) => s + r.share, 0);
+const helping = ranked.filter((r) => r.perDec > 0);
+const hurting = ranked.filter((r) => r.perDec < 0);
+console.log(`\nconcentration: the top 3 rules carry ${(100 * top3).toFixed(0)}% of the card's total advantage`);
+console.log(`${helping.length} rules beat the control where they apply, ${hurting.length} do WORSE than it`);
+if (hurting.length) {
+  console.log(`worst: ${hurting[hurting.length - 1].perDec.toFixed(3)} bits/dec over `
+    + `${hurting[hurting.length - 1].n} decisions — ${hurting[hurting.length - 1].when.slice(0, 60)}`);
+}
