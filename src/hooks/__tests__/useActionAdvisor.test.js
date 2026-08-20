@@ -110,6 +110,35 @@ describe('useActionAdvisor', () => {
       return refined;
     };
 
+    /**
+     * The same thing, but with the refinement held on an explicit gate the test opens.
+     *
+     * WHY: observing the PROVISIONAL state means asserting inside a window, and a window
+     * bounded by `setTimeout(0)` is a race against the event loop, not a boundary. It held
+     * in isolation and lost under a loaded shard — `await act(async () => ...)` yields
+     * enough times that the timer can fire before the assertion runs, and the refined
+     * answer had already replaced the provisional one. Flaky in the direction that says
+     * PASS on a quiet machine, which is the direction that hides.
+     *
+     * The macrotask yield is KEPT, because the comment above is right that removing it
+     * would stop exercising two-phase at all. What changes is that the window is now
+     * closed by the test rather than by a timer, which is the same `releaseFirst` idiom
+     * the superseded-call test below already uses.
+     */
+    const gatedTwoPhase = (fast, refined) => {
+      let open;
+      const gate = new Promise((r) => { open = r; });
+      return {
+        impl: async (args) => {
+          args.onFastResult?.(fast);
+          await gate;
+          await new Promise((r) => setTimeout(r, 0));
+          return refined;
+        },
+        open: () => open(),
+      };
+    };
+
     it('passes onFastResult to the engine at all', async () => {
       evaluateGameTree.mockResolvedValue(mockResult);
       const { result } = renderHook(() => useActionAdvisor());
@@ -124,7 +153,8 @@ describe('useActionAdvisor', () => {
     it('renders the fast answer as provisional, then replaces it with the refined one', async () => {
       const fast = { heroEquity: 0.55, recommendations: [{ action: 'bet', ev: 20 }] };
       const refined = { heroEquity: 0.62, recommendations: [{ action: 'check', ev: 31 }] };
-      evaluateGameTree.mockImplementation(twoPhase(fast, refined));
+      const { impl, open } = gatedTwoPhase(fast, refined);
+      evaluateGameTree.mockImplementation(impl);
       const { result } = renderHook(() => useActionAdvisor());
 
       // The two phases have to be observed ACROSS the macrotask boundary, not inside one
@@ -143,6 +173,7 @@ describe('useActionAdvisor', () => {
       expect(provisional.isProvisional).toBe(true);
       expect(provisional.recommendations[0].action).toBe('bet');
 
+      open();
       await act(async () => { await pending; });
 
       expect(result.current.advice.isProvisional).toBe(false);
