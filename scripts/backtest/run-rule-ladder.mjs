@@ -11,7 +11,11 @@
  * is not in the question. Bolting a "no engine" mode onto a script whose every figure is an
  * engine contrast would leave both harder to read.
  *
- * THE COST ARGUMENT THAT MOTIVATED THIS FILE WAS WRONG, AND THE MEASUREMENT SAYS SO.
+ * TWO COST ARGUMENTS HAVE NOW BEEN MADE ABOUT THIS FILE AND THE MEASUREMENT REFUTED BOTH.
+ * Both are kept. A refuted prediction deleted once it is fixed is a prediction the next
+ * reader re-derives from scratch, and this file is on its second lap of exactly that.
+ *
+ * ── REFUTATION 1 (2026-08-17) — "drop the engine arm and it runs in minutes" ──
  *
  * The prediction: run-strategy-arms.mjs took 220 s for 45 decisions (~4.9 s/decision) and its
  * header states strategy arms are "free — pure functions of the decision, no engine call. The
@@ -19,15 +23,68 @@
  * run in minutes.
  *
  * MEASURED 2026-08-17, engine-free: 420 s for 85 decisions. **4.9 s/decision — unchanged.**
- * Removing the engine arm bought nothing in wall clock. The per-decision cost is NOT the
- * engine call; it is the per-player corpus walk (index, buildRangeProfile, accumulateDecisions)
- * amortised over a very low yield of scored decisions per player — 85 decisions from 20
- * players here.
+ * Removing the engine arm bought nothing in wall clock.
+ *
+ * ── REFUTATION 2 (2026-08-20) — "the cost is the per-player corpus walk" ──
+ *
+ * Refutation 1 concluded with a SECOND prediction, stated here as fact for three days: that
+ * the per-decision cost was the per-player corpus walk (index, buildRangeProfile,
+ * accumulateDecisions) amortised over a low yield of decisions per player, and therefore
+ * "THROUGHPUT IS AN OPEN BLOCKER and the fix is in the corpus walk, not here."
+ *
+ * WS-540 built the per-phase instrument that could check it — there was none in
+ * scripts/backtest at all — and the number came back the other way round:
+ *
+ *     comboSample   139.0 s (102 calls)   98.2% of wall
+ *     strategyArms    0.0 s (474 calls)   the rules ARE free, exactly as claimed
+ *     corpus read     1.2 s   accumulate 1.1 s   profileBuild 0.2 s
+ *
+ * The corpus walk is under 2%. Confirmed independently by `node --cpu-prof`, which knows
+ * nothing about that instrument: 57.9% self time in `evaluate5`
+ * (src/utils/pokerCore/handEvaluator.js), 5.4% `bestFiveFromSeven`, 4.9%
+ * `comboStrengthPercentile`; `buildRangeProfile` and `accumulateDecisions` are not in the
+ * top 18.
+ *
+ * THE ACTUAL CAUSE: `sampleCombos(range, board, k)` is a pure function of three DECISION
+ * properties — no arm value reaches it — but it was called inside `policyAt`, so every rung
+ * at a node recomputed a bit-identical array. Fixed by building it once per decision and
+ * handing it to every arm: 4.94 -> 1.52 s/decision, bit-identical output.
+ *
+ * ── THE SECOND HALF OF THE SAME FIX (2026-08-20) ──
+ *
+ * `comboStrengthPercentile` answers for ONE combo by enumerating the whole ~1,081-1,176 combo
+ * universe, and those inner scores depend only on the BOARD — so a range of N combos ran the
+ * identical enumeration N times. The repo already had the answer:
+ * `computeBoardPercentileTable` computes every combo's percentile in one pass, and its docblock
+ * states "any divergence from `comboStrengthPercentile` is a bug in this function". That claim
+ * was CHECKED before `sampleCombos` was moved onto it — 9,122 combos across 8 boards, zero
+ * mismatches — rather than taken on the docblock's word.
+ *
+ *     141.6 s -> 2.3 s on an identical 93-decision slice (61.6x), output bit-identical.
+ *     4.94 -> 0.03 s/decision against the run this file was written around (~165x).
+ *
+ * WHERE THE COST IS NOW, and it is worth stating plainly because it is where refutation 1
+ * ALREADY claimed it was:
+ *
+ *     corpus read 1.1 s   accumulate 0.9 s   profileBuild 0.2 s   comboSample 0.1 s
+ *     the per-player corpus walk is now 99.6% of the run
+ *
+ * So the corpus-walk diagnosis is true TODAY. It was not true when it was made — it became
+ * true only once the term that actually dominated was removed. A claim that is eventually
+ * right for reasons its author did not have is still not evidence, and that is the whole
+ * reason both refutations are kept here.
+ *
+ * THE LESSON ALL OF IT SHARES: every cost claim about this pipeline that was reasoned about
+ * rather than measured has been wrong, and each one was wrong in a way that sent the next
+ * piece of work at the wrong term. Measure the phase before optimising it.
+ *
+ * WHAT THIS UNBLOCKS. At 0.03 s/decision the n this ladder needs is reachable: ~26,000
+ * decisions (the low-end MDE estimate) is ~13 minutes and ~550,000 is ~4.6 hours, against
+ * ~36 hours and ~31 days before. Every rung is still UNRESOLVED at n=93; that is now a
+ * question of running it, not of whether it can be run.
  *
  * The file still earns its place: FALLBACK_POOL is the reading the ladder wants, and rung-to-
- * rung deltas are its product. But THROUGHPUT IS AN OPEN BLOCKER and the fix is in the corpus
- * walk, not here. Recorded rather than quietly dropped, because the prediction is in this
- * file's own commit message and a future reader would otherwise inherit it as fact.
+ * rung deltas are its product.
  *
  * The infrastructure already anticipated this. `normalizeDepthArms` (heroEvRunner.mjs:88)
  * refuses a strategy-only run ONLY when an arm asks to fall back to an engine that is not

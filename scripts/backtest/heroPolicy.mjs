@@ -47,7 +47,7 @@
  */
 
 import { enumerateCombos } from '../../src/utils/pokerCore/rangeMatrix.js';
-import { comboStrengthPercentile } from '../../src/utils/pokerCore/handEvaluator.js';
+import { comboStrengthPercentile, computeBoardPercentileTable } from '../../src/utils/pokerCore/handEvaluator.js';
 import { getRangePositionCategory } from '../../src/utils/positionUtils.js';
 import { buildBaselineRange } from '../../src/utils/exploitEngine/preflopAdvisor.js';
 import { evaluateGameTree } from '../../src/utils/exploitEngine/gameTreeEvaluator.js';
@@ -106,8 +106,29 @@ export const sampleCombos = (range, board, k = DEFAULT_COMBO_SAMPLES) => {
   const combos = enumerateCombos(range, board);
   if (combos.length === 0) return [];
 
+  // WS-540 — ONE ENUMERATION PER BOARD, not one per combo.
+  //
+  // `comboStrengthPercentile` answers for a single combo by enumerating the whole ~1,081-1,176
+  // combo universe, and every one of those inner scores depends only on the BOARD. Asking it
+  // once per combo therefore ran the identical enumeration N times. MEASURED 2026-08-20: this
+  // loop was 98.2% of an engine-free ladder run, ~74% of it inside `evaluate5`.
+  //
+  // `computeBoardPercentileTable` is the repo's own answer to exactly this — its docblock says
+  // "any divergence from `comboStrengthPercentile` is a bug in this function", and that claim
+  // was CHECKED rather than trusted before this call site was moved onto it: 9,122 combos
+  // across 8 boards (flop, turn, river), zero mismatches. `handStrength.mjs:355` is the
+  // existing precedent for this pattern, including the locally-declared key.
+  //
+  // The fallback is not decoration: the table is empty for a board outside 3-5 cards, and the
+  // single-combo function returns null there too, so an invalid board behaves exactly as before
+  // instead of silently becoming NaN.
+  const pctTable = computeBoardPercentileTable(board);
+  const comboKey = (a, b) => (a < b ? a * 52 + b : b * 52 + a);
   for (const c of combos) {
-    c.strength = comboStrengthPercentile(c.card1, c.card2, board);
+    const fromTable = pctTable.get(comboKey(c.card1, c.card2));
+    c.strength = fromTable === undefined
+      ? comboStrengthPercentile(c.card1, c.card2, board)
+      : fromTable;
   }
   combos.sort((a, b) => a.strength - b.strength);
 
