@@ -58,7 +58,10 @@ import { buildEnumeration } from './heroEvEnumeration.mjs';
 import {
   stratifiedSelect, stratifiedOrder, countByStratum, DEFAULT_SELECTION_STRATEGY,
 } from './stratifiedSelect.mjs';
-import { scoreHeroEvPlayer, newTaskCounters, mergeTaskCounters } from './heroEvTask.mjs';
+import {
+  scoreHeroEvPlayer, newTaskCounters, mergeTaskCounters,
+  newPhaseTimings, mergePhaseTimings, summarizePhaseTimings,
+} from './heroEvTask.mjs';
 import { buildChunkStamp, writeChunk, loadChunk } from './mergeHeroEvChunks.mjs';
 import { DECISION_RECORD_SCHEMA_VERSION } from './decisionRecord.mjs';
 import { REFINEMENT_CLOCK_VERSION } from '../../src/utils/exploitEngine/refinementWork.js';
@@ -245,13 +248,22 @@ export const runHeroEv = async ({
   if (!Number.isInteger(workers) || workers < 0) {
     throw new Error(`runHeroEv: workers must be a non-negative integer, got ${workers}`);
   }
-  if (workers > 0 && strategyArms.length > 0) {
-    // A strategy's policyAt is a function and cannot cross the thread boundary. The
-    // residual is NAMED, not silently dropped: supporting strategy arms in workers needs
-    // a serializable strategy descriptor (the Strategy Card JSON) rebuilt in-worker via
-    // validateStrategy — filed with WS-433's completion notes. Until then a strategy run
-    // is serial, never a silently different measurement.
-    throw new Error('runHeroEv: strategy arms are not yet transportable to workers — run with workers: 0');
+  // WS-540 — strategy arms ARE now transportable to workers. The restriction that used to
+  // throw here ("not yet transportable") pinned every rule-ladder run to one core of twenty.
+  // A `policyAt` closure still cannot cross the boundary; what crosses is the arm's
+  // `descriptor` (the loaded Strategy Card plus its build options), which the worker rebuilds
+  // through `rehydrateStrategy` with a content-hash assertion. An arm carrying no descriptor
+  // is still untransportable and is refused HERE, by name, rather than failing as an opaque
+  // structured-clone error inside the pool.
+  if (workers > 0) {
+    const undescribed = strategyArms.filter((a) => !a.strategy?.descriptor);
+    if (undescribed.length) {
+      throw new Error(
+        `runHeroEv: strategy arm(s) [${undescribed.map((a) => a.id).join(', ')}] carry no `
+        + 'serializable descriptor and cannot cross a worker boundary. Build them with '
+        + '`fromStrategyCard`, which attaches one, or run with workers: 0.',
+      );
+    }
   }
 
   const guard = new LeakageGuard({ poolPct, reference });
@@ -263,6 +275,11 @@ export const runHeroEv = async ({
   // set is the first N of the canonical enumeration, not the first N seen in the corpus.
   // (`maxPlayers` at ingest was the old cap semantics; planning from the enumeration is
   // what makes a capped run's player set independent of file order.)
+  // WS-540 Phase 0. The corpus read is the one production phase that happens ONCE for the
+  // whole run rather than per player, so it is timed here and reported separately — folding
+  // it into the per-player block would let a big one-off read masquerade as per-decision cost.
+  const runStartedNs = process.hrtime.bigint();
+  const corpusReadStartNs = process.hrtime.bigint();
   const { byPlayer, skipStats, handsRead } = await indexEvalPlayers({
     files,
     poolPct,
@@ -271,6 +288,7 @@ export const runHeroEv = async ({
     keyBySite: true,
     onProgress: ({ handsRead: h, players }) => log(`read ${h} hands, ${players} eval players`),
   });
+  const corpusReadNs = Number(process.hrtime.bigint() - corpusReadStartNs);
   log(`indexed ${byPlayer.size} EVAL players from ${handsRead} hands`);
 
   // The stable work index. Qualification (>= minTrainHands + 1) is what makes the
@@ -362,11 +380,16 @@ export const runHeroEv = async ({
     const coverageByArm = Object.fromEntries(strategyArms.map((a) => [a.id, newCoverage()]));
     const decisions = [];
     const barePids = new Set();
+    const timings = newPhaseTimings();
     let contributing = 0;
     let walkForwardChecked = 0;
     for (const f of sorted) {
       decisions.push(...f.decisions);
       mergeTaskCounters(counters, f.counters);
+      // WS-540 Phase 0. Absent on chunk-seeded fragments (stripped at seed) and on chunks
+      // written before this change — a resumed wave cost THIS run nothing, and counting it
+      // would report time the run never spent.
+      mergePhaseTimings(timings, f.timings);
       mergeLedgerFragment(ledger, f.ledger);
       for (const [armId, cov] of Object.entries(f.coverageByArm)) {
         mergeCoverage(coverageByArm[armId], cov);
@@ -383,6 +406,7 @@ export const runHeroEv = async ({
     }
     return {
       decisions, counters, ledger, coverageByArm, contributing, walkForwardChecked, barePids,
+      timings,
     };
   };
 
@@ -460,6 +484,7 @@ export const runHeroEv = async ({
     },
   });
   let resumedWaves = 0;
+  let resumedPlayers = 0; // WS-540 Phase 0 — players whose cost this run did not pay
   let resumedEngineDirty = false;
 
   const waveBounds = (wave) => ({
@@ -488,11 +513,16 @@ export const runHeroEv = async ({
         }
       }
       delete f.records; // replayed (or capture off) — do not retain a wave of ~15KB rows
+      // WS-540 Phase 0. A seeded wave did not execute here; its original run's timings must
+      // not be attributed to this one. `resumedWaves` in the cost block says how much of the
+      // work is unmeasured for that reason.
+      delete f.timings;
       takeFragment(f);
     }
     failures.push(...hit.failures);
     if (hit.engineDirty) resumedEngineDirty = true;
     resumedWaves++;
+    resumedPlayers += sortedFrags.length;
     log(`resumed wave [${from}, ${to}) from chunk — ${sortedFrags.length} players`);
     return true;
   };
@@ -556,8 +586,18 @@ export const runHeroEv = async ({
     }
   } else {
     const { createHeroEvPool } = await import('./heroEvPool.mjs');
+    // WS-540 — the worker config carries DESCRIPTORS, never closures. structuredClone throws
+    // on a function, so an arm's `strategy` is replaced by its `descriptor` here and rebuilt
+    // on the far side. Serial mode keeps the closure and is unchanged, which is what makes
+    // serial the bit-identity baseline the parallel path is checked against.
+    const workerConfig = {
+      ...taskConfig,
+      arms: taskConfig.arms.map((a) => (a.strategy
+        ? { ...a, strategy: null, strategyDescriptor: a.strategy.descriptor }
+        : a)),
+    };
     const pool = await createHeroEvPool({
-      config: taskConfig,
+      config: workerConfig,
       behaviorPolicy,
       reference,
       poolPct,
@@ -654,6 +694,47 @@ export const runHeroEv = async ({
       // WS-428 Stage 0. The control whose correct value is known INDEPENDENTLY of this
       // instrument — see `handLedger.mjs`. NOT a Result Card figure and not quotable.
       fieldAnchor: sealHandLedger(folded.ledger),
+      // ── WS-540 Phase 0 — WHERE THE TIME ACTUALLY GOES ────────────────────────────────
+      //
+      // This block exists to be able to REFUSE the decoupling. The claim under test is
+      // that production phases dominate, so persisting the decision set makes an added rung
+      // nearly free. `decoupleableShare` is that claim as a number; if it is small, a
+      // decision set buys nothing and WS-540's remaining scope is aimed at the wrong term.
+      //
+      // Per-phase nanoseconds are summed ACROSS WORKERS, so `perPhase.totalNs` exceeds
+      // `wallMs` by roughly the worker count. Every share is taken WITHIN the measured
+      // block; none is a fraction of wall clock. `unmeasuredWallMs` is what the phases do
+      // not account for (ingest already excluded, pool setup, chunk IO, folding) — reported
+      // rather than silently absorbed, because a large residual means the phase set is
+      // incomplete and the shares below are describing the wrong denominator.
+      cost: (() => {
+        const perPhase = summarizePhaseTimings(folded.timings);
+        const wallMs = Number(process.hrtime.bigint() - runStartedNs) / 1e6;
+        const corpusReadMs = corpusReadNs / 1e6;
+        // The corpus read is a production cost too — it is precisely what a persisted set
+        // skips — so it joins the numerator AND the denominator, once, at run level.
+        const decoupleableNs = perPhase.productionNs + corpusReadNs;
+        const accountedNs = perPhase.totalNs + corpusReadNs;
+        return {
+          wallMs,
+          workers,
+          corpusReadMs,
+          perPhase,
+          decoupleableNs,
+          accountedNs,
+          // THE NUMBER THE PLAN'S FALSIFIER IS PRE-REGISTERED AGAINST.
+          decoupleableShare: accountedNs > 0 ? decoupleableNs / accountedNs : null,
+          armShare: accountedNs > 0 ? perPhase.scoringNs / accountedNs : null,
+          unmeasuredWallMs: wallMs - (accountedNs / 1e6) / Math.max(workers, 1),
+          msPerDecision: decisions.length > 0 ? wallMs / decisions.length : null,
+          // Waves that came from chunks contributed decisions but no measured time. When
+          // `resumedPlayers` is non-zero, `msPerDecision` describes the whole run while the
+          // phase block describes only the executed part — say so rather than blending them.
+          resumedWaves,
+          resumedPlayers,
+          measuredPlayers: fragments.length - resumedPlayers,
+        };
+      })(),
       config: {
         poolPct, minTrainHands, checkpointInterval, comboSamples, trials,
         rakeConfig, rakeIsModelled: true, maxDecisions,

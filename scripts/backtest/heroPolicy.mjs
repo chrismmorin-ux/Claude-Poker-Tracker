@@ -184,6 +184,8 @@ export const heroPolicyAt = async ({
   // removal, exercised for real against the pre-WS-436 worktree in the B4 protocol.
   villainFeed = null,
   villainSource = VILLAIN_SOURCES.NULL,
+  // WS-540 — the shared per-decision combo sample. See the note at its use below.
+  combos: providedCombos = null,
 }) => {
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   const board = ctx.board;
@@ -192,7 +194,17 @@ export const heroPolicyAt = async ({
     return { ok: false, reason: POLICY_SKIP_REASONS.EMPTY_RANGE };
   }
 
-  const combos = sampleCombos(range, board, comboSamples);
+  // WS-540 — `sampleCombos` is a PURE function of (range, board, k), and all three are
+  // properties of the DECISION, not of the arm. Every arm at a node therefore recomputed a
+  // bit-identical result. Measured 2026-08-20: that recomputation was 99.2% of a five-rung
+  // engine-free run, ~74% of it inside `evaluate5` via `comboStrengthPercentile`, which
+  // enumerates all 1176 opponent combos per hero combo.
+  //
+  // `combos` lets the CALLER hand in the one shared sample. It is optional and defaults to
+  // computing it, so every existing caller is bit-identical and pays exactly what it paid
+  // before. Consumers only read card1/card2/sampleWeight/weight/strength — nothing mutates
+  // a combo — so one array is safely shared across arms.
+  const combos = providedCombos ?? sampleCombos(range, board, comboSamples);
   if (combos.length === 0) return { ok: false, reason: POLICY_SKIP_REASONS.NO_COMBOS };
 
   const geo = decisionGeometry(hand, ctx.order, ctx.street);

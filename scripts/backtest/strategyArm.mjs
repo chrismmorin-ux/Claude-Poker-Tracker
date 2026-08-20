@@ -102,7 +102,8 @@
  */
 
 import { RESPONSES_BY_FACING } from './behaviorPolicy.mjs';
-import { evaluateCard } from '../../src/utils/standardOfRecord/strategyCard.js';
+import { evaluateCard, canonicalCardBody } from '../../src/utils/standardOfRecord/strategyCard.js';
+import { hashObject } from '../../src/utils/contentHash.js';
 import { sampleCombos, DEFAULT_COMBO_SAMPLES } from './heroPolicy.mjs';
 import { comboClass } from './decisionRecord.mjs';
 
@@ -144,6 +145,112 @@ const EPSILON = 1e-12;
  * number must not be able to start. In particular a typo in `fallback` must not fall through
  * to a default, because the default silently decides what the arm measures.
  */
+/**
+ * Attach a serializable descriptor to a HAND-WRITTEN arm (WS-543).
+ *
+ * `fromStrategyCard` arms carry their card, which is data and rebuilds exactly. A hand-written
+ * arm is a closure with no data behind it — but it lives at a known export of a known module,
+ * and the worker can import that module itself. So what crosses is a POINTER, and what is
+ * asserted on the far side is that the pointer still resolves to the same function.
+ *
+ * THE SOURCE HASH IS WHY THIS IS SAFE. `id` and `version` are declared strings and would agree
+ * even if the function body had changed underneath them; hashing `String(policyAt)` compares the
+ * actual code. That is the same lesson the card path already paid for once: an integrity check
+ * must re-derive from content, never compare two copies of a stored label.
+ *
+ * `modulePath` is resolved by the worker relative to `scripts/backtest/`, which is where
+ * `heroEvWorker.mjs` lives and imports from.
+ */
+export const withModuleDescriptor = async (arm, { modulePath, exportName }) => {
+  if (typeof arm?.policyAt !== 'function') {
+    throw new Error(`withModuleDescriptor: ${arm?.id} has no policyAt to describe`);
+  }
+  const policySourceHash = await hashObject(String(arm.policyAt));
+  return Object.freeze({
+    ...arm,
+    descriptor: Object.freeze({
+      kind: 'module-export',
+      modulePath,
+      exportName,
+      id: arm.id,
+      version: arm.version,
+      policySourceHash,
+    }),
+  });
+};
+
+/**
+ * Rebuild a strategy arm from its serializable descriptor, in a worker (WS-540).
+ *
+ * THE HASH MUST BE RE-DERIVED, NEVER COMPARED TO ITSELF. The first version of this function
+ * compared `descriptor.contentHash` against `arm.descriptor.contentHash` — but the latter is
+ * COPIED off `card.contentHash`, so both sides read the same field and the check was vacuous.
+ * A card that lost a rule in transit while keeping its advertised hash passed cleanly. Caught
+ * by the "CARD was altered in transit" test in strategyArmWorkerTransport.test.js, which is
+ * the only reason it is not still in the codebase.
+ *
+ * So the hash is RECOMPUTED from the card's canonical body, exactly as `loadStrategyCard`
+ * stamps it, and compared against what the descriptor advertised. That makes the check a
+ * derivation rather than a tautology, and it is why this function is async.
+ *
+ * Why it matters at all: a worker rebuilding a different card than the main thread would
+ * produce internally consistent, entirely plausible, WRONG numbers for every rung — and no
+ * downstream figure could reveal it, because they would all agree with each other.
+ */
+export const rehydrateStrategy = async (descriptor, { armId } = {}) => {
+  if (!descriptor) {
+    throw new Error(`strategy arm "${armId}": cannot rehydrate — descriptor missing.`);
+  }
+
+  // ── A hand-written arm: re-import the module and verify the CODE, not the label. ──
+  if (descriptor.kind === 'module-export') {
+    const mod = await import(new URL(descriptor.modulePath, import.meta.url).href);
+    const arm = mod[descriptor.exportName];
+    if (!arm || typeof arm.policyAt !== 'function') {
+      throw new Error(
+        `strategy arm "${armId}": module ${descriptor.modulePath} has no callable export `
+        + `"${descriptor.exportName}".`,
+      );
+    }
+    if (arm.id !== descriptor.id) {
+      throw new Error(
+        `strategy arm "${armId}": REHYDRATION IDENTITY MISMATCH. Descriptor names id `
+        + `"${descriptor.id}" but the module export is "${arm.id}".`,
+      );
+    }
+    const derived = await hashObject(String(arm.policyAt));
+    if (derived !== descriptor.policySourceHash) {
+      throw new Error(
+        `strategy arm "${armId}": REHYDRATION SOURCE MISMATCH. The descriptor was built from a `
+        + `policyAt hashing to ${descriptor.policySourceHash} but the module now provides `
+        + `${derived}. The code changed between the main thread and here.`,
+      );
+    }
+    return arm;
+  }
+
+  if (descriptor.kind !== 'strategy-card') {
+    throw new Error(
+      `strategy arm "${armId}": cannot rehydrate — descriptor of unknown kind `
+      + `"${descriptor?.kind}". Only 'strategy-card' and 'module-export' cross the boundary.`,
+    );
+  }
+  const advertised = descriptor.contentHash;
+  const derived = await hashObject(canonicalCardBody(descriptor.card));
+  if (advertised !== derived) {
+    throw new Error(
+      `strategy arm "${armId}": REHYDRATION HASH MISMATCH. The descriptor advertised `
+      + `${advertised} but its card content hashes to ${derived}. The card changed between `
+      + 'the main thread and here. Refusing rather than scoring a strategy nobody declared.',
+    );
+  }
+  return fromStrategyCard(descriptor.card, {
+    sourceRef: descriptor.sourceRef,
+    encoding: descriptor.encoding,
+    comboSamples: descriptor.comboSamples,
+  });
+};
+
 export const validateStrategy = (strategy, { armId }) => {
   if (!strategy || typeof strategy !== 'object') {
     throw new Error(`strategy arm "${armId}": strategy must be an object`);
@@ -345,13 +452,23 @@ export const summarizeCoverage = (c) => {
  */
 export const strategyPolicyAt = ({
   arm, ctx, hand, geo, engineActions = null, poolActions = null, coverage,
+  // WS-540 — `(k) => combos`, the caller's per-decision memo. Optional: absent, every arm
+  // computes its own sample exactly as before.
+  combosFor = null,
 }) => {
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   coverage.n++;
 
   let out;
   try {
-    out = arm.strategy.policyAt({ ctx, hand, geo, responses });
+    // Keyed on the arm's OWN comboSamples, not the run's: two cards built at different k
+    // must not silently share one sample. `k` is stamped on the descriptor at construction,
+    // so this is exactly the k the card would have used itself. A `fromMarginalFrequency`
+    // arm carries no descriptor and its `policyAt` ignores `combos` entirely, so the
+    // fallback key is unobservable rather than merely harmless.
+    const k = arm.strategy.descriptor?.comboSamples ?? DEFAULT_COMBO_SAMPLES;
+    const combos = combosFor ? combosFor(k) : null;
+    out = arm.strategy.policyAt({ ctx, hand, geo, responses, combos });
   } catch {
     out = { covered: false };
   }
@@ -531,7 +648,25 @@ export const fromStrategyCard = (card, { sourceRef, encoding = ENCODING.DIRECT, 
     sourceRef,
     cardTitle: card.title,
     needsHand,
-    policyAt: ({ ctx, hand, geo }) => {
+    // WS-540 — THE SERIALIZABLE TWIN OF THIS ARM.
+    //
+    // `policyAt` is a closure and cannot cross a worker boundary, which is why every run
+    // containing a strategy arm was pinned to `workers: 0` and used one core of twenty. But
+    // `fromStrategyCard` is a PURE function of (card, opts) and a loaded card is plain data,
+    // so the arm does not need to travel — its INPUTS do, and the worker rebuilds it.
+    //
+    // The descriptor is the arm's identity, not a convenience copy: `rehydrateStrategy`
+    // re-derives the arm and REFUSES if the content hash moves, so a worker silently scoring a
+    // different card than the main thread is not a failure mode this can have.
+    descriptor: Object.freeze({
+      kind: 'strategy-card',
+      card,
+      sourceRef,
+      encoding,
+      comboSamples,
+      contentHash: card.contentHash ?? null,
+    }),
+    policyAt: ({ ctx, hand, geo, combos: providedCombos = null }) => {
       const base = situationOf(ctx, hand, geo);
 
       if (!needsHand) {
@@ -549,7 +684,12 @@ export const fromStrategyCard = (card, { sourceRef, encoding = ENCODING.DIRECT, 
       const range = ctx.rangeBefore;
       const board = ctx.board;
       if (!range || !board) return { covered: false };
-      const combos = sampleCombos(range, board, comboSamples);
+      // WS-540 — take the caller's shared sample when it supplied one. `sampleCombos` is a
+      // pure function of (range, board, k), so every rung at a node was recomputing a
+      // bit-identical array; measured 2026-08-20 that recomputation was 99.2% of a five-rung
+      // run. `providedCombos` is only ever used when the caller built it at the SAME k this
+      // card was constructed with — the caller keys its memo on k for exactly that reason.
+      const combos = providedCombos ?? sampleCombos(range, board, comboSamples);
       if (combos.length === 0) return { covered: false };
 
       const actions = {};

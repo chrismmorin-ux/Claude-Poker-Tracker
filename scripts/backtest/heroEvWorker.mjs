@@ -22,6 +22,7 @@
 import { parentPort } from 'node:worker_threads';
 import { LeakageGuard } from './leakageGuard.mjs';
 import { validateBehaviorPolicy } from './behaviorPolicy.mjs';
+import { rehydrateStrategy } from './strategyArm.mjs';
 import { scoreHeroEvPlayer } from './heroEvTask.mjs';
 
 if (!parentPort) throw new Error('heroEvWorker.mjs must be run as a worker thread');
@@ -30,20 +31,38 @@ let taskConfig = null;
 let policy = null;
 let guard = null;
 
-parentPort.on('message', (msg) => {
-  if (msg.type === 'init') {
-    try {
+const initWorker = async (msg) => {
+  {
+    {
       const { config, behaviorPolicy, reference, poolPct } = msg;
       // Each worker validates for itself: the guard's reference check and the policy
       // validation are cheap, and a worker that could score without them would be a
       // leakage channel the main thread cannot see.
       guard = new LeakageGuard({ poolPct, reference });
       policy = validateBehaviorPolicy(behaviorPolicy, poolPct);
-      taskConfig = config;
-      parentPort.postMessage({ type: 'ready' });
-    } catch (err) {
-      parentPort.postMessage({ type: 'init-error', message: err?.message || String(err), stack: err?.stack ?? null });
+      // WS-540 — rebuild strategy arms from their descriptors. `rehydrateStrategy` asserts the
+      // content hash, so a worker that reconstructed a different card than the main thread
+      // fails to initialise instead of quietly scoring the wrong strategy. Same reason each
+      // worker re-validates the leakage guard and the behaviour policy for itself.
+      const arms = [];
+      for (const a of (config.arms ?? [])) {
+        arms.push(a.strategyDescriptor
+          // eslint-disable-next-line no-await-in-loop -- a handful of arms, once, at init
+          ? { ...a, strategy: await rehydrateStrategy(a.strategyDescriptor, { armId: a.id }) }
+          : a);
+      }
+      taskConfig = { ...config, arms };
     }
+  }
+};
+
+parentPort.on('message', (msg) => {
+  if (msg.type === 'init') {
+    initWorker(msg).then(() => {
+      parentPort.postMessage({ type: 'ready' });
+    }).catch((err) => {
+      parentPort.postMessage({ type: 'init-error', message: err?.message || String(err), stack: err?.stack ?? null });
+    });
     return;
   }
 
