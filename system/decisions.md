@@ -1090,3 +1090,213 @@ assumptions:
 **Date:** 2026-08-15 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
 **Decision:** Materialized the full 27-dir HandHQ corpus on cm-node1 and measured it paired against the 2-dir slice, rather than replacing any shipped artifact. New outputs go to new filenames; the delta is the deliverable.
 **Reasoning:** WS-492 flagged 're-mine everything vs stage by consumer' as a founder call. Measuring first answers it with numbers instead of blind: the stake gradient turns out to be large and monotone, and the founder's stake (200NLH) is mis-fitted by 26% on 3-bet. Replacing priors is still his decision; producing the evidence is not.
+
+### DEC-082: Games are matched by their METRIC VECTOR, never by bb level: online and live are not comp…
+**Date:** 2026-08-16 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Games are matched by their METRIC VECTOR, never by bb level: online and live are not comparable by stake, and the skill axis inverts (online 200NL is a far tougher pool than live 1/2-2/5). A 57%-higher 3-bet rate means a different GAME TYPE, not a scaled version of the same one, so preflop charts fitted on one are wrong for the other. The mistake-type distribution is what determines a game's identity and its exploitability, and is the pre-session study unit.
+**Reasoning:** Founder ruling 2026-08-16, correcting WS-492 and my own report to him. WS-492 doc and my summary both asserted 'founder plays live 1/2-1/3, which maps to canonical 1-2 = 200NLH' and derived a 26.4% 3-bet understatement from that mapping. The mapping is a bb-level equivalence that ignores population skill, and online has BETTER players at lower stakes than live -- so the bb-matched band is not the skill-matched band, and may be further from his game than the 50NLH slice. Correct approach: identify a game by its measured metric vector (3-bet, c-bet, fold-to-cbet, check-raise, thin-value frequency) and the mistakes that distribution implies.
+
+### DEC-083: Build the limp-rate channel
+**Date:** 2026-08-16 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Build the limp-rate channel — but conditional on players-in and pot cheapness, never as a flat limp-to-weakness read
+**Reasoning:** WS-320 measured limp rate separating at chi2/df 79.5 (8x the control) with split-half reliability 0.86 on 18.3M hands, clearing the 'prove it separates before building the channel' bar. Founder refines: good players limp MORE and WIDER when a cheap multiway flop is likely, so a monotonic limp-to-weak mapping would be wrong and would violate labels-are-outputs-not-inputs. The channel conditions on players-already-in and price, per first-principles decision modeling.
+
+### DEC-084: WS-445 label-ledger gate: --update writes new constructs with ledger:null, and a null led…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** WS-445 label-ledger gate: --update writes new constructs with ledger:null, and a null ledger is itself a violation — so re-snapshotting can never silence the gate
+**Reasoning:** A snapshot gate everyone learns to refresh reflexively enforces nothing. Recording that a construct EXISTS is separated from asserting anyone DECIDED about it, so the only path to green is a human writing a ledger row or a reasoned exclusion. Direct answer to faultRegister.test.js:467 'a generator would just move the drift'.
+
+### DEC-085: WS-445 foundation status is a FIVE-value vocabulary including measured-refuted, kept orth…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** WS-445 foundation status is a FIVE-value vocabulary including measured-refuted, kept orthogonal to the three-tier evidence ladder
+**Reasoning:** FOLD_CURVE_STREET_MODS was measured, NOT supported (Brier 0.23668->0.23723) and still ships. A four-value set cannot say 'we looked, it failed, it ships' — collapsing it into unmeasured erases the measurement, into measured launders it.
+
+### DEC-086: Realtime table briefing delivers STEPWISE, not as a monolithic report
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Realtime table briefing delivers STEPWISE, not as a monolithic report. Two independent release gates: (1) evidence-gated - each insight carries its own n-threshold and fires when its conditioning set crosses it; (2) compute-gated - cheap frequencies land instantly, equity/range/EV work streams in behind. Every surfaced item must carry which gate released it plus current n, so a slow-but-old claim is distinguishable from a newly-true one.
+**Reasoning:** Founder 2026-08-16 at the table: 'we can have delivery be stepwise, either by volume of actions suddenly revealing something, or in depth of analysis unlocked after processing.' Dissolves the low-n problem - there is no single sufficient n, each claim self-announces at its own threshold. Sets the precedent for the whole realtime surface.
+
+### DEC-087: Guide slot rule: a word may leave a guide's title only if the guide carries the set it ma…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Guide slot rule: a word may leave a guide's title only if the guide carries the set it marginalizes over AND the Weighting used
+**Reasoning:** Deleting a qualifier generalizes a claim while carrying the specific claim's credibility - the WS-291 mechanism reached faster than by building a bad instrument, and the output reads MORE authoritative rather than less. Enforced in code, not by discipline.
+
+### DEC-088: A Guide cell with n=0 reports 'unexamined' and never inherits the general guide's value
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A Guide cell with n=0 reports 'unexamined' and never inherits the general guide's value
+**Reasoning:** Founder ruling 2026-08-16, chosen over shrinkage so guides become visibly holey and the holes become the work queue. Inverts the range engine's subclass direction (DEC-025 Amd 1); the two coexist because shrinkage answers estimation-under-sparsity and the guide lattice answers marginalization-of-a-measured-joint.
+
+### DEC-089: Guide form gets a new program (prog-guide-authority) rather than extending prog-strategy-…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Guide form gets a new program (prog-guide-authority) rather than extending prog-strategy-of-record
+**Reasoning:** strategy-of-record is in cap_breach at ratio 1.7 (17 open vs max 10); adding to it floors its backlog to priority_floor. Registered as fed_by: strategy-of-record.
+
+### DEC-090: Guide monitor treats INERTNESS as a violation on a dated, owned deadline - not only confo…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Guide monitor treats INERTNESS as a violation on a dated, owned deadline - not only conformance
+**Reasoning:** A standard with zero instances passes every conformance check and prints a green tick. That is prog-strategy-of-record's own baseline finding: 7 of 13 standardOfRecord modules, 1679 lines, zero non-test consumers, under 304 passing tests. A gate that cannot distinguish 'perfectly obeyed' from 'never used' is the failure it exists to catch. Grace expires 2026-10-15, owned by WS-519.
+
+### DEC-091: Stage behavior-policy.json as a compute_job input rather than re-mining it on cm-node1
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Stage behavior-policy.json as a compute_job input rather than re-mining it on cm-node1
+**Reasoning:** pi_pool is the denominator of every importance weight, so re-mining on node1 would fit it on that machine's 27-directory corpus and silently swap the FIELD underneath a run whose stated purpose is same-population continuation. Staging with a sha256 makes drift fail preflight loudly instead of rebasing the field. Establishes the first use of compute_job.inputs in this repo.
+
+### DEC-092: blocked_by now hard-gates compute job SUBMISSION, not just ranking
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** blocked_by now hard-gates compute job SUBMISSION, not just ranking
+**Reasoning:** The ranker applies soft-block damping and still reports compute_ready:true — correct for a human composing a sprint, wrong for an unattended dispatcher. WS-503 declared blocked_by:[WS-504] and the dry-run still picked it, so the 2-hourly autonomous feeder would have spent 4-5h of the fleet's only unattended compute producing a knowingly-confounded result. A missing blocker YAML counts as unmet: refusing costs a 2h wait, submitting wrongly costs hours plus a quotable bad number.
+
+### DEC-093: WS-504 corpus/player cap sampling policy is EQUAL PER STRATUM (round-robin), not proporti…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** WS-504 corpus/player cap sampling policy is EQUAL PER STRATUM (round-robin), not proportional. stratifiedSelect.mjs currently ships SELECTION_STRATEGIES=['proportional','prefix'] with DEFAULT_SELECTION_STRATEGY='proportional'; 'equal' must be added and made the default.
+**Reasoning:** Founder ruling 2026-08-17. The question WS-503 asks is whether the engine's edge holds ACROSS 25NLH-1000NLH, which needs comparable statistical power at every stake. Proportional sampling reproduces the corpus's own stake mix, so thin stakes stay underpowered - a softer version of the same defect. Consequence to stamp in the manifest: a pooled aggregate over an equal-sampled capped run is NOT a corpus-weighted average.
+
+### DEC-094: Facing a 3-bet is a THIRD independent normalization tree (fold|call4|fourBet), not a four…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Facing a 3-bet is a THIRD independent normalization tree (fold|call4|fourBet), not a fourth threeBet subclass. New parents call4/fourBet, subclasses cold4Bet/fourBetAfterOpen, PROFILE_VERSION 4->5.
+**Reasoning:** Founder ruling 2026-08-17, resolving a fork WS-270's own text left open (:40 says 'third independent tree', :56 says 'shrinkage toward the parent threeBet posterior'). Deciding argument: a subclass can only claim the 4-bet RAISE branch - the subAction:null residual already sitting in threeBet - and would still emit nothing for the opener who FOLDS or CALLS a 3-bet, which is WS-521's actual defect. Only a normalization scenario expresses a three-way decision. Consequence: threeBet no longer contains 4-bets, so POKER_THEORY 2.5.3's 'totalShare < 1' residual is now claimed.
+
+### DEC-095: A seat that COLD-CALLS a 3-bet is now call4, not coldCall - the taxonomy deliberately div…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** A seat that COLD-CALLS a 3-bet is now call4, not coldCall - the taxonomy deliberately diverges from sequenceUtils.wouldBeColdCall.
+**Reasoning:** Discovered when 3 lineTaxonomy tests failed. wouldBeColdCall is a street-generic affordance predicate (has this seat acted, is there a bet level) with NO production consumers - only the parity test. It cannot count raises. Keeping the old meaning would split one decision node across two trees while WS-270 already places the symmetric case (cold4Bet, a cold RAISE facing two) in the new tree. Parity is now asserted only inside the one-raise tree, with the two-raise divergence pinned by its own test rather than left as an untested gap.
+
+### DEC-096: WS-521 measured on corpus: the emission hole was 3,445 preflop decision points per 28,699…
+**Date:** 2026-08-17 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** WS-521 measured on corpus: the emission hole was 3,445 preflop decision points per 28,699 hands (+1.903%), previously emitted NOWHERE. A further 3,086 were emitted but misfiled into the wrong tree.
+**Reasoning:** Measured 2026-08-17 against 48 stratified corpus files (FTP 14 / PS 34, online 2009 HandHQ - transferred not measured for the founder's live game). Control was an independent reimplementation of the pre-WS-521 emission rule sharing no code with lineTaxonomy.js. Of 6,531 faced-3-bet decisions now classified, 3,445 are net-new emissions and the remainder were previously landing in coldCall or threeBet. Breakdown: fold 4,565 / call4 1,570 / fourBetAfterOpen 335 / cold4Bet 48 / unsubclassed 13.
+
+### DEC-097: Villain rule-sets parameterise the generative EM fit rather than describing it post-hoc
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Villain rule-sets parameterise the generative EM fit rather than describing it post-hoc
+**Reasoning:** A discriminative rule set predicts actions but does not compose into a coherent policy across a hand, so it cannot be sampled from and drifts from the fit. Founder raised simulation as a goal, which forces one object to serve as ruleset, predictor and simulator. This reverses the discriminative architecture proposed earlier in the same conversation.
+
+### DEC-098: The villain Strategy Card ships as prose in docs/standard-of-record/, not as a .card.js a…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** The villain Strategy Card ships as prose in docs/standard-of-record/, not as a .card.js and not as a docs/guides/ Guide
+**Reasoning:** strategyCard.js requires total coverage inside the declared domain; the fold branch is unexamined so the loader would correctly reject it. GUIDE-STANDARD 0.3 runs bottom-up and the children it would marginalise over do not exist, so publishing under docs/guides/ would be authority borrowed by deletion. Neither rejection was forced past.
+
+### DEC-099: Identifiability is measured by the smallest Hessian eigenvalue (curvature), never by axis…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Identifiability is measured by the smallest Hessian eigenvalue (curvature), never by axis-aligned perturbation or by EM convergence
+**Reasoning:** Axis-aligned resolvability understated hands-to-resolve by 10.5x on the identified case and reported a finite 6,547 hands for a direction that is infinitely unresolvable. EM convergence on log-likelihood declared success 0.079 from the truth at a cost of 2.2e-10 nats. A flat direction in parameter space need not align with any parameter, so only the full local geometry can see it. WS-526.
+
+### DEC-100: EM converges on parameter change and returns converged:false on a stall, never on log-lik…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** EM converges on parameter change and returns converged:false on a stall, never on log-likelihood change
+**Reasoning:** An LL criterion is meaningless near a flat direction: the run reported iterations 5000 of maxIter 5000 with no flag while the answer was wrong by 0.079. Fixing it moved the headline from 2.0e-5 to 1.6e-10. WS-526.
+
+### DEC-101: WS-526 emits a structured claim artifact rather than a Result Card, following the Compres…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** WS-526 emits a structured claim artifact rather than a Result Card, following the Compression-claim precedent
+**Reasoning:** VOCABULARY.md: a Match is Surface x Deal Book x Field, and a measurement with no surface, no strategy and no opponent population must not mint one. WS-526 is a property of an estimator on synthetic data. Conflicts with WS-526's own accept criteria which I authored before reading the register; flagged to the founder rather than silently amended after a passing result.
+
+### DEC-102: Villain rules are DERIVED from data, never authored by hero
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Villain rules are DERIVED from data, never authored by hero
+**Reasoning:** Founder ruling 2026-08-17, chosen over the offered alternative of encoding his own rules first. Authored rules were measured once before and shattered the natural structure (the six classifyStyle archetypes: cluster purity 0.63/0.44, TAG spanning both poles, 21% unlabelable). WS-535.
+
+### DEC-103: Every Villain Model Card carries a grammar-free reference; the villain's decision model i…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Every Villain Model Card carries a grammar-free reference; the villain's decision model is not assumed to share hero's rule grammar
+**Reasoning:** Founder 2026-08-17: 'the shape of villain decision model may look different than ours, they may have different rulesets, or rulesets that transform in a strange way to our engine.' If induction runs inside hero's grammar, a villain reasoning on an axis that grammar lacks cannot be expressed, and the fit packs that structure into the nearest shape and reports good coverage anyway. The shapeTest field is REQUIRED on the metrics kind so a card cannot omit it.
+
+### DEC-104: metrics.villain-model-card scores three terms and reports a FRONTIER, never a point
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** metrics.villain-model-card scores three terms and reports a FRONTIER, never a point
+**Reasoning:** Founder objective function 2026-08-17: least rules, standardized vocab, highest behavioral AND EV coverage. The terms trade against each other, so a single headline hides the trade the programme exists to navigate. Behavioral and EV coverage are never collapsed because evCost.mjs establishes an error costs nothing unless it moves hero across a decision boundary.
+
+### DEC-105: The villain rule ladder is scored by EV-equivalence to the real villain, not only by acti…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The villain rule ladder is scored by EV-equivalence to the real villain, not only by action-prediction accuracy
+**Reasoning:** A rule set can hit 70% action accuracy and be a wildly different player, because the missed 30% is where the money is. EV coverage gives a stopping criterion that behavioural coverage cannot: when the model both predicts his actions AND earns his winrate, it describes him. Founder 2026-08-17 ladder design.
+
+### DEC-106: Ladder throughput is bounded by the per-player corpus walk, not by the engine call
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Ladder throughput is bounded by the per-player corpus walk, not by the engine call
+**Reasoning:** PREDICTION REFUTED BY MEASUREMENT: run-strategy-arms took 4.9 s/decision with an engine arm; the engine-free run-rule-ladder took 420s for 85 decisions -- 4.9 s/decision, identical. The cost is indexEvalPlayers + buildRangeProfile + accumulateDecisions amortised over ~4 scored decisions per player. Right fix is decoupling decision production from arm scoring via a persisted atom set. WS-540.
+
+### DEC-107: Strategy arms are excluded from worker parallelism, forcing every ladder run onto one core
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Strategy arms are excluded from worker parallelism, forcing every ladder run onto one core
+**Reasoning:** heroEvRunner.mjs:254 throws if workers>0 and any strategy arm is present, because an arm carries a policyAt closure that cannot be structured-cloned. A Strategy Card is data with a content hash, so the worker can rebuild the arm from the card instead. This supersedes the vaguer 'the corpus walk is expensive' diagnosis: it is a ~20x ceiling behind one named restriction. WS-540.
+
+### DEC-108: The rule ladder's target is to MATCH the villain's EV, not to maximise edge over the field
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The rule ladder's target is to MATCH the villain's EV, not to maximise edge over the field
+**Reasoning:** Founder ruling 2026-08-18: play like a villain, document how losing they are, study the most common villain's decision surface; optimally exploitative play is explicitly later. Inverts the scoreboard: edgeBB = wisValue - poolValue, so a ruleset behaving exactly like the field scores exactly 0. Headline becomes matchErrorBB minimised, and a rung that beats the field is a worse villain model. Registered as metrics.villain-model-card.evFidelity v2.
+
+### DEC-109: A transported artifact's integrity check must RE-DERIVE the hash from content, never comp…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A transported artifact's integrity check must RE-DERIVE the hash from content, never compare two copies of a stored field
+**Reasoning:** WS-540: rehydrateStrategy first compared descriptor.contentHash to arm.descriptor.contentHash. Both read card.contentHash, so the check was a tautology and a card that lost a rule in transit passed. Now recomputed via hashObject(canonicalCardBody(card)) exactly as loadStrategyCard stamps it, which is why the function is async. Caught only because a test was written for the tampered-card case specifically.
+
+### DEC-110: The pool prices by bet size but does NOT read SPR
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The pool prices by bet size but does NOT read SPR — R2 resolves at +0.117bb, R4 is null at +0.0075bb
+**Reasoning:** Ladder v1, n=2126. R2 (split flat continue across five bet-size buckets) buys +0.1173 bb CI [+0.0048,+0.2394], excludes zero. R4 (SPR gate) buys +0.0075 bb CI [-0.0958,+0.1372] — centred on zero and tight enough to exclude an effect the size of R3's +0.232. Pre-registered in rungs.card.js as a finding about the pool, not a tuning target. sprBand has been mined since WS-333 and this is the first time it was asked to earn its place.
+
+### DEC-111: RETRACTED: 'this pool does not read SPR'
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** RETRACTED: 'this pool does not read SPR'. An aggregate null over a mixture cannot refute a subset effect
+**Reasoning:** Ladder v1 measured ONE SPR encoding, in aggregate, at n=2126, on the blended field, with an interval known to be too narrow. An axis that matters in a few situations with opposite signs elsewhere sums to zero and looks absent. Founder 2026-08-18: 'that's a strong statement, especially when I observe villains looking at stack sizes at the table.' The proxy case is sharper — the villain may bin stacks coarsely rather than compute SPR, which an aggregate test cannot distinguish from absence. WS-544 locates the axis instead of voting on it.
+
+### DEC-112: An IPS edge is unreliable below ~50% ESS
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** An IPS edge is unreliable below ~50% ESS — narrow-support policies are graded on a different population than their baseline
+**Reasoning:** WS-543 calibration, n=2155: dominated arms return the correct sign at ESS 74-100% (always-fold -1.18, fold-every-small-bet -0.42, clone-the-pool exactly 0) and confidently WRONG signs at ESS 21-37% (never-fold +2.85 CI [+1.21,+4.67]; raise-everything +4.32 CI [+1.62,+7.24]) where domination guarantees negative. wisValue averages over the policy's support, poolValue over all scored decisions. Ladder v1 rungs ran at ESS 37-40% — the failure zone — so their LEVELS are not readable as strategy quality.
+
+### DEC-113: The 2.91-players-per-hand clustering violation is a 1% effect, not the headline caveat I…
+**Date:** 2026-08-18 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** The 2.91-players-per-hand clustering violation is a 1% effect, not the headline caveat I claimed
+**Reasoning:** WS-543 measured hand-clustered vs player-clustered intervals directly: median widening 1.013x. I had flagged it as the reason ladder v1's resolved deltas were overstated. It is not; the support problem is. Dominated arms found a failure that reasoning about the estimator did not.
+
+### DEC-114: Compute dedupe keys on the transitive import closure of a job's entry scripts, priced at…
+**Date:** 2026-08-19 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Compute dedupe keys on the transitive import closure of a job's entry scripts, priced at the job's own commit — not on HEAD and not hand-listed per job
+**Reasoning:** Keying on HEAD would re-run the whole compute history on every unrelated push; keying on steps alone (the old behaviour) meant a code fix never re-opened the job it invalidated, which left RC-study-ladder-d908f09d standing wrong for 3 days. The closure is the only key that re-opens exactly what a change invalidated. Structure is read from the working tree on the compute node, contents from git ls-tree at each side's commit, so both sides degrade together when a digest is unavailable.
+
+### DEC-115: Eval pool is sharded by salted player hash and scored one shard at a time; the whole pool…
+**Date:** 2026-08-19 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Eval pool is sharded by salted player hash and scored one shard at a time; the whole pool is still scored, memory is bought with corpus passes
+**Reasoning:** indexEvalPlayers held every hand of every eval player at once and both its memory controls default to Infinity; peak tracks PLAYER COUNT not hands (1300 players = 3.16GB over 1.07M hands vs OOM at 12GB on 250k hands unbounded). Raising the ceiling is impossible - node1 has 10.1GB free. Sharding by hash needs no prior knowledge of which players exist. Verified byte-identical report AND Result Card at 1, 5 and 7 shards, which required compensated summation and sorted lazy-bucket keys.
+
+### DEC-116: Range-calibration stat accumulators use Neumaier compensated summation and emit sorted ke…
+**Date:** 2026-08-19 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Range-calibration stat accumulators use Neumaier compensated summation and emit sorted keys
+**Reasoning:** Without them a sharded run differed from an unsharded one in 99 float figures (max rel 5.4e-14) and 17 key orderings, while every count and verdict matched. The instrument's replication stamp claims true bit-reproducibility since it uses no randomness; a claim true only up to accumulation order is not that claim. Removing it cost two small edits.
+
+### DEC-117: 3-bet rate earns NO channel as an aggregate unconditional axis - it is LESS dispersed bet…
+**Date:** 2026-08-19 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** 3-bet rate earns NO channel as an aggregate unconditional axis - it is LESS dispersed between players (0.595x) than the control axis is
+**Reasoning:** WS-320 recomputed under the corrected separability code (a60d4084) on the recorded statistics. limpRate separates decisively (8.49x control, SD 14.7pp, splitHalf 0.864); cbetRate survives only against the DISJOINT control flopBetFreqNonPfa (1.111x) because every c-bet IS a flop bet so the original control contained the candidate; threeBetRate is not-beyond-control. This is NOT does-not-separate and licenses deleting nothing - sub-channels may still separate. Corpus is online 2009 50NL; founder game is live 9-handed - transferred, not measured.
+
+### DEC-118: The optimism probe cannot measure the curse by varying Math.random - the engine's runout…
+**Date:** 2026-08-19 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The optimism probe cannot measure the curse by varying Math.random - the engine's runout sampler is seeded from the BOARD, by design
+**Reasoning:** boardDerivedRng(cards, salt) at gameTreeSampling.js:113 touches Math.random nowhere; determinism was made free deliberately in WS-355/WS-393. So 200 seeds are 200 identical computations, not replicates. Neither candidate mechanism in the ticket was right: (a) had the symptom but not the cause (nothing is miswired), (b) is false for the 5 flop scenarios which do sample and true only for the 3 turn ones which enumerate every river. Zero measured noise is NOT evidence the curse is zero - determinism removes SAMPLING noise, not ESTIMATION error, and Jensen does not care which.
+
+### DEC-119: A gate that passes on an empty population is not a gate: every known-answer gate must req…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A gate that passes on an empty population is not a gate: every known-answer gate must require its population to be non-empty
+**Reasoning:** Four new outcome gates reported pass with '0 of 0 hands' while the wiring they checked had never run. The post-induction gate then caught two of my own later fixes the same way. A green light with no circuit behind it is worse than no light.
+
+### DEC-120: A known-answer check must IMPORT the function it verifies, never reimplement it
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A known-answer check must IMPORT the function it verifies, never reimplement it
+**Reasoning:** My first contentHash check reimplemented the hash locally, so it would have passed forever while the real function stayed broken. Same two-representations defect the directory has been bitten by three times (loadVillain copy, dumpLeaf enrichment, can_raise labels).
+
+### DEC-121: str_basis moved from the situation group to its own provenance group so the induction can…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** str_basis moved from the situation group to its own provenance group so the induction cannot condition on it
+**Reasoning:** It records whether OUR range model was exact or assumed. A rule branching on it says 'when our pipeline measured exactly, he does X' — a statement about the instrument, not the player. It appeared on villain 1's second-highest-lift rule.
+
+### DEC-122: Rule identity is a hash of the canonical predicate, not rank-by-n
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Rule identity is a hash of the canonical predicate, not rank-by-n
+**Reasoning:** ruleId was assigned by size rank, so adding hands silently rebound every downstream citation. Two cards for the same subject over the same 3,386 decisions shared one ruleId of 25.
+
+### DEC-123: Orthogonality is a scoring criterion for generated primitives, never a generation constra…
+**Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Orthogonality is a scoring criterion for generated primitives, never a generation constraint
+**Reasoning:** I told the blind agents a primitive must not be a rename of an existing column, to protect correction-family size. That instruction made the generator route around suit_max — the known separator — and the positive control failed as a result.

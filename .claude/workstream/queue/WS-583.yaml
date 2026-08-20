@@ -1,0 +1,84 @@
+id: "WS-583"
+title: "Synthetic round-trip validation — generate a corpus, re-induce Conduct Cards from it, and require they reproduce the source cards; that is the falsifier for 'synthetic at corpus quality'"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 62.0
+priority_label: "P1"
+category: testing
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-19: *"If we are able to generate synthetic data that is the same quality as the
+  corpus, then we probably have done most of the work toward something that I can immediately put
+  to use."* Agreed — and "the same quality" needs a test, or it is a feeling.
+
+  THE ROUND TRIP IS THE TEST. Generate a synthetic corpus by playing Conduct Cards against each
+  other, then RE-INDUCE Conduct Cards from the synthetic hands and compare them to the sources. If
+  the generator is faithful, the synthetic cards reproduce the originals: the same spots found, the
+  same frequencies within intervals, the same held-out lift over the legality control. If it is
+  not, the comparison says exactly where it drifted.
+
+  This is a known-answer test at the population level, and it is the same discipline that caught
+  four defects in this instrument on 2026-08-19 — the answer is written down before the run, and
+  the run either reproduces it or does not.
+
+  WHY IT IS THE RIGHT TEST RATHER THAN A DISTRIBUTION MATCH. Matching pot sizes and showdown rates
+  is necessary and weak: a generator can reproduce marginal distributions while getting the
+  conditional structure wrong, which is precisely the failure that matters here, because the whole
+  point of the simulator is the conditional structure. Re-inducing the cards tests the object the
+  system actually consumes.
+
+  THE TRAP THE FOUNDER ALREADY NAMED, and it must be enforced rather than remembered. Resampling
+  your own fitted model to reach significance shrinks the interval around a FIXED BIAS: the
+  synthetic data inherits every error in the cards that generated it, and re-inducing from it will
+  reproduce those errors faithfully and look like confirmation. So:
+
+    - synthetic hands may NEVER widen an interval or raise an n on a claim about a real villain
+    - a Conduct Card built from synthetic hands is a different KIND of object and must be marked
+      as such on the card, not distinguished by filename or by memory
+    - the round trip is a test OF THE GENERATOR, never evidence about a player
+
+  SECONDARY CHECKS, all measurable against the real corpus today: pot-size distribution, street
+  reach rates, showdown frequency, action mix by position, and the aggregate opportunity mix that
+  WS-577 measures.
+accept_criteria:
+  - "PRE-REGISTER the comparison before generating: which fields must match, and to what tolerance. `the synthetic cards reproduce the source cards' rule set and per-rule frequencies within their 95% intervals` is the headline; state the acceptable share of rules allowed to differ before the generator is called unfaithful."
+  - "A card induced from synthetic hands carries a REQUIRED field marking it synthetic, and `conductCardProblems` REFUSES a card that mixes real and synthetic decisions. A refusal in code outlives a paragraph — the existing schema already enforces `n == sum(k)` by throwing, and this is the same guard one level up."
+  - "The round trip reports WHERE the synthetic cards differ, per rule, not just whether they do. A single pass/fail hides the diagnosis, and the diagnosis is the deliverable — a generator that reproduces preflop and drifts on the river is a specific, fixable thing."
+  - "Held-out lift over the legality control is computed for the synthetic cards on synthetic hold-out, and compared to the real cards' figures (villain 1 +0.0726, villain 2 +0.1220 bits/decision). A generator producing cards that beat the control by far MORE than the originals is overfitting its own regularity and is not more faithful — it is less."
+  - "The secondary distribution checks are reported alongside, with the real-corpus figures as targets. They are necessary and not sufficient, and the report must say so rather than presenting a distribution match as validation."
+  - "State plainly what the round trip CANNOT test: it cannot detect an error present in the source cards, because the generator inherits it and the re-induction reproduces it. That blind spot is structural and naming it is part of the deliverable."
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/profileVillain.mjs"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+  - "src/utils/standardOfRecord/conductCard.js"
+blocked_by: ["WS-580"]
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: founder-direction
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Blocked by WS-580 because a generator built on the marginal policy would produce hands in which
+  no villain's action depends on his cards, and re-inducing from those would produce cards that
+  reproduce the sources trivially — passing the round trip while proving nothing. The test only
+  has teeth once the villains being simulated actually hold hands.
+
+  Related standing memory: `project_synthetic_amplification` records the founder's own naming of
+  the fatal trap and the four valid forms (calibration null, power analysis, held-out both ways,
+  optimal experimental design). This item is the held-out-both-ways form applied to the generator.

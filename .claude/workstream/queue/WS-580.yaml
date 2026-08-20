@@ -1,0 +1,87 @@
+id: "WS-580"
+title: "Hand-conditional policy by iterative proportional fitting — a Conduct Card is a MARGINAL policy, so simulating from it directly gives every villain identical play with every holding and puts nobody's cards on the table"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 68.0
+priority_label: "P0"
+category: architecture
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE STRUCTURAL PROBLEM, and it is the hard one in the whole table-shape program.
+
+  A Conduct Card gives `P(action | situation)`, marginalised over the villain's hole cards. That is
+  deliberate and correct for a descriptive record — the rules cannot condition on cards, enforced
+  by a gate, because conditioning on the outcome is leakage. But it means a simulator that samples
+  actions straight from the card produces a table where EVERY VILLAIN PLAYS EVERY HOLDING
+  IDENTICALLY in a given spot. Board texture then interacts with nothing, flops are decoration,
+  and the entire object of the exercise evaporates.
+
+  This is not a rough edge to accommodate. It is the difference between simulating poker and
+  simulating a frequency table.
+
+  THE FIX IS TO FIT THE CONDITIONAL, CONSTRAINED BY WHAT WAS MEASURED. Find
+  `P(action | situation, holdingClass)` subject to three requirements:
+
+    1. HARD CONSTRAINT — it must marginalise, over his measured range at that node, back to the
+       card's `P(action | situation)`. The card is the measurement; the conditional may not
+       contradict it.
+    2. SOFT CONSTRAINT — it must match the showdown-observed composition where we have it.
+       `rangeInference.showdownPrior` already computes what his shown hands say each action means,
+       per action, carrying its own n so it can be discounted.
+    3. MAXIMUM ENTROPY OTHERWISE — assume no structure beyond what was measured. Any extra
+       structure would be our invention wearing his name.
+
+  That is iterative proportional fitting against known marginals. It is standard, it is well-posed,
+  and it consumes exactly the two things this repo already has: the card, and the showdown prior.
+
+  IT ALSO RESOLVES THE `needs-cards` VERDICT PROPERLY. The mix taxonomy already names this exact
+  gap — `needs-cards` means nothing observable separates the leaf while the revealed holdings do,
+  and it says the range-inference layer resolves it and more corpus never will. This item is that
+  layer.
+
+  WHAT MUST NOT HAPPEN. Do not fit the conditional from the showdown subset alone. Showdowns are
+  survivor-filtered — a hand reaches one by CONTINUING — so a conditional fitted on them describes
+  the hands that got there, and would have the villain folding his best holdings. The marginal
+  constraint is what keeps the fit honest, which is why it is hard and the showdown match is soft.
+accept_criteria:
+  - "The fitted conditional marginalises back to the card's action distribution at every leaf, to within a stated tolerance, and this is CHECKED by a gate rather than asserted. A conditional that silently drifts from the card has replaced the measurement with a model."
+  - "KNOWN-ANSWER CHECK on a constructed leaf where the answer is written down first: a spot where the conditional is known by construction (e.g. an exact-range big-blind limped pot with a synthetic policy), fitted, and recovered. If the fit cannot recover a conditional that was planted, no real fit from it is admissible."
+  - "The showdown-anchored constraint carries its n and is DOWN-WEIGHTED explicitly as n falls, with the weighting stated. Villain 1 has 57 shown hands total and only 41 voluntarily entered — a constraint that strong at that n would be fitting noise into the conditional."
+  - "Survivor filtering is handled explicitly and the handling is stated. A fit that treats the showdown subset as a random sample of his range is wrong in a known direction — it over-represents strong holdings — and stating the direction is the minimum."
+  - "Report, for both existing subjects, how much the conditional actually varies by holding class. If the fitted conditional is near-flat in the holding — if the villain really does play every hand the same in most spots — that is a major finding about the population and it should be reported unhedged, not buried as a modelling detail."
+  - "Engine dependence is declared on the output. The conditional needs a range model, so unlike the card itself it is NOT engine-free, and anything computed from it inherits that. Stamp it."
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/rangeInference.mjs"
+  - "scripts/villainArchetype/handStrength.mjs"
+  - "src/utils/standardOfRecord/conductCard.js"
+blocked_by: ["WS-578"]
+blocked_by_legacy: []
+enables: ["WS-582", "WS-583"]
+sprint_id: ""
+decision_flags:
+  - "Domain: what is a holding CLASS for this purpose — the made/draw taxonomy, comboStrengthPercentile bands, or a joint. Too fine and every cell starves; too coarse and the conditional cannot express the thing that matters."
+source:
+  type: founder-direction
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Blocked by WS-578 because a conditional over actions with no sizes cannot produce a playable
+  policy — the environment still could not step even with a perfect hand-conditional action mix.
+
+  POKER_THEORY 15.1 names `comboStrengthPercentile` as the canonical strength axis and it is
+  board-conditional and comparable across boards, which makes it the obvious candidate for the
+  holding class. The decision flag stands because the made-hand and draw dimensions are separate
+  by founder ruling and a single percentile ladder has to lie about one of them.

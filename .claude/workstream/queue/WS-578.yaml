@@ -1,0 +1,81 @@
+id: "WS-578"
+title: "Sizing on the action — `my_raise_to_bb` is populated on 1,167 of 1,167 raises and reaches the Conduct Card on zero rules, so no environment can be stepped"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 70.0
+priority_label: "P0"
+category: data-integrity
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  A Conduct Card rule's action distribution is over the action NAME only — `{fold, call, raise,
+  bet, check}` — built at `emitConductCard.mjs` from `r.mix.dist`. The amount is dropped.
+
+  MEASURED on villain 2 this session: `my_raise_to_bb` is populated on 1,167 of 1,167 raises and
+  `my_bet_x_pot` on every bet. He raises to exactly 3.5bb on 675 of those 1,167 — a near
+  deterministic sizing policy that the card does not record at all. An independent audit put the
+  discarded information at 2,410 bits on his preflop raises alone, roughly 31% the size of the
+  action channel the card does retain.
+
+  WHY IT BLOCKS EVERYTHING DOWNSTREAM. "He raises 16.4%" cannot be applied to a game state. A
+  simulator stepping an environment needs `(action, amount)` — the transition function is
+  literally undefined without it, so WS-582's configuration sweep and WS-580's hand-conditional
+  policy both stall here. It is also not an approximation gap that can be papered over with a
+  default: a raise to 3.5bb and a raise to 12bb are different actions that produce different pots,
+  different SPRs and different continuing ranges, and averaging them describes a player who does
+  not exist.
+
+  IT ALSO FEEDS BACK INTO THE CARD'S OWN CONDITIONS. The villain's sizing IS the `bet_bb` /
+  `bet_x_pot` / `price_pct` that the seat behind him faces. So the same vocabulary appears on both
+  sides of the table, and recording sizing once makes the simulator's inputs and the card's
+  conditions consistent by construction rather than by coincidence.
+
+  SHAPE. A sub-distribution WITHIN each action, banded the way the situation features are banded,
+  each band carrying its own k/n and interval, and the residue never discarded — the same
+  constraint `buildMix` already enforces on the action distribution itself. NOT a joint over
+  (action x size), which multiplies the leaf count and starves every cell.
+
+  NOTE A RELATED DEFECT ALREADY FIXED THIS SESSION: `my_bet_x_pot` divided by `pot - myBet`,
+  subtracting hero's own bet from a pot that never contained it. 1,351 of 1,676 values exceeded 3
+  with a median of exactly 350 — which is 3.5/0.01, the clamp. Fixed in `decisionLabeler.mjs`. Any
+  sizing work must be built on the corrected column, not the archived cards.
+accept_criteria:
+  - "Each action in a rule carries a sizing sub-distribution with k, n and an interval per band, and the bands sum to the action's own k — enforced by a throw, the same way `buildMix` already refuses an action distribution that does not sum to n. A dropped residue here is a silently narrowed sizing policy."
+  - "Actions with no meaningful size (fold, check, call at a fixed price) carry `sizing: null` explicitly rather than an empty object, so 'no sizing exists here' is distinguishable from 'sizing was not recorded'."
+  - "KNOWN-ANSWER CHECK: replay one of the subject's own hands from the labelled decisions and reproduce the actual pot size at every node to within the band width. This is a hard target with a right answer, not a plausibility read, and it is the check that proves the sizing is usable for stepping an environment."
+  - "The bands are chosen from the observed distribution, not from a constant table. 675 of 1,167 raises at exactly 3.5bb means a fixed 0.25-width banding wastes most of its resolution on empty space and merges the one value that matters with its neighbours."
+  - "Report, for both existing subjects, how concentrated the sizing is per action — if a villain's raise size is nearly deterministic, that is itself an exploitable fact and belongs in the ranked spot list alongside the frequency lift."
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "scripts/villainArchetype/decisionSchema.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-580", "WS-582"]
+sprint_id: ""
+decision_flags: []
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "conduct-card-audit-2026-08-19"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Found independently by the game-theory and information lenses of the 2026-08-19 Conduct Card
+  audit, and by three of the six blind primitive-generation agents in the same session — the
+  blind agents reached it from the other direction, reporting that the instrument records the
+  size of bets the villain FACES and never the size of bets he MAKES.
+
+  Touches `src/utils/standardOfRecord/conductCard.js`, which is schema-versioned and
+  additive-only; `schemas.test.js` pins a baseline and fails on any removal or retype. Add, never
+  reshape.

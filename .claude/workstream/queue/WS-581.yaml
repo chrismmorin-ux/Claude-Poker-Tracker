@@ -1,0 +1,93 @@
+id: "WS-581"
+title: "Policy-space rank test — if the villain policy matrix is effectively rank 1 then every table is a ladder and no configuration can ever surprise; engine-free, and it names which villains form the interesting combinations"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 76.0
+priority_label: "P0"
+category: architecture
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  THE QUESTION THE WHOLE CONFIGURATION PROGRAM RESTS ON, and it is answerable now, cheaply, with
+  no engine and no simulator.
+
+  The founder's target is the strategy that emerges only when a particular COMBINATION of villains
+  sits together. That presupposes villains differ in SHAPE, not merely in degree. Build the matrix
+
+      M[i, l] = villain i's action shares at common leaf l
+
+  centre it, and take the singular spectrum. If M is effectively RANK 1 — one "tightness" factor
+  plus noise — then every villain is a scalar rescaling of every other, every table is a ladder,
+  and the best response to a configuration is the best response to its aggregate. No combination
+  could produce anything an individual analysis would not already surface, and the simulator buys
+  nothing over a weighted average for that purpose.
+
+  If the rank is 2 or more, villains occupy genuinely different directions in policy space,
+  configurations can be non-additive, and THE LEADING SINGULAR DIRECTIONS NAME WHICH VILLAINS FORM
+  THE INTERESTING COMBINATIONS. The target list falls out of the same computation.
+
+  THE REPO'S OWN PRIOR EVIDENCE POINTS TOWARD RANK 1 AND THIS MUST BE SAID LOUDLY. VOCABULARY.md
+  records the pool as *"a continuum with one dominant axis (k-means bestK = 2, silhouette 0.343)"*,
+  and WS-436 measured the six style labels carrying ZERO villain-action information over 10,147
+  paired decisions. Both are consistent with a rank-1 pool.
+
+  The reason the question is still open — and worth the measurement rather than the assumption —
+  is that both prior results were computed over AGGREGATE behavioural statistics (VPIP/PFR/AF-shaped
+  quantities). A scalar relationship in aggregates is entirely compatible with shape differences at
+  LEAF resolution: two players with identical VPIP can fold to three-bets differently and c-bet
+  differently in offsetting ways. The Conduct Card is the first object in this repo at the
+  resolution where the question can actually be asked, so this is not a re-run of the stratum work
+  — it is the sharper version of it.
+
+  THE NOISE FLOOR MUST BE MEASURED, NOT CHOSEN. Split each villain's hands in half, build M_A and
+  M_B, and use (M_A - M_B)/2 as a measured noise replica. "How many components are significant" is
+  then a measurement rather than a taste judgement — the same construction WS-337 used.
+
+  PREREQUISITE: a COMMON LEAF SET. Two cards currently share almost no rule conditions, because
+  each villain's tree is grown independently and the basis is chosen by the data. Rules must be
+  evaluated on a fixed shared lattice for M to have a column space at all. The predicate emission
+  built 2026-08-19 makes this possible for the first time — a card can now be EVALUATED against
+  any decision, so every villain can be scored on the same cells regardless of which cells his own
+  tree happened to find.
+accept_criteria:
+  - "PRE-REGISTER THE FALSIFIER BEFORE RUNNING, in the file, in these terms: `the centred policy matrix has exactly one component above the measured noise floor`. Record the outcome unhedged. A rank-1 result is a real answer that redirects the program, not a failure — and it must not be softened after the fact."
+  - "The noise floor is a MEASURED split-half replica, not a chosen threshold and not a scree-plot eyeball."
+  - "Villains are scored on a COMMON leaf set, evaluated through the emitted predicates, not on their own private trees. State how the common lattice was chosen and how much of each villain's decisions it covers — a lattice that covers 30% of one villain and 90% of another is comparing different things."
+  - "Target 50-200 subjects. The induction is per-subject independent and scripted, so this is a node1 batch job. Report the actual n and the per-subject hand counts, since a matrix built from subjects with wildly different volumes has heteroscedastic rows and the spectrum will partly measure that."
+  - "IF rank >= 2: report the leading singular directions and name the villains at their extremes. That list is the input to WS-582 and the item is not done without it."
+  - "IF rank == 1: say so plainly in the item's completion notes and in the continuation doc, and state what it implies for WS-582 — that configuration effects on THIS axis are refuted and the sweep must look somewhere else or not at all. Do not quietly proceed."
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/ruleMatch.mjs"
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "src/utils/pokerCore/equityOperator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-582"]
+sprint_id: ""
+decision_flags:
+  - "Method: what defines the common lattice — a hand-specified cell set, or the union of the top-n rules across subjects. The choice decides what shape differences are even visible."
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "conduct-card-audit-2026-08-19"
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Raised by the game-theory lens of the 2026-08-19 Conduct Card audit as the go/no-go for the
+  configuration program, with the explicit note that the repo's own prior evidence points the
+  wrong way and that saying so loudly is part of the item.
+
+  Highest priority score of the eight because it is the cheapest item that can invalidate the most
+  expensive ones. It is fully engine-independent — a spectrum of measured action frequencies at
+  measured leaves, no EV model anywhere — which is exactly why it should run before anything is
+  built on the configuration premise.

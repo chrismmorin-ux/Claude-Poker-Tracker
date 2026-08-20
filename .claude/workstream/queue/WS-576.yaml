@@ -1,0 +1,88 @@
+id: "WS-576"
+title: "Relational seat coordinates — every positional column is button-relative, so a funnel defined by where hero sits relative to the AGGRESSION is not expressible and therefore cannot be found"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 72.0
+priority_label: "P0"
+category: architecture
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-19, describing the target of the whole table-shape program: *"Three seats left
+  of the first aggressive when there are 2 at the table, and wham there is a statistically emerged
+  funnel that just was revealed because of the table shape."*
+
+  THE PROBLEM IS A COORDINATE SYSTEM, NOT A MISSING MEASUREMENT. Every positional column in
+  `decisionSchema.mjs` is measured against the BUTTON: `seat_pos`, `off_button`, `to_act_after`,
+  `acted_before`, `is_blind`, `is_late`, `blind_v_blind`. Not one is measured against the other
+  PLAYERS. So the sentence "three seats left of the first aggressive" has no representation in the
+  schema, the induction cannot split on it, and the funnel cannot be found no matter how much
+  corpus is thrown at it. This is the same class of defect as `bet_x_pot` being algebraically
+  identical to `price_pct` — a fact the schema had no way to hold.
+
+  WHAT TO ADD. Coordinates relative to the aggression configuration at the table:
+
+    - `seats_from_first_aggr`   seats between hero and the first aggressive seat, in action order
+    - `aggressors_behind`       aggressive seats yet to act after hero
+    - `aggressors_in_front`     aggressive seats who have already acted
+    - `aggr_count`              how many aggressive seats are at the table at all
+    - `aggr_adjacency`          is the seat immediately behind hero aggressive (the squeeze axis)
+
+  DEFINE "AGGRESSIVE" BY MEASUREMENT, NEVER BY A LABEL. This is the requirement that makes the
+  primitive survive the pool changing. Founder: *"must stay rooted in primitives that can flex to
+  what today's pool eventually will look like."* A seat is aggressive when its MEASURED frequency
+  on a stated axis exceeds a threshold derived from the same table — a quantile of the seats
+  present, not a constant, and not a name. When the pool tightens, the threshold moves with it and
+  the coordinate keeps meaning the same thing. A hardcoded "VPIP > 24" would be a 2009 artifact
+  three years from now.
+
+  This also satisfies the repo's hardest domain rule rather than violating it. The rule is that
+  labels are OUTPUTS of a decision process and never inputs. `aggressors_behind` is not a style
+  label — it is a count of seats whose measured behaviour crosses a measured threshold, which is
+  the same kind of quantity as `opps_live`. What is forbidden is `if (villain === 'LAG')`; what is
+  required is a count derived from frequencies.
+
+  WHY IT IS FIRST. Items WS-582 (configuration sweep) and WS-577 (the pulse) both search for
+  effects that live in this coordinate system. Running them without it searches a space that
+  cannot contain the answer, and would return a confident null.
+accept_criteria:
+  - "The new columns are in the `situation` group and therefore conditionable, and every one of them is derivable from the hand history alone with no engine and no range model — so a rule that branches on them stays engine-free."
+  - "`aggressive` is computed from measured frequency against a threshold derived from the seats present at that table, never from a constant and never from a name. A test seats the same nine measured players at a tighter table and at a looser one and asserts the classification of a given seat CHANGES — that is the property that makes the primitive survive the pool changing, and a constant threshold fails it."
+  - "`heroReach.mjs` classifies every new column. The completeness check already fails a run on an unclassified column; these must come back `given` or `shaped` with a stated reason, since hero chooses his SEAT but not who else is aggressive."
+  - "Measured on the corpus and reported: how often does each new coordinate actually vary? A column that is constant across 95% of decisions cannot separate anything and would inflate the correction family for every leaf — the cost of a useless column is not zero, it is paid by every other feature via Bonferroni."
+  - "Re-run both existing Conduct Cards and report whether any rule now splits on a relational coordinate, with its held-out lift over the legality control. Pre-register the falsifier BEFORE the run: `relational coordinates produce no rule that beats the legality control by more than 0.02 bits/decision held out`. Record the outcome unhedged either way — a null here is a real result and it constrains WS-582."
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/decisionSchema.mjs"
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "scripts/villainArchetype/heroReach.mjs"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-577", "WS-582"]
+sprint_id: ""
+decision_flags:
+  - "Domain: what axis defines 'aggressive' — preflop raise frequency, postflop aggression frequency, or a composite. The choice changes which funnels are findable."
+source:
+  type: founder-direction
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Grounded in a measurement made this session: the two published Conduct Cards contain 83
+  conditionable columns and not one is player-relative. Confirmed by reading the `situation` group
+  of `decisionSchema.mjs` in full.
+
+  The `heroReach.mjs` classification built this session (15 lever / 48 shaped / 21 given) already
+  has the completeness check that will fail on these columns until they are classified, so the
+  gate for accept-criterion 3 exists before the work starts.

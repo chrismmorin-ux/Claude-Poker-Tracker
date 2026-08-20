@@ -1,0 +1,128 @@
+id: "ses-20260819-2250-874c0089"
+status: completed
+started_at: "2026-08-19T22:50:46.496Z"
+ended_at: "2026-08-20T02:25:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-20T02:07:00.264Z"
+pid: 33836
+pid_recorded_at: "2026-08-20T02:07:00.264Z"
+host: MorinComputer
+agent_session_id: "874c0089-fb7a-414d-b243-5d2eb7c75e4d"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/villainArchetype/__checks__/handOutcome.check.mjs"
+  - "scripts/villainArchetype/enrichDecisions.mjs"
+  - ".tmp-arch/validateOutcome.mjs"
+  - ".tmp-arch/dumpRaw.mjs"
+  - ".tmp-arch/rakeCheck.mjs"
+  - ".tmp-arch/negatives.mjs"
+  - ".tmp-arch/v2re/explainers.json"
+  - "docs/villain-archetype/CONTINUATION.md"
+  - ".tmp-arch/blindLeaf.mjs"
+  - ".tmp-arch/gtestNull.mjs"
+  - ".tmp-arch/hashSabotage.mjs"
+  - ".tmp-arch/pilot/primitives.json"
+  - ".tmp-arch/pilot/score.mjs"
+  - "scripts/villainArchetype/mixTest.mjs"
+  - "scripts/villainArchetype/decisionLabeler.mjs"
+  - "scripts/villainArchetype/induceCore.mjs"
+  - "scripts/villainArchetype/ruleMatch.mjs"
+  - "scripts/villainArchetype/scoreHeldOut.mjs"
+  - "scripts/villainArchetype/emitConductCard.mjs"
+  - "src/utils/standardOfRecord/conductCard.js"
+  - "scripts/villainArchetype/heroReach.mjs"
+  - "scripts/villainArchetype/decisionSchema.mjs"
+  - ".claude/workstream/queue/WS-576.yaml"
+  - ".claude/workstream/queue/WS-577.yaml"
+  - ".claude/workstream/queue/WS-578.yaml"
+  - ".claude/workstream/queue/WS-579.yaml"
+  - ".claude/workstream/queue/WS-580.yaml"
+  - ".claude/workstream/queue/WS-581.yaml"
+  - ".claude/workstream/queue/WS-582.yaml"
+  - ".claude/workstream/queue/WS-583.yaml"
+handoff_notes: |
+  CONDUCT CARD INSTRUMENT SESSION. Founder asked for a retrospective artifact on the Conduct
+  Card plus recommendations, and dispatched agents to deep-dive it. The dispatch found six LIVE
+  defects instead — two of them on dossiers published earlier the same day — so the artifact was
+  deferred by founder direction ("delay delivery until we are confident and have done a few
+  passes of improve") and the session became instrument work.
+
+  THE ARTIFACT IS STILL OWED. It was explicitly deferred, not cancelled. Everything it needs is
+  in the four lens reports and the pilot, summarised below and in the commits.
+
+  SIX DEFECTS, all verified by known-answer test before acceptance:
+    1. contentHash bound 0.91% of the card (replacer-allowlist misuse). Sabotaging every nested
+       value and flipping all 23 gates to FAILED left the digest unchanged. FIXED + check.
+    2. Separator test declared a ZERO-INFORMATION feature significant (no expected-cell-count
+       guard; G degenerates to 2nH on near-continuous columns). Took THREE rounds to fix —
+       guard, then banding + collapse + exact permutation, then the banding branch turned out to
+       be dead code because feature values are label strings and Number() was NaN. FIXED + check.
+    3. `air` negative on 1,249/2,085 postflop rows; published as "Air -27.7%". FIXED.
+    4. `strength.draw` NaN on every row (summed a Map); published as "0.0%". FIXED.
+    5. `my_bet_x_pot` median exactly 350 (= 3.5/0.01, the clamp). FIXED.
+    6. `residual` named a 330-decision c-bet rule as the enclosure clause. FIXED by deletion —
+       the round-trip gate now PROVES the partition, so no fallback needs naming.
+
+  BOTH of villain 2's `hidden-cond` verdicts were artifacts of defect 2. The card now reports
+  none. Villain 1's survives on three BINARY features at p=4.8e-5 and is real.
+
+  THE CARD IS NOW A POLICY. Rules carry an evaluable `predicate`; two round-trip gates prove the
+  card reproduces itself (0 overlaps, 0 off-support, 0 count disagreements over 3,386 and 9,442
+  decisions). `scoreHeldOut.mjs` gives the first falsifiable quality figure this artifact has
+  ever had — pre-registered falsifier MET on both subjects (+0.0726 / +0.1220 bits/decision over
+  a legality control, hand-split walk-forward). Every prior accuracy figure was resubstitution.
+
+  THE FINDING THAT MATTERS MOST FOR DIRECTION: the lift is CONCENTRATED. Top 3 rules carry
+  68%/64% of the card's total advantage; best single rule 0.810/0.865 bits against averages of
+  0.073/0.122. And 9 of villain 1's 19 rules do WORSE than the legality control — fitted noise,
+  currently unmarked on the card. Marking per-rule held-out lift is the obvious next pass.
+
+  NINE-HANDED IS AVAILABLE AND NOBODY HAS USED IT. Measured this session: the local PS directory
+  is 15.0% nine-handed, ~180k hands, 3,082 players, top volumes 1,954/1,558/1,261. The "not one
+  hand was nine-handed" caveat on both dossiers is a SELECTION ARTIFACT of ranking subjects by
+  total hands. WS-579 removes it. NOTE: I measured this WRONG TWICE first (CRLF mis-parse, then
+  a single-directory sample) — the two local dirs have completely different table-size profiles,
+  so never quote a corpus statistic from one directory.
+
+  Items completed: none claimed this session (instrument work, not queue work).
+  Items created: WS-576..583 — the table-shape simulation program, dependency-ordered.
+
+  NEXT RECOMMENDED ACTION: WS-581, the policy-space rank test. It is the cheapest item that can
+  invalidate the most expensive ones, it is fully engine-free, and the repo's own prior evidence
+  (bestK=2, silhouette 0.343; WS-436 zero-information style labels) points toward the answer that
+  would redirect the whole configuration program. Run it before anything is built on that premise.
+
+  OPEN DECISION FOR THE FOUNDER (blocks WS-576, which blocks the sweep): what axis defines
+  "aggressive" for the relational seat coordinates — preflop raise frequency, postflop aggression
+  frequency, or a composite. It determines which funnels are findable at all.
+
+  Autopilot eligible: none of the new items — all are M/L with decision flags or heavy dependencies.
+context_notes: |
+  MY OWN ERRORS THIS SESSION, so the next session does not repeat them:
+    - I wrote a contentHash check that REIMPLEMENTED the hash locally. It would have passed
+      forever while the real function stayed broken. `canonical` is now exported and imported.
+      A known-answer check must import what it verifies.
+    - A regex fix was mangled by shell escaping (\s became literal s) inside `node -e`, so the
+      fix compiled and did nothing. Cost a full re-profile cycle. Write patches to a file.
+    - In the blind-primitive pilot I instructed agents that a primitive must not rename an
+      existing column. That made the generator route around `suit_max` — the known separator —
+      and the POSITIVE CONTROL FAILED. Orthogonality is a scoring criterion, never a generation
+      constraint.
+
+  THE PATTERN WORTH CARRYING: three of the six defects were found by dispatched agents
+  DISAGREEING with the card, not by reading code. Two more were caught by the repo's own gates
+  firing on me. I found none of the six by inspecting my own work.
+
+  STALE HOOK DATA: SessionStart reported 2 other live sessions in this repo. The founder
+  confirmed there were none. The queue index had drifted (WS-573/574/575 unindexed) and is now
+  repaired — 387 entries, 387 files.
+
+  The four lens reports (estimation / game-theory / information / architecture) and the six blind
+  pilot agents produced far more than was implemented. Their unimplemented recommendations are
+  the raw material for the deferred artifact — notably the shared-lattice argument for the
+  archetype pyramid, and the observation that two cards currently share ~1 rule condition of 25,
+  which is why hierarchical shrinkage is impossible in the current basis.

@@ -1,0 +1,82 @@
+id: "WS-579"
+title: "Nine-handed Conduct Cards — ~180k nine-handed hands sit in the local corpus and both profiled villains are six-max by SELECTION ARTIFACT, so the format caveat on every published page is removable"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 74.0
+priority_label: "P0"
+category: data-integrity
+capability: "core"
+program: "data-provenance"
+finding_id: ""
+description: |
+  MEASURED 2026-08-19, on this machine, scanning both local corpus directories:
+
+    FTP-2009-07-01_2009-07-23_50NLH_OBFU   525 files    100.0% six-handed
+    PS-2009-07-01_2009-07-23_50NLH_OBFU  1,231 files     52.1% heads-up
+                                                         32.9% six-handed
+                                                         15.0% NINE-HANDED
+
+  In a 149,135-hand sample from the PokerStars directory: 22,436 nine-handed hands across 3,082
+  distinct players, with top per-player volumes of 1,954 / 1,558 / 1,261 / 1,091 / 1,041. Sampled
+  150 of 1,231 files, so the directory holds on the order of 180,000 nine-handed hands.
+
+  THE CAVEAT ON BOTH PUBLISHED DOSSIERS IS A SELECTION ARTIFACT. Every dossier states: *"Every one
+  of his hands was dealt at a table of six seats or fewer. Not one was nine-handed ... these rates
+  are transferred, not measured — they cross a format gap as well as a population gap."* That is
+  true of THOSE TWO SUBJECTS and it is not a property of the corpus. Both were chosen by ranking
+  players on TOTAL hand count, which selects six-max grinders, and nobody checked whether the
+  format gap was a corpus fact or a picking fact.
+
+  This matters more than the usual caveat because the founder's game is live NINE-HANDED. The
+  format gap is the larger half of the transfer — position means a different thing when UTG faces
+  six players behind instead of three — and it is the half that is removable today at the cost of
+  one run.
+
+  I ALSO GOT THIS WRONG TWICE BEFORE GETTING IT RIGHT, and the method matters for whoever picks
+  this up. A first scan mis-parsed on CRLF line endings and reported 395 hands over 400 files. A
+  second scanned only the FTP directory and reported 100% six-max. Only a line-based scan across
+  BOTH directories gave the numbers above. Do not trust a corpus statistic from a single directory
+  — the two local directories have completely different table-size profiles.
+
+  SCOPE. Select nine-handed subjects by nine-handed volume (not total volume), profile them
+  through the existing procedure, and publish. The instrument needs no change: `positionOf` already
+  has known-answer checks at 8, 9 and 10 handed, and they pass.
+accept_criteria:
+  - "Subject selection ranks by NINE-HANDED hand count, not by total hands. The bug being fixed is a selection rule, so re-using the old ranking reproduces it."
+  - "At least two nine-handed subjects with 1,000+ nine-handed hands each are profiled through the full procedure, all gates passing, and published as dossiers."
+  - "The masthead caveat is REGENERATED from the data rather than edited: `tableSizes` is already read from the record and the format sentence is already generated from `maxSeats` at `buildDossier.mjs`. Confirm it now states nine-handed truthfully with no hand-editing — if it does not, the generation is wrong and that is a separate defect."
+  - "Held-out lift over the legality control is reported for the nine-handed subjects, and compared against the six-max subjects. Pre-register before running: `a nine-handed subject's card beats the legality control by an amount indistinguishable from the six-max subjects'`. If nine-handed play is measurably harder or easier to describe, that is a finding about the format and it changes what the simulator should expect."
+  - "The `population` and `provenance` fields distinguish the two local directories. They have different table-size profiles and different sites, and pooling them into one 'the corpus' is how the first two measurements of this went wrong."
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/loadVillain.mjs"
+  - "scripts/villainArchetype/profileVillain.mjs"
+  - "docs/villain-archetype/CONTINUATION.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-582"]
+sprint_id: ""
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Only 2 of the 27 corpus directories are present on this machine; the rest are on node1. The
+  nine-handed share of the FULL corpus is therefore unmeasured and may be higher or lower than
+  15%. Re-measure on node1 before quoting a corpus-wide figure.
+
+  `docs/villain-archetype/CONTINUATION.md` currently states as a standing fact that both profiled
+  villains are six-max and that this is "a format gap as well as a population gap". That sentence
+  needs updating when this lands — it is accurate about the subjects and has been read as a
+  statement about the corpus.

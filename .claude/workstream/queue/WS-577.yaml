@@ -1,0 +1,77 @@
+id: "WS-577"
+title: "The pulse — an orbit clock, seat turnover and sit-down stacks, so waiting cost becomes orbits-until-available and held-out lift becomes bb/orbit"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 66.0
+priority_label: "P1"
+category: architecture
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-19: *"We probably need to set or define a pulse for a table and start measuring
+  off that as a beat of time. The pulse being the thing the hero is stepping into. Probably looks
+  way different with 4x aggro players than it does with all nits."*
+
+  THE CLOCK IS THE ORBIT. `n` hands, where `n` is the number of seats. It is the only interval over
+  which every seat occupies every position exactly once, which makes it the natural beat and makes
+  tables of different sizes comparable — an orbit is an orbit whether it is six seats or nine.
+  Founder's *"ability to run all positions in a row before repeating"* is exactly this.
+
+  THE STATE IS THE OPPORTUNITY MIX. A table is a machine that emits decision nodes. The pulse is
+  the distribution of nodes hero is offered per orbit, and what each is worth. Four aggressive
+  seats emit a different mix than nine passive ones: more defend spots, fewer steal spots, larger
+  pots, more multiway. That difference is the thing being measured, and it is why the pulse cannot
+  be a single scalar.
+
+  WHY THIS IS THE MISSING MULTIPLIER. This session measured, per rule, the held-out lift over a
+  legality control, and separately the WAITING COST — how many dealt conditions must be satisfied
+  before a spot is even available. Waiting cost is currently a COUNT. The pulse turns it into a
+  RATE: how many orbits until this spot appears, given who is at the table. Then
+
+      EV per orbit = SUM over spots of (occurrence rate | composition) x (value when taken)
+
+  which is what converts bits-of-lift into big blinds per orbit. Without it the ranked spot list
+  says where the model knows something and cannot say how often the table offers it, and those are
+  very different rankings when one spot occurs ten times an hour and another twice a session.
+
+  WHAT MUST BE MEASURED FROM THE CORPUS, NOT ASSUMED:
+    - seat turnover: how long a seat is occupied by one player, and the hazard of leaving
+    - sit-down stack distribution, which is NOT the observed stack distribution — it is the stack
+      at the moment of sitting, and it is what "replacing villains as they get stacked" needs
+    - hands per orbit actually observed vs seats dealt (sit-outs make these differ)
+    - the opportunity mix itself, per table composition, so the simulator has a target to reproduce
+accept_criteria:
+  - "An orbit is defined and computed from the corpus, and the definition survives sit-outs and mid-orbit seat changes — both occur in the data and a naive `hands / seats` will silently mis-count them. State which convention was chosen and why."
+  - "Seat turnover and sit-down stack distribution are MEASURED from the corpus and reported with n, not assumed from a plausible-looking distribution. The sit-down stack is distinct from the observed stack and conflating them is the obvious error."
+  - "`orbitsUntilAvailable(spot, composition)` exists and is computed from measured occurrence rates. For each of the top-lift spots on both existing cards, report the rate and the resulting bb/orbit."
+  - "The opportunity mix is reported for at least two genuinely different compositions drawn from the corpus, and they DIFFER measurably. If the mix is the same for an aggressive table and a passive one, the pulse is not measuring what it claims and that is the finding — record it unhedged."
+  - "Every rate carries its conditioning set. `occurrence rate` conditioned on a six-max online 2009 table is not the founder's live nine-handed rate, and the transfer must be stated on the figure rather than in a caveat elsewhere."
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/"
+  - "scripts/backtest/corpusFiles.mjs"
+blocked_by: ["WS-576"]
+blocked_by_legacy: []
+enables: ["WS-582"]
+sprint_id: ""
+decision_flags:
+  - "Domain: does an orbit end on the button passing a fixed seat, or on every seat having acted once? They differ whenever a player sits out mid-orbit."
+source:
+  type: founder-direction
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  Depends on WS-576 because the opportunity mix is exactly what varies with the aggression
+  configuration, and without relational coordinates the mix can only be reported against
+  button-relative buckets — which is the axis that does NOT vary with composition.

@@ -1,0 +1,85 @@
+id: "WS-582"
+title: "Configuration sweep and funnel discovery — search table composition x hero seat for EV per orbit, and require a NON-MONOTONE effect in seat count as proof the simulator escaped the product-of-marginals regime"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 64.0
+priority_label: "P1"
+category: architecture
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  THE PRODUCT. Founder, 2026-08-19: *"I want to know if all I have to do is always sit at a
+  particular kind of table, and lean a certain way, and the EV flows. Three seats left of the first
+  aggressive when there are 2 at the table, and wham there is a statistically emerged funnel that
+  just was revealed because of the table shape, and hero actions are to dip into that funnel."*
+
+  Seat N Conduct Cards at a simulated table, sweep composition and hero seat, and measure EV per
+  orbit. Report the configurations where it is highest, and the hero actions that reach the funnel.
+
+  THE EXISTING MACHINERY CANNOT FIND THIS AND THAT IS THE POINT OF THE ITEM. `exploitCard.mjs`
+  computes P(all fold) as a PRODUCT OF MARGINAL FOLD RATES at one node, with independence assumed
+  and its direction declared unknown. That construction is monotone in seat count by arithmetic —
+  adding a seat always lowers P(all fold) — so the only answer it can ever produce is "more seats
+  is worse". Every effect the founder is hunting is non-monotone in composition: a seat that folds
+  a lot but three-bets huge behind, a passive seat that shields hero from an aggressive one, a
+  table where every range is capped on broadway boards so the nut region is unoccupied. None of
+  them are visible to a product of marginals, and none of them can be found without a tree.
+
+  ANTISYMMETRY DOES NOT SURVIVE THREE PLAYERS. Any two-player result — including the WS-337
+  skew-operator machinery — must be RE-DERIVED for a multiway table, never transferred. Flag any
+  such transfer explicitly rather than assuming it carries.
+
+  WHAT THE SWEEP VARIES:
+    - the count and placement of aggressive seats (WS-576's relational coordinates)
+    - hero's seat relative to them
+    - table size, 6 through 9
+    - stack depths, from the measured sit-down distribution (WS-577)
+
+  ATTRIBUTION IS PART OF THE DELIVERABLE, NOT A FOLLOW-UP. "This funnel exists" is a narrative
+  until it is decomposed. Use leave-one-rule-out substitution: replace one rule's action
+  distribution with a field baseline at the same predicate, hold everything else fixed, re-run,
+  record the EV delta. Report NET and GROSS together — a large gross-over-net ratio means the
+  effect is a redistribution across rules that happens to sum, which is a completely different
+  finding from "two rules carry it" and would make the story false while sounding true.
+accept_criteria:
+  - "PRE-REGISTER: `hero EV per orbit is a monotone function of the number of aggressive seats, in every sweep run`. This is the null that says the simulator has not escaped the product-of-marginals regime. Finding a NON-monotone configuration is the positive result; failing to find one after a genuine sweep is a real negative and must be recorded unhedged rather than explained away."
+  - "Every reported configuration EV carries its Monte-Carlo interval and its seed. A configuration ranking without intervals is a ranking of noise, and the repo has been bitten by exactly that before."
+  - "Attribution by leave-one-rule-out, reported as NET and GROSS. A funnel with no rule-level attribution is not shippable — the claim is that a SHAPE creates it, and that claim needs to survive being decomposed."
+  - "SYNTHETIC KNOWN-ANSWER FIRST, before any real configuration is reported: construct a table with one deliberately extreme rule (folds 100% to a specific sizing at a specific node), sweep, and confirm the entire effect attributes to that rule with the others near zero. If attribution smears on a synthetic where the truth is a point mass, the decomposition is wrong and no real result from it is admissible."
+  - "Occupancy is respected and stated. A best response computed outside a card's occupancy measures the card's holes, not the subject's weakness — the bound already rides on every card and the sweep must refuse to leave it, or declare loudly where it did."
+  - "Results are Result Cards with full replication manifests, per ADR-009. Every figure here is comparative by construction, so none of it is a claim otherwise."
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/villainArchetype/exploitCard.mjs"
+  - "scripts/villainArchetype/runExploitCard.mjs"
+  - "src/utils/standardOfRecord/"
+blocked_by: ["WS-576", "WS-577", "WS-578", "WS-580", "WS-581"]
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Strategy: what is hero's policy during the sweep — a fixed reasonable baseline, or a best response re-solved per configuration. The second is the real question and is far more expensive."
+source:
+  type: founder-direction
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-19"
+updated_at: "2026-08-19"
+status_note: |
+  The most blocked item of the eight, deliberately. It depends on relational coordinates (WS-576,
+  or the funnel is unexpressible), the pulse (WS-577, or there is no rate to multiply lift by),
+  sizing (WS-578, or the environment cannot step), the hand-conditional policy (WS-580, or every
+  villain plays every holding identically), and the rank test (WS-581, or the premise is untested).
+
+  Running it earlier than that produces a confident number from a simulator that cannot represent
+  the effect being searched for — which is worse than not running it, because the null would be
+  believed.
