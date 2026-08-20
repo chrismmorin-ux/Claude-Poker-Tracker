@@ -23,7 +23,8 @@
  * expensive one by construction — that is the subsystem under measurement — so budget roughly
  * `combo-samples x (depth1 cost + depth2 cost)` per decision and size `--max-decisions`
  * against the wall clock you have. `--refinement-ms` lets the depth-2 arm be run at a smaller
- * budget than production's 2000ms; it is STAMPED into the card, because a run at a different
+ * budget than production's (see DEFAULT_REFINEMENT_BUDGET_MS — 20000 since v129, and NOT
+ * this file's 2000 default); it is STAMPED into the card, because a run at a different
  * budget is measuring a different configuration and must not be compared as if it were not.
  */
 

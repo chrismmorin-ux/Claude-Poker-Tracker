@@ -20,7 +20,8 @@ description: |
 
   WHY 40 IS THIN. 40 boards is a board sample, not a decision sample, and the quantity that
   matters — the rate at which the top action changes — is a proportion whose interval at
-  n=40 is roughly +-15pp. The reported 100% -> 77.5% swing is far larger than that, so the
+  n=40 is +-12.9pp (1.96*sqrt(.775*.225/40)). The reported 100% -> 77.5% swing is far larger
+  than that, so the
   DIRECTION is not in doubt. What is in doubt is the LEVEL: whether 77.5% is the post-fix
   over-raise rate or whether the true value sits meaningfully either side of it. WS-402/403
   exist because an over-raise rate of 91.9% was a real defect, so the difference between
@@ -30,19 +31,55 @@ description: |
   rather than introduced: run both arms, report the delta, and let the delta be the result.
 
   SCOPE
-  - Paired ablation over a board sample large enough to put a usable interval on the
-    top-action-change rate. State the n and the achieved interval; do not report a point
-    estimate alone.
+  - `--max-decisions` at 400 or above. At p~=0.775 that gives +-4.1pp
+    (1.96*sqrt(.775*.225/400)), which fits inside the 14.4pp gap between the 77.5% result and
+    WS-402/403's 91.9% defect level — the comparison the run has to be able to make. 268 is
+    the bare minimum for +-5pp; below ~270 the run cannot separate "fixed" from "not fixed"
+    and should not be started. The paired C-vs-B contrast is tighter than either arm alone.
+    State the achieved interval; never report a point estimate alone.
+  - The EV basis has its own gate already: `--power-gate refuse` (the default) blocks a run
+    whose pre-flight MDE cannot resolve TARGET_EFFECT_BB=0.20. That gate covers the bb delta,
+    NOT the top-action proportion above — the two need separate sizing, and the proportion is
+    the binding one here.
   - Arms, same Deal Book / partition / seeds / engine commit, differing only as named:
-      A  budget 2000, no depth-3 call branch   (the pre-v129 deployed behaviour)
-      B  budget 20000, no depth-3 call branch  (WS-574 alone — isolates the budget)
-      C  budget 20000, with depth-3 call branch (v129 as shipped)
+      A  budget 2000, depth-3 call branch present   (the pre-v129 BUDGET, current engine)
+      B  budget 20000, depth-3 call branch DISABLED (WS-574 alone — isolates the budget)
+      C  budget 20000, depth-3 call branch present  (v129 as shipped)
     Arm B is the one the 40-board run did not have, and it is the arm that says whether the
     horizon asymmetry or the budget is doing the work.
   - Report per-street. The river never ran depth-2 before, and 80% of top-action flips are
     river — an aggregate over streets will average that away.
   - Emit a Result Card (ADR-009) with the full replication manifest and
     `manifest.disclaimerRegisterVersion`.
+
+
+  ARM B IS NOT RUNNABLE TODAY, AND THAT IS A PREREQUISITE, NOT A REASON TO DROP IT.
+  Corrected 2026-08-20 after checking the instrument rather than assuming it — this ticket
+  was first written asserting three runnable arms, which was wrong.
+
+  `run-depth-ablation.mjs:276` configures its two arms by ONE lever:
+  `[{id:'depth1', refinementBudgetMs:0}, {id:'depth2', refinementBudgetMs:<--refinement-ms>}]`.
+  `callDepth3` is selected by `gateStage('callDepth3', ...)` in gameTreeEvaluator.js:2148,
+  which is WORK-gated, not feature-gated, and `gateStage` (gameTreeEvaluator.js:1179) takes
+  only per-call conditions — there is no disabled-stage set anywhere in the engine. So there
+  is no way to hold the budget at 20000 while suppressing the depth-3 call branch.
+
+  Also note arm A is NOT the deployed pre-v129 engine: at budget 2000 on the CURRENT engine
+  the depth-3 call branch exists and is simply budget-starved. That is close to, but not
+  identical to, the code that shipped before v129. Do not describe arm A as "production
+  before the change" in the Result Card.
+
+  WHAT REMOVING THE LIMITATION COSTS. An optional `disabledStages: Set<string>` threaded
+  into `evaluateGameTree` and consulted in `gateStage` (one condition, `!disabled.has(stage)`,
+  recorded in `blockedBy` as 'ablated' so the stage ledger says why it did not run), plus a
+  `--disable-stages` pass-through in run-depth-ablation.mjs. Small — an afternoon including
+  tests — but it is engine code, so it needs an ENGINE_VERSION bump and the stage-ledger
+  tests updated. It also buys every FUTURE single-stage ablation, which the repo has wanted
+  repeatedly (WS-402/403 was exactly this question about a different stage).
+
+  Running A/C only is available and would still replicate the headline. It would NOT
+  attribute the swing between the budget and the horizon fix, which is the open question
+  WS-575's justification rests on. That trade is the founder's call, not the AI's.
 
   CORPUS TRANSFER. This runs on the 2009 online corpus. Per
   `.claude/rules/corpus-transfer-is-earned.md` the over-raise RATE is a LEVEL and so carries
@@ -71,8 +108,9 @@ blocked_by: []
 enables: []
 sprint_id: ""
 decision_flags:
-  - "Board sample size: pick n from a power calculation on the top-action-change proportion, not from what fits the runway"
-  - "If arm B alone reproduces most of the swing, WS-575's depth-3 call branch is not what fixed it and its justification needs rewriting"
+  - "BLOCKING: arm B needs a disabled-stage capability that does not exist. Build it (cost above), or run A/C only and accept that the swing is not attributed."
+  - "Sample size is in DECISIONS (--max-decisions), not boards. The 40-board figure came from probe-depth2-coverage.mjs, a DIFFERENT instrument — do not carry the unit across."
+  - "If arm B reproduces most of the swing, WS-575's depth-3 call branch is not what fixed it and its justification needs rewriting"
 source:
   type: manual
   created_by: user
