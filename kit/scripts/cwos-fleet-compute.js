@@ -201,6 +201,49 @@ function codeDigestFor(wsId, commit) {
   return line;
 }
 
+/**
+ * Which of a job's step scripts are ABSENT from the pinned commit's tree.
+ *
+ * ── WHY THIS EXISTS (ws-295-28d02a0a9124, 2026-08-20) ──
+ * The feeder pins the job to `computeHead()` — cm-node1's HEAD, which is whatever
+ * `origin/main` last handed it. The spec, however, is authored on G16 against the WORKING
+ * TREE, where a script may exist in a commit that has not been pushed yet. Nothing compared
+ * the two. WS-295 was submitted naming `scripts/backtest/run-optimism-boards.mjs`, a file
+ * introduced in db4c7e96 which was one of 36 unpushed commits; node1 was at fa526801, where
+ * it does not exist. Step 0 ran for 25 minutes and SUCCEEDED, then step 1 died
+ * MODULE_NOT_FOUND, twice, and the whole job was thrown away.
+ *
+ * The 25 wasted minutes are the cheap half. The expensive half is that this is undetectable
+ * from the authoring side: the file is right there on G16's disk, so every check a human
+ * would think to run passes. `validateComputeJob` cannot catch it either — it validates the
+ * SHAPE of the block and has no repo, no commit, and no filesystem.
+ *
+ * So the check has to live here, where the pinned commit is known, and it has to run against
+ * the commit rather than against any working tree.
+ */
+function missingScriptsAtCommit(commit, steps) {
+  // A step's script is its first path-shaped argument: `node <script> --flag ...`. Anything
+  // that is not repo-relative (a flag, a bare value, an absolute path) is not ours to verify.
+  const wanted = [];
+  for (const st of steps || []) {
+    const arg = (st.args || []).find((a) => /^[\w./-]+\.(mjs|cjs|js|py|sh)$/.test(String(a)));
+    if (arg && !wanted.includes(arg)) wanted.push(arg);
+  }
+  if (!wanted.length) return { ok: true, missing: [] };
+
+  // One `ls-tree` for the whole set: N steps must not cost N round-trips to the compute node.
+  const paths = wanted.map((w) => quote(w)).join(' ');
+  const cmd = `git -C ${quote(REMOTE_REPO)} ls-tree -r --name-only ${quote(commit)} -- ${paths}`;
+  const r = onTarget()
+    ? run('git', ['-C', REMOTE_REPO, 'ls-tree', '-r', '--name-only', commit, '--', ...wanted])
+    : run('ssh', [TARGET, cmd]);
+  // A check that cannot run must not silently pass — but it also must not block the queue on
+  // a transient ssh failure, so it reports its own inconclusiveness and the caller decides.
+  if (!r.ok) return { ok: false, missing: [], unchecked: true };
+  const present = new Set(r.stdout.split('\n').map((l) => l.trim()).filter(Boolean));
+  return { ok: true, missing: wanted.filter((w) => !present.has(w)) };
+}
+
 /** HEAD of the repo on the compute node — the commit a worktree can actually be cut from. */
 function computeHead() {
   if (onTarget()) {
@@ -327,6 +370,20 @@ function feed({ dryRun }) {
     if (unmet.length) { skipped.push(`${cand.id}: blocked_by unmet — ${unmet.join(', ')}`); continue; }
     const built = materializeSpec({ item: candItem, commit, repoPath: REMOTE_REPO, nodePath });
     if (!built.ok) { skipped.push(`${cand.id}: ${built.problems.join('; ')}`); continue; }
+    // The spec is shape-valid; that says nothing about whether the code it names is REACHABLE
+    // at the commit we are about to pin. See missingScriptsAtCommit for the run this cost.
+    const scripts = missingScriptsAtCommit(commit, built.spec.steps);
+    if (scripts.unchecked) {
+      skipped.push(`${cand.id}: cannot verify step scripts exist at ${commit.slice(0, 8)} on ${TARGET} — refusing rather than guessing`);
+      continue;
+    }
+    if (scripts.missing.length) {
+      // Name the likely remedy: the overwhelmingly common cause is a local commit that has
+      // not been pushed, so the file is on the author's disk and absent from the pinned tree.
+      // A message that only said "missing" would send someone looking for a deleted file.
+      skipped.push(`${cand.id}: ${scripts.missing.join(', ')} absent at pinned commit ${commit.slice(0, 8)} — ${TARGET} tracks origin/main, so push the commit that adds it (or fix the path in compute_job)`);
+      continue;
+    }
     // Dedupe on the FINGERPRINT of the work, not on the job id. Both sides are fingerprinted
     // at read time by one shared function, so the comparison stays symmetric even if that
     // function changes later. Two earlier keying schemes each silently invalidated history
@@ -463,6 +520,47 @@ function harvest({ dryRun }) {
   return { ok: true, filed, skipped, scanned: sets.length };
 }
 
+/**
+ * How far cm-node1's checkout is behind this one — the skew that makes a shipped fix inert.
+ *
+ * ── WHY (2026-08-20) ──
+ * `doneOutcomes()` does not run OUR copy of `done-summary.cjs`; it runs the one in the
+ * compute node's checkout, because that is the machine holding the `done/` directory. So a
+ * fix to that reader takes effect only once node1 has PULLED it. `done-summary.cjs` states
+ * in its own header that this is fine — "cm-node1 already syncs it, so there is nothing
+ * extra to deploy or keep in step." That premise assumes the commit reached `origin/main`.
+ *
+ * WS-547 added a 5th field (the runner's own failure verdict, base64) to that reader and was
+ * committed on G16. It was never pushed. node1 kept running the 4-field version, so
+ * `detailB64` arrived `undefined`, `recordDetail` fell back to `''`, and the WS-547 fix —
+ * which was written precisely to stop failures being filed as undiagnosable — could not fire
+ * even once. WS-592 was then filed saying "the runner recorded no detail", while node1's own
+ * terminal record held `detail: "step 1 (optimism-size-boards-depth1): missing artifact"`.
+ *
+ * A capability that silently stops existing is worse than one that was never built, because
+ * the repo now contains a fix everybody believes is running. This makes the skew SAY so.
+ */
+function checkoutSkew(remoteHead) {
+  if (!remoteHead || onTarget()) return null;
+  const local = run('git', ['-C', REPO_ROOT, 'rev-parse', 'HEAD']);
+  if (!local.ok) return null;
+  const localHead = local.stdout.trim();
+  if (localHead === remoteHead) return null;
+  // `A..B` counts commits reachable from B and not from A — i.e. what node1 has not got.
+  const ahead = run('git', ['-C', REPO_ROOT, 'rev-list', '--count', `${remoteHead}..${localHead}`]);
+  if (!ahead.ok) return null;
+  const n = Number(ahead.stdout.trim());
+  if (!Number.isFinite(n) || n <= 0) return null;
+  // Only name the files that actually change what the fleet pipeline can do. A hundred
+  // unpushed UI commits are irrelevant here; one unpushed change to the reader is not.
+  const touched = run('git', ['-C', REPO_ROOT, 'diff', '--name-only', remoteHead, localHead,
+    '--', 'scripts/fleet', 'scripts/backtest', 'kit/scripts/lib/cwos-compute-job.js']);
+  const files = touched.ok
+    ? touched.stdout.split('\n').map((l) => l.trim()).filter(Boolean)
+    : [];
+  return { behind: n, remoteHead: remoteHead.slice(0, 8), localHead: localHead.slice(0, 8), files };
+}
+
 /** Terminal jobs on the compute node with their outcome, via the versioned reader. */
 function doneOutcomes() {
   const summary = onTarget()
@@ -552,7 +650,19 @@ function fileFailureItem(t, now) {
 
 /** Pull the actual error out of the job's step log — a failure with no cause is not a report. */
 function failureDetail(jobId, recordDetail = '') {
-  const ps = `Get-Content '${REMOTE_LOGS}\\${jobId}.0.log' -ErrorAction SilentlyContinue | Select-String -Pattern 'FATAL ERROR|Error:|ENOENT|out of memory' | Select-Object -First 3`;
+  // ── EVERY step log, not just step 0 (ws-295-28d02a0a9124, 2026-08-20) ──
+  // This used to read `<jobId>.0.log` and nothing else. A job fails at the step that failed,
+  // which is usually NOT step 0 — and when step 0 succeeded its log is clean by definition,
+  // so the grep found nothing and the item was filed claiming "the step log has no error —
+  // the job died before its first step". For WS-295 all three clauses were false: step 0 ran
+  // 25 minutes and SUCCEEDED, step 1 failed twice, and `.1.log` held the complete cause
+  // (`Error: Cannot find module ... run-optimism-boards.mjs`) — matching a pattern this
+  // function already searches for. The evidence was on disk, in the right format, and simply
+  // never opened.
+  //
+  // Descending sort so the LAST step is read first: the failing step is the last one to
+  // write, and its lines are the ones that explain the outcome.
+  const ps = `Get-ChildItem '${REMOTE_LOGS}\\${jobId}.*.log' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Get-Content | Select-String -Pattern 'FATAL ERROR|Error:|ENOENT|out of memory' | Select-Object -First 3`;
   const r = onTarget()
     ? run('powershell', ['-NoProfile', '-Command', ps])
     : run('ssh', [TARGET, `powershell -NoProfile -Command "${ps}"`]);
@@ -699,6 +809,20 @@ function panel(status, ranked, already) {
     L.push(`  BLOCKED  ${blocked.length} item(s) need CODE before they can ever run: ${blocked.map((c) => c.id).join(', ')}`);
   }
 
+  // SKEW - the line that would have caught WS-547 shipping into a void. node1 runs the
+  // pipeline code from ITS OWN checkout, so anything unpushed here is not running there,
+  // however recently it was committed. Only reported when pipeline files are among the
+  // unpushed commits: a skew that cannot change fleet behaviour is noise.
+  // One extra rev-parse over ssh, only on the panel path. `status` does not carry HEAD and
+  // threading it through would make every caller pay for a check only this line uses.
+  const skew = checkoutSkew(computeHead());
+  if (skew && skew.files.length) {
+    L.push(`  SKEW     ${TARGET} is ${skew.behind} commit(s) behind (${skew.remoteHead} vs ${skew.localHead})`);
+    L.push(`           and runs pipeline code from its own checkout, so ${skew.files.length} unpushed file(s) are NOT live there:`);
+    L.push(`           ${skew.files.slice(0, 3).join(', ')}${skew.files.length > 3 ? ', ...' : ''}`);
+    L.push('           push to origin/main, or the fix you just shipped is not the code that runs.');
+  }
+
   return L.join('\n');
 }
 
@@ -789,4 +913,8 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { computeStatus, rankNode1, feed, humanStatusLine, panel, reviewDebt, doneJobIds };
+// `failureDetail` and `missingScriptsAtCommit` are exported for verification: both were
+// written to fix a misdiagnosis, and a fix to a diagnostic is worthless unless the
+// diagnostic itself can be run against the job it got wrong.
+module.exports = { computeStatus, rankNode1, feed, humanStatusLine, panel, reviewDebt, doneJobIds,
+                   failureDetail, missingScriptsAtCommit, checkoutSkew, computeHead };
