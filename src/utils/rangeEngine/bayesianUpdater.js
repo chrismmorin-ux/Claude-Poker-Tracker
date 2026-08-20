@@ -16,7 +16,11 @@ import {
   NO_RAISE_ACTIONS,
   FACED_RAISE_ACTIONS,
   FACED_3BET_ACTIONS,
-  FOUR_BET_FREQUENCIES,
+  // FOUR_BET_FREQUENCIES is deliberately NOT imported. WS-521's §2.5.5a fix did not re-scope
+  // the read at the third updateScenarioRanges call, it REPLACED it with the role blend below
+  // — pricing a cold seat's fold at the opener rate (94.55% vs 43.37%) bought fold equity that
+  // is not there. The import outlived the read and made a grep say this engine still consumes
+  // the pooled table. It does not; FACED_3BET_FREQUENCIES_BY_ROLE is what prices this tree.
   FACED_3BET_FREQUENCIES_BY_ROLE,
   NO_RAISE_SUBCLASSES,
   FACED_RAISE_SUBCLASSES,

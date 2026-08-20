@@ -1248,7 +1248,7 @@ export const LABEL_LEDGER = Object.freeze([
 
   buildLabelEntry({
     labelId: 'LBL-four-bet-frequencies',
-    title: 'Position -> fold/call4/fourBet frequencies when facing a 3-bet — the one MEASURED row in this file',
+    title: 'Position -> fold/call4/fourBet frequencies when facing a 3-bet — the one MEASURED row in this file, and now VESTIGIAL: its single reader was removed by the fix that corrected it',
     site: {
       file: 'src/utils/rangeEngine/populationPriors.js', symbol: 'FOUR_BET_FREQUENCIES',
     },
@@ -1269,11 +1269,11 @@ export const LABEL_LEDGER = Object.freeze([
       + 'populationPriors.test.js "matches the MEASURED HandHQ row it is derived from", which '
       + 'recomputes all three quotients from the raw counts — so a regeneration that moves the '
       + 'source fails the suite rather than drifting silently.',
-    liveness: 'unconditional',
+    liveness: 'vestigial',
     impact: buildUnmeasuredReach({
-      readSites: 1,
+      readSites: 0,
       cellCount: 15,
-      primaryPath: true,
+      primaryPath: false,
       instrument: {
         what: 'TWO open questions, and they are different in kind. (1) TRANSFER, shared with '
           + 'every SRC-011 row: the corpus is online 2009 and the founder game is live 9-handed '
@@ -1297,8 +1297,22 @@ export const LABEL_LEDGER = Object.freeze([
       + 'measuring the gradient.',
       'The 15 cells are 3 distinct values repeated across 5 positions — cell count overstates '
       + 'the independent quantities, which is 3.',
-      'ONE read site — bayesianUpdater.js:110, the third updateScenarioRanges call. Narrower '
-      + 'than its 3-bet sibling by construction: threeBetTopFraction READS '
+      'ZERO read sites as of 2026-08-20, and the reason is the point: WS-521 removed the ONLY '
+      + 'one. This row used to be read at bayesianUpdater.js:110, the third '
+      + 'updateScenarioRanges call, applying an OPENER-measured table across the whole '
+      + 'faced-3-bet tree. The fix did not re-scope that read, it REPLACED it with the '
+      + 'role-split blend (LBL-faced-3bet-role-frequencies, row below), so the pooled table '
+      + 'has no consumer left. The import in bayesianUpdater.js outlived the read for two days '
+      + 'and made a grep for FOUR_BET_FREQUENCIES say the engine still consumed the pooled '
+      + 'table; it was removed 2026-08-20 and replaced with a comment naming the role blend. '
+      + 'THE MEASUREMENT IS NOT WRONG AND IS NOT DELETED, and it must not be: POKER_THEORY '
+      + 'S2.5.5a names it the INDEPENDENT CROSS-CHECK that licenses the role rows — it '
+      + 'reproduces the separately-mined HANDHQ_OPENER_FACING_3BET to under 0.5pp on all '
+      + 'three actions, and the cold and passive rows have no other reference. It is still '
+      + 'asserted by populationPriors.test.js against the raw HandHQ counts. So this row is '
+      + 'vestigial in the tracer sense ONLY — zero PRODUCTION readers — and deleting the table '
+      + 'would destroy the anchor that validates its replacement. '
+      + 'On the sibling asymmetry: threeBetTopFraction READS '
       + 'FACED_RAISE_FREQUENCIES to scale the 3-bet foot per position, whereas '
       + 'FOUR_BET_TOP_FRACTION deliberately does not scale, because this table is flat across '
       + 'positions and a scaling would read a gradient it does not claim to have. index.js '
@@ -2278,7 +2292,7 @@ export const LABEL_LEDGER = Object.freeze([
       + 'points: EQUITY_VS_OPEN[heroPosition][handClassIndex]".',
     liveness: 'unconditional',
     impact: buildUnmeasuredReach({
-      readSites: 6,
+      readSites: 7,
       cellCount: 845,
       primaryPath: true,
       instrument: {

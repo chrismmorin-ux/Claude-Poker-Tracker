@@ -160,7 +160,6 @@ There is **no EV column in this table, and a test asserts there never will be.**
 doc-side mirror of the module-side impossibility in §3.
 
 <!-- LABEL-LEDGER-UNMEASURED:BEGIN -->
-
 | # | Label | Site | Foundation | Foundation status | Read sites | Cells | Primary path | Instrument ticket |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `LBL-population-priors` | `POPULATION_PRIORS` | founder-estimate | undeclared | 46 | 8 | yes | WS-445 |
@@ -168,7 +167,7 @@ doc-side mirror of the module-side impossibility in §3.
 | 3 | `LBL-equity-ladder` | `EQ` | founder-estimate | declared-estimate | 24 | 5 | yes | WS-445 |
 | 4 | `LBL-handhq-reference-pool` | `HANDHQ_OPENER_FACING_3BET` | mined-corpus | generated | 17 | 43 | yes | WS-445 |
 | 5 | `LBL-concept-registry` | `CONCEPT_REGISTRY` | founder-estimate | undeclared | 16 | 52 | yes | WS-445 |
-| 6 | `LBL-equity-vs-open` | `EQUITY_VS_OPEN` | structural-computation | generated | 6 | 845 | yes | WS-445 |
+| 6 | `LBL-equity-vs-open` | `EQUITY_VS_OPEN` | structural-computation | generated | 7 | 845 | yes | WS-445 |
 | 7 | `LBL-population-curve` | `POPULATION_CURVE` | fitted-curve | measured-supported | 13 | 5 | yes | WS-445 |
 | 8 | `LBL-game-type-rake-defaults` | `GAME_TYPES` | founder-estimate | undeclared | 12 | 14 | yes | WS-445 |
 | 9 | `LBL-fear-greed-factor-weights` | `FEAR_FACTOR_WEIGHTS` | founder-estimate | declared-estimate | 12 | 11 | yes | WS-445 |
@@ -204,30 +203,29 @@ doc-side mirror of the module-side impossibility in §3.
 | 39 | `LBL-positional-fold-to-3bet` | `POSITIONAL_FOLD_TO_3BET` | founder-estimate | undeclared | 2 | 10 | yes | WS-445 |
 | 40 | `LBL-weakness-to-delta` | `WEAKNESS_TO_DELTA` | founder-estimate | declared-estimate | 2 | 9 | yes | WS-445 |
 | 41 | `LBL-range-boost-switch` | `getRangeBoost` | founder-estimate | undeclared | 1 | 16 | yes | WS-445 |
-| 42 | `LBL-four-bet-frequencies` | `FOUR_BET_FREQUENCIES` | mined-corpus | generated | 1 | 15 | yes | WS-521 |
-| 43 | `LBL-no-raise-frequencies` | `NO_RAISE_FREQUENCIES` | founder-estimate | undeclared | 1 | 15 | yes | WS-445 |
-| 44 | `LBL-deviation-type-switch` | `deriveRecommendedAction` | structural-computation | undeclared | 2 | 3 | yes | WS-445 |
-| 45 | `LBL-open-rate-prior` | `OPEN_RATE_PRIOR` | founder-estimate | declared-estimate | 2 | 2 | yes | WS-445 |
-| 46 | `LBL-faced-3bet-role-frequencies` | `FACED_3BET_FREQUENCIES_BY_ROLE` | mined-corpus | measured-supported | 1 | 9 | yes | WS-521 |
-| 47 | `LBL-per-stat-prior-weight` | `PER_STAT_PRIOR_WEIGHT` | mined-corpus | measured-supported | 1 | 6 | yes | WS-445 |
-| 48 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
-| 49 | `LBL-holemap-curve-transcription` | `POPULATION_CURVE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
-| 50 | `LBL-population-curve-raise` | `POPULATION_CURVE_RAISE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
-| 51 | `LBL-positional-fold-to-4bet` | `POSITIONAL_FOLD_TO_4BET` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
-| 52 | `LBL-size-bucket-midpoint-holemap` | `SIZE_BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
-| 53 | `LBL-stake-factor` | `stakeFactor` | founder-estimate | declared-estimate | 1 | 5 | yes | WS-445 |
-| 54 | `LBL-gto-open-width` | `GTO_OPEN_WIDTH` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
-| 55 | `LBL-outs-scaling` | `OUTS_SCALING` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
-| 56 | `LBL-bucket-raise-fraction` | `bucketRaiseFraction` | founder-estimate | undeclared | 1 | 3 | yes | WS-445 |
-| 57 | `LBL-study-priority-frequencies` | `POSITION_PAIR_FREQ` | founder-estimate | declared-estimate | 6 | 72 | no | WS-445 |
-| 58 | `LBL-calibration-ladder` | `CALIBRATION_LADDER` | founder-estimate | declared-estimate | 9 | 5 | no | WS-445 |
-| 59 | `LBL-gto-baselines` | `GTO_BASELINES` | founder-estimate | undeclared | 6 | 6 | no | WS-445 |
-| 60 | `LBL-skill-signal-weights` | `DEFAULT_WEIGHTS` | founder-estimate | declared-estimate | 6 | 6 | no | WS-445 |
-| 61 | `LBL-m-ratio-zones` | `M_RATIO_ZONES` | founder-estimate | declared-estimate | 4 | 8 | no | WS-445 |
-| 62 | `LBL-flush-deltas` | `FLUSH_DELTAS` | structural-computation | declared-estimate | 3 | 6 | no | WS-445 |
-| 63 | `LBL-recognizability-map` | `RECOGNIZABILITY_MAP` | founder-estimate | declared-estimate | 1 | 23 | no | WS-445 |
+| 42 | `LBL-no-raise-frequencies` | `NO_RAISE_FREQUENCIES` | founder-estimate | undeclared | 1 | 15 | yes | WS-445 |
+| 43 | `LBL-deviation-type-switch` | `deriveRecommendedAction` | structural-computation | undeclared | 2 | 3 | yes | WS-445 |
+| 44 | `LBL-open-rate-prior` | `OPEN_RATE_PRIOR` | founder-estimate | declared-estimate | 2 | 2 | yes | WS-445 |
+| 45 | `LBL-faced-3bet-role-frequencies` | `FACED_3BET_FREQUENCIES_BY_ROLE` | mined-corpus | measured-supported | 1 | 9 | yes | WS-521 |
+| 46 | `LBL-per-stat-prior-weight` | `PER_STAT_PRIOR_WEIGHT` | mined-corpus | measured-supported | 1 | 6 | yes | WS-445 |
+| 47 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 48 | `LBL-holemap-curve-transcription` | `POPULATION_CURVE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
+| 49 | `LBL-population-curve-raise` | `POPULATION_CURVE_RAISE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
+| 50 | `LBL-positional-fold-to-4bet` | `POSITIONAL_FOLD_TO_4BET` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 51 | `LBL-size-bucket-midpoint-holemap` | `SIZE_BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 52 | `LBL-stake-factor` | `stakeFactor` | founder-estimate | declared-estimate | 1 | 5 | yes | WS-445 |
+| 53 | `LBL-gto-open-width` | `GTO_OPEN_WIDTH` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
+| 54 | `LBL-outs-scaling` | `OUTS_SCALING` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
+| 55 | `LBL-bucket-raise-fraction` | `bucketRaiseFraction` | founder-estimate | undeclared | 1 | 3 | yes | WS-445 |
+| 56 | `LBL-study-priority-frequencies` | `POSITION_PAIR_FREQ` | founder-estimate | declared-estimate | 6 | 72 | no | WS-445 |
+| 57 | `LBL-calibration-ladder` | `CALIBRATION_LADDER` | founder-estimate | declared-estimate | 9 | 5 | no | WS-445 |
+| 58 | `LBL-gto-baselines` | `GTO_BASELINES` | founder-estimate | undeclared | 6 | 6 | no | WS-445 |
+| 59 | `LBL-skill-signal-weights` | `DEFAULT_WEIGHTS` | founder-estimate | declared-estimate | 6 | 6 | no | WS-445 |
+| 60 | `LBL-m-ratio-zones` | `M_RATIO_ZONES` | founder-estimate | declared-estimate | 4 | 8 | no | WS-445 |
+| 61 | `LBL-flush-deltas` | `FLUSH_DELTAS` | structural-computation | declared-estimate | 3 | 6 | no | WS-445 |
+| 62 | `LBL-recognizability-map` | `RECOGNIZABILITY_MAP` | founder-estimate | declared-estimate | 1 | 23 | no | WS-445 |
+| 63 | `LBL-four-bet-frequencies` | `FOUR_BET_FREQUENCIES` | mined-corpus | generated | 0 | 15 | no | WS-521 |
 | 64 | `LBL-faced-raise-rate` | `FACED_RAISE_RATE` | founder-estimate | undeclared | 0 | 5 | no | WS-445 |
-
 <!-- LABEL-LEDGER-UNMEASURED:END -->
 
 *Rows are referenced by `LBL-` id below, never by row number — the ranking re-sorts whenever a

@@ -1,0 +1,112 @@
+id: "WS-605"
+title: "The repo cannot run its own test suite deterministically — two identical runs gave different failure sets, and the quarantine that fixes it was built but never extended"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 90
+priority_label: "P1"
+category: "engineering"
+capability: "core"
+program: "engineering"
+finding_id: ""
+description: |
+  Measured 2026-08-20 while verifying an unrelated change.
+
+  THE OBSERVATION. Two runs of the same test selection, with ZERO code changes between them,
+  returned different results:
+
+      run 1:  13 tests failed across 2 files
+      run 2:   2 tests failed across 1 file
+      isolated re-run of that file: 19 of 19 PASS, twice
+
+  The failure is not an assertion. It is:
+
+      Error: Test timed out in 30000ms.
+
+  The assertion never executed. Nothing was wrong with the code under test.
+
+  WHY THIS IS A P1 AND NOT AN ANNOYANCE. `.claude/rules/testing-strategy.md` says "Failed tests
+  block commits." CLAUDE.md routes `/verify` and the pre-commit gate through this suite. A gate
+  whose verdict changes between identical runs is not a gate — it teaches everyone to re-run
+  until green, which is precisely how a REAL failure gets waved through. It also means no
+  session can currently answer "did I break anything?" with a straight yes or no; this session
+  could not, and had to fall back on chunked runs plus a hand-built reachability proof.
+
+  THE MECHANISM IS ALREADY DIAGNOSED — IN THIS REPO'S OWN CONFIG. vite.config.js:153-160
+  explains it exactly, and the fix already exists:
+
+      "the regular `unit` project's `pool: threads, maxThreads: 4` causes them to time-out
+       under co-runner CPU [pressure] ... This project pins them to `pool: forks, maxForks: 1`"
+
+  and vite.config.js:178-181 states the doctrine outright:
+
+      "Registered here rather than given bigger inline timeouts: CONTENTION, NOT DURATION,
+       is what breaks them."
+
+  So the `slow-unit` quarantine is correct, deliberate, and working. THE DEFECT IS ITS
+  MEMBERSHIP LIST. It holds six files. The `unit` project — `pool: threads`, `maxThreads: 4`,
+  `testTimeout: 5000` (vite.config.js:147-149) — still contains these, measured in one run:
+
+      blockerBluffSelection.test.js      395.6 s
+      depthReachability.test.js          345.2 s
+      preflopEquity.test.js              269.2 s
+      computeDepth2Plan.test.js          257.9 s   <- the file that flaked
+      groundTruthEstimators.test.js      228.3 s
+      refinementDeterminism.test.js      187.2 s
+      item28Improvements.test.js         182.4 s
+      depthParity.test.js                175.6 s
+      budgetBound.test.js                151.1 s
+      optimismSalt.test.js               117.9 s
+      equityDecomposition.test.js         86.0 s
+      foldEstimateComposition.test.js     74.3 s
+
+  Twelve files over 70 seconds each, four-wide, in a project whose declared per-test ceiling is
+  five seconds. They pass alone and time out beside each other. Same class as the six already
+  quarantined; nobody extended the list as they grew.
+
+  SCALE, so the cost of the current state is not guessed: 403 test files were observed before
+  the run was killed, summing to 3,043 s — **50.7 minutes** of file-duration in `unit` alone.
+  The suite is not merely flaky, it is unrunnable inside any ordinary session: three separate
+  background runs were killed by lifetime limits before finishing, and each left an orphaned
+  vitest process still burning CPU after its wrapper died.
+
+  DO NOT FIX BY RAISING TIMEOUTS. The config already refuses that, by name, with the reason.
+  A bigger inline timeout converts a fast failure into a slow one and leaves the contention
+  untouched.
+accept_criteria: |
+  - Every test file whose isolated duration exceeds the `unit` project's contention budget is
+    in `slow-unit` (or an equivalent serialized pool), and the two lists cannot drift: adding a
+    file to one without the other FAILS a check. The current arrangement — two hand-maintained
+    lists that must mirror each other (`unit.exclude` and `slow-unit.include`) — is itself a
+    drift hazard and should be derived from one source.
+  - A DETERMINISM PROOF, not an impression: the full suite runs N>=3 times back to back and
+    returns the identical pass/fail set every time. Record it. A single green run does not
+    close this item — a single green run is what the current state can already produce by luck.
+  - No orphaned vitest process survives a killed or interrupted run. A wrapper that dies takes
+    its children with it, or the runner refuses to start when a previous run's workers are
+    still alive.
+  - The suite completes within a bound that a session can actually wait for, OR the runner
+    supports resumable/sharded execution so a full verification can be assembled from parts
+    without losing the "did everything pass" answer. State which was chosen and why.
+  - `computeDepth2Plan.test.js` specifically: passes 3 consecutive full-suite runs.
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "vite.config.js"
+  - "scripts/smart-test-runner.sh"
+  - "src/utils/postflopDrillContent/__tests__/computeDepth2Plan.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Serialize the slow files into slow-unit (preserves current semantics, suite stays ~50 min), or make the runner shardable/resumable so a full verification can complete inside a session? The first is a smaller change; the second is what makes the suite usable as a gate again."
+source:
+  kind: "measurement"
+  detail: "2026-08-20: two identical runs of the same selection returned different failure sets (13/2 files, then 2/1); the failing file passes 19/19 twice in isolation. Failure mode is `Test timed out in 30000ms`, never an assertion."
+created_at: "2026-08-20T19:05:00.000Z"

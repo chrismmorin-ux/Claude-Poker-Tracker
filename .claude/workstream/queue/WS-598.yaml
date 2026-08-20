@@ -1,0 +1,91 @@
+id: "WS-598"
+title: "The facing-3-bet fallback hard-codes its own source as literals, and two more scars the WS-521 fix left behind"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 62
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Four small defects in the facing-3-bet path, all left by the WS-521 §2.5.5a fix, found
+  2026-08-20 by the same audit that produced WS-597. None changes a number today. Three of
+  them are drift hazards — they are wrong only LATER, which is why they get a ticket rather
+  than a comment.
+
+  (a) THE FALLBACK DUPLICATES ITS SOURCE AS TYPED LITERALS. bayesianUpdater.js (~:207-209):
+
+        const weights = observed > 0
+          ? roles.map(r => (byRole[r] || 0) / observed)
+          : [2779 / 6531, 3083 / 6531, 669 / 6531];
+
+      Those are `FACED_3BET_ROLE_COUNTS[r].n / Σn` re-typed by hand. The BEHAVIOUR is correct
+      and is the point of the fix — a villain with no observed role mix is priced as the pool
+      rather than as an opener. The WIRING is the hazard: a re-measurement that updates
+      FACED_3BET_ROLE_COUNTS leaves this fallback silently pointing at the OLD corpus
+      composition, and no test compares the two. This is the `FAULT-constants-by-taste` shape
+      with a measured provenance — worse, because it LOOKS derived. One-line fix: compute the
+      weights from FACED_3BET_ROLE_COUNTS, and add the test that would have caught the drift.
+
+  (b) THE UNOBSERVED-ROLE DEFAULT PICKS THE LEAST-FOLDING ROLE. bayesianUpdater.js (~:82):
+
+        if (byRole) byRole[ext.priorRole || PRIOR_ROLES.OPENER]++;
+
+      An extraction with no `priorRole` is counted as `opener` — fold 42.97%, the most
+      optimistic of the three against cold's 94.55%. The in-code comment justifies this as
+      reproducing what the old code implicitly assumed, which is honest. But the failure
+      direction is the reckless one (POKER_THEORY §13.3: inflated fold equity), and it is
+      currently unreachable only because PROFILE_VERSION = 5 invalidates older caches
+      (usePlayerTendencies.js ~:105). That is unreachable BY POLICY, not BY CONSTRUCTION. If
+      it can happen it should refuse or use the pool mix, not silently take the optimistic row.
+
+  (c) `pos` IS A DEAD PARAMETER. `faced3BetPopFreqs(opp, pos)` (bayesianUpdater.js ~:200)
+      declares `pos` and never reads it. It is the visible scar of position being genuinely
+      absent from the FREQUENCY dimension — correctly so, since both the old and the new table
+      are flat across positions. Remove it or annotate it, so a future reader does not read it
+      as a wiring bug and "fix" it by inventing a positional gradient.
+
+  (d) A STALE JUSTIFICATION WEARING A CORRECT CONCLUSION. populationPriors.js (~:706-709)
+      explains why FOUR_BET_TOP_FRACTION is not position-scaled by pointing at
+      FOUR_BET_FREQUENCIES — a table nothing reads any more. The CONCLUSION survives, because
+      FACED_3BET_FREQUENCIES_BY_ROLE is also flat across positions. The REASONING points at a
+      corpse. A future editor who checks the cited table and finds it vestigial may "fix" the
+      comment by scaling the foot, which would install a gradient neither table claims.
+
+  ALSO OUT OF SCOPE HERE, DELIBERATELY: src/constants/runtimeVersions.js (~:71) still asserts
+  FOUR_BET_FREQUENCIES is the only measured frequency table. That file was in another live
+  session's working set on 2026-08-20 and was left untouched to avoid a collision. It is a
+  one-line correction — the two sibling claims in POKER_THEORY.md §2.5.5 and
+  rangeEngine/CLAUDE.md were fixed in commit-scope that day.
+accept_criteria: |
+  - The no-observation role weights are DERIVED from FACED_3BET_ROLE_COUNTS, with a test that
+    fails if the two ever disagree.
+  - The missing-`priorRole` path either refuses or falls back to the pool composition — not to
+    the least-folding role. If `opener` is kept, a test pins WHY and asserts the path is
+    genuinely unreachable rather than merely cache-gated.
+  - `pos` is removed from `faced3BetPopFreqs`, or carries a comment saying the frequency
+    dimension is flat by measurement and must not be given a gradient.
+  - The FOUR_BET_TOP_FRACTION comment cites the table that is actually read.
+  - runtimeVersions.js line corrected once the other session's work has landed.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/constants/runtimeVersions.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "audit"
+  detail: "Dispatched 2026-08-20 to test whether removing the FOUR_BET_FREQUENCIES read created a 4-bet blind spot. Hypothesis refuted; these are the residual scars of the WS-521 fix."
+created_at: "2026-08-20T18:06:00.000Z"

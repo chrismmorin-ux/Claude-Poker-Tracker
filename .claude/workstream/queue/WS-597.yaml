@@ -1,0 +1,86 @@
+id: "WS-597"
+title: "cold4Bet is not narrower than its parent — the narrowest range in the preflop tree is a copy of the aggregate"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 88
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found 2026-08-20 by an audit dispatched to test the OPPOSITE hypothesis — that removing the
+  engine's read of FOUR_BET_FREQUENCIES had blinded 4-bet pricing. It had not. This is what the
+  audit found instead, and it is a real gap in the same place.
+
+  THE DEFECT. `buildActionPrior` (src/utils/rangeEngine/populationPriors.js) builds the
+  `fourBet` parent and the `cold4Bet` subclass with the SAME EXPRESSION AND THE SAME FOOT:
+
+      case 'fourBet':   range[i] = ramp(strength, fourBetFoot, 1.0); break;   // ~:932
+      case 'cold4Bet':  range[i] = ramp(strength, fourBetFoot, 1.0); break;   // ~:941
+
+  So `cold4Bet` is BIT-IDENTICAL to its parent aggregate. POKER_THEORY §2.5.5 calls it
+  "**Narrowest in the whole preflop tree.** No bluff tail." It has no bluff tail — correct —
+  but it is not narrower than anything. The only thing separating the three cases is a 0.12
+  suited tail added to `fourBetAfterOpen`.
+
+  Compare the 3-bet tier (~:833+), where `cold3Bet` / `squeeze` / `limpReraise` genuinely
+  diverge. The 4-bet subclass shapes were stubbed at parent-equals-child and the doctrine text
+  ran ahead of the code.
+
+  THE TEST PASSES FOR THE WRONG REASON. populationPriors.test.js (~:554-566) asserts
+
+      expect(cold4, `${pos} cold4Bet vs fourBetAfterOpen`).toBeLessThan(after);
+
+  which holds ONLY because `after` has the suited tail added — not because `cold4Bet` was
+  narrowed. Nothing asserts `cold4Bet` is narrower than `fourBet`, and it is not. A test that
+  cannot fail for the reason it was written is not evidence (`FAULT-degenerate-signal`).
+
+  WHY IT MATTERS. A cold 4-bet is a re-raise of a 3-bet with NOTHING invested and players
+  possibly still to act. If the model prices that range at the aggregate's width, it credits a
+  villain with cold 4-bet bluffs he does not have — which inflates hero's fold equity against
+  it and, per §13.3, makes the engine RECKLESS rather than timid. Same failure direction as
+  the WS-521 defect this sits next to.
+
+  DO NOT FIX BY EYE. Picking a narrower foot by taste installs another unmeasured constant
+  (`FAULT-constants-by-taste`, and `.claude/rules/unmeasured-constants.md` binds here). The
+  corpus already carries the answer: FACED_3BET_ROLE_COUNTS records cold n=3,083 with k=48
+  4-bets, so the cold 4-bet FREQUENCY is measured at 1.56%. What is not measured is the SHAPE
+  — which hands. That is a corpus question of the same kind WS-521 already answered for
+  frequency, and node1 can run it.
+accept_criteria: |
+  - `cold4Bet`'s grid is derived, not copied: it is strictly narrower than the `fourBet`
+    parent, per position, and asserted so by a test that FAILS if the two are made equal
+    again. The current test's reliance on `fourBetAfterOpen`'s tail is removed as the
+    discriminator.
+  - The narrowing is measured, or it ships as BOTH ARMS with the delta reported
+    (`.claude/rules/unmeasured-constants.md`): founder-estimate foot vs corpus-derived foot,
+    same seeds, delta on the card. Neither arm is the silent default.
+  - Containment still holds — DEC-025 Amd 1: the subclass grid is CARVED FROM the parent, never
+    built beside it, and a child can never exceed its parent (crossRangeConstraints Pass B).
+  - The 1.56% measured cold 4-bet frequency (k=48/n=3,083) is stated wherever the new foot is
+    justified, with its n, per `.claude/rules/sparsity-refuse-or-shrink.md`.
+  - POKER_THEORY §2.5.5's "narrowest in the whole preflop tree" either becomes true in code or
+    is rewritten to what the code actually does. The doc and the code stop disagreeing.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/rangeEngine/__tests__/populationPriors.test.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Measure the cold-4-bet range SHAPE on the corpus, or ship both arms with the delta? The frequency (1.56%, k=48/n=3,083) is already measured; the shape is not."
+source:
+  kind: "audit"
+  detail: "Dispatched 2026-08-20 to test whether removing the FOUR_BET_FREQUENCIES read created a 4-bet blind spot. Hypothesis refuted; this found instead."
+created_at: "2026-08-20T18:05:00.000Z"

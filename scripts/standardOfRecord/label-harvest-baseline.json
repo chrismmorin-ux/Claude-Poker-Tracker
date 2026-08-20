@@ -421,6 +421,157 @@
     "ledger": "LBL-size-bucket-midpoint-holemap",
     "since": "2026-08-17"
   },
+  "scripts/backtest/ladder/rungs.card.js::BASE": {
+    "file": "scripts/backtest/ladder/rungs.card.js",
+    "symbol": "BASE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "domain",
+        "schemaVersion"
+      ],
+      [
+        "gameType",
+        "seats",
+        "stackDepthBB"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "b0d0604cab96",
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-20"
+  },
+  "scripts/backtest/ladder/rungs.card.js::R0": {
+    "file": "scripts/backtest/ladder/rungs.card.js",
+    "symbol": "R0",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cardId",
+        "rationale",
+        "residual",
+        "rules",
+        "title"
+      ],
+      [
+        "do",
+        "rationale"
+      ],
+      [
+        "fold"
+      ]
+    ],
+    "cellCount": 1,
+    "exported": true,
+    "shapeDigest": "9e5d53e93eed",
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-20"
+  },
+  "scripts/backtest/ladder/rungs.card.js::R1": {
+    "file": "scripts/backtest/ladder/rungs.card.js",
+    "symbol": "R1",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cardId",
+        "rationale",
+        "residual",
+        "rules",
+        "title"
+      ],
+      [
+        "do",
+        "rationale"
+      ],
+      [
+        "fold"
+      ]
+    ],
+    "cellCount": 1,
+    "exported": true,
+    "shapeDigest": "9e5d53e93eed",
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-20"
+  },
+  "scripts/backtest/ladder/rungs.card.js::R2": {
+    "file": "scripts/backtest/ladder/rungs.card.js",
+    "symbol": "R2",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cardId",
+        "rationale",
+        "residual",
+        "rules",
+        "title"
+      ],
+      [
+        "do",
+        "rationale"
+      ],
+      [
+        "fold"
+      ]
+    ],
+    "cellCount": 1,
+    "exported": true,
+    "shapeDigest": "9e5d53e93eed",
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-20"
+  },
+  "scripts/backtest/ladder/rungs.card.js::R3": {
+    "file": "scripts/backtest/ladder/rungs.card.js",
+    "symbol": "R3",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cardId",
+        "rationale",
+        "residual",
+        "rules",
+        "title"
+      ],
+      [
+        "do",
+        "rationale"
+      ],
+      [
+        "fold"
+      ]
+    ],
+    "cellCount": 1,
+    "exported": true,
+    "shapeDigest": "9e5d53e93eed",
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-20"
+  },
+  "scripts/backtest/ladder/rungs.card.js::R4": {
+    "file": "scripts/backtest/ladder/rungs.card.js",
+    "symbol": "R4",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cardId",
+        "rationale",
+        "residual",
+        "rules",
+        "title"
+      ],
+      [
+        "do",
+        "rationale"
+      ],
+      [
+        "fold"
+      ]
+    ],
+    "cellCount": 1,
+    "exported": true,
+    "shapeDigest": "9e5d53e93eed",
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-20"
+  },
   "scripts/backtest/ladderAxes.mjs::AXES": {
     "file": "scripts/backtest/ladderAxes.mjs",
     "symbol": "AXES",
@@ -537,6 +688,38 @@
     "shapeDigest": "468480059722",
     "ledger": "LBL-rake-schedules",
     "since": "2026-08-17"
+  },
+  "scripts/backtest/run-optimism-boards.mjs::ARMS": {
+    "file": "scripts/backtest/run-optimism-boards.mjs",
+    "symbol": "ARMS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "depth-1",
+        "depth-2plus"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": false,
+    "shapeDigest": "78de467885ce",
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-20"
+  },
+  "scripts/backtest/run-optimism-boards.mjs::boardSize#ternary1": {
+    "file": "scripts/backtest/run-optimism-boards.mjs",
+    "symbol": "boardSize",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "river",
+        "turn"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "976a0b0bae4f",
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-20"
   },
   "scripts/backtest/runoutBenchmark.mjs::EMPTY_INDEX": {
     "file": "scripts/backtest/runoutBenchmark.mjs",
@@ -1447,6 +1630,8 @@
       [
         "BET_CALL_DEPTH2",
         "CALL_DEPTH2",
+        "CALL_DEPTH3_RIVER",
+        "CALL_DEPTH3_TURN",
         "COMBO_ROLLOUT",
         "DEFAULT_EQUITY_MC",
         "DEPTH3_FLOP_RIVER",
@@ -1455,9 +1640,9 @@
         "RAISE_RESPONSE_DEPTH2"
       ]
     ],
-    "cellCount": 8,
+    "cellCount": 10,
     "exported": true,
-    "shapeDigest": "c4dccaa51d23",
+    "shapeDigest": "91468adba19c",
     "ledger": "EXCLUDED:not-a-label",
     "since": "2026-08-17"
   },
@@ -4012,6 +4197,7 @@
     "keyPaths": [
       [
         "comparisonCensus",
+        "conductCard",
         "coverageCensus",
         "dealBookManifest",
         "decisionAtom",
@@ -4022,9 +4208,9 @@
         "strategyCard"
       ]
     ],
-    "cellCount": 9,
+    "cellCount": 10,
     "exported": true,
-    "shapeDigest": "cacb40a89f60",
+    "shapeDigest": "afff7999ea60",
     "ledger": "EXCLUDED:schema-or-version",
     "since": "2026-08-17"
   },
