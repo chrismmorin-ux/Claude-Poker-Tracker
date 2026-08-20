@@ -25,7 +25,20 @@ jobs:
       # copy in smart-test-runner.sh.
       - name: Label & Foundation Ledger gate
         run: bash scripts/check-label-ledger.sh
+      # WS-519 / prog-guide-authority, and here for the same FIND-086 reason as the steps
+      # above: CI runs `npm test` directly, so the guide-authority gate needs its own step.
+      # It measures inertness as well as conformance — a standard with zero instances passes
+      # every conformance check and prints a green tick.
+      - name: Guide Authority observance gate
+        run: bash scripts/check-guide-ledger.sh
       - run: npm test
+      # WS-555, and the same FIND-086 reason as the gates above: CI runs `npm test` directly,
+      # and these known-answer checks hang off `preflight`, which CI never invokes. Their own
+      # runner opens with the observation that six of them "have caught real bugs" and nothing
+      # ran them. `sourceParity` is the WS-555 gate — corpus, Ignition and live-app hands must
+      # produce identically-shaped decision rows — and it takes under a second.
+      - name: Villain-archetype known-answer checks
+        run: npm run check:archetype
       - name: Model Coherence scan (advisory — Phase 1)
         run: node scripts/coherence-scan.cjs
         continue-on-error: true

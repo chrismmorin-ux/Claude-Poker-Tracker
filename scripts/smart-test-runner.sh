@@ -60,6 +60,20 @@ if ! bash "$SCRIPT_DIR/check-label-ledger.sh"; then
   echo "    note it records the construct, it does NOT decide anything about it.)"
   exit 1
 fi
+# WS-519 / prog-guide-authority: the guide form's observance monitor. Measures INERTNESS as
+# well as conformance — a standard with zero instances passes every conformance check and
+# prints a green tick, which is exactly prog-strategy-of-record's own baseline finding (7 of
+# 13 modules, 1,679 lines, zero non-test consumers, under 304 passing tests). Wired here on
+# day one for the same FIND-086 reason as the gates above.
+if ! bash "$SCRIPT_DIR/check-guide-ledger.sh"; then
+  echo ""
+  echo "❌ Pre-test gate failed: check-guide-ledger.sh"
+  echo "   Tests skipped — fix the violation above and re-run."
+  echo "   (What needs a decision?  node scripts/standardOfRecord/check-guide-ledger.mjs --undecided)"
+  echo "   (Legitimate new document? node scripts/standardOfRecord/check-guide-ledger.mjs --update —"
+  echo "    note it records the document, it does NOT decide anything about it.)"
+  exit 1
+fi
 
 # Run tests and capture output
 if [ -n "$PROJECT" ]; then
