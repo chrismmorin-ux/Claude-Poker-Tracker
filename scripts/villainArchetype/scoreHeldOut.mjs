@@ -47,6 +47,7 @@ import { loadVillain } from './loadVillain.mjs';
 import { enrichDecisions } from './enrichDecisions.mjs';
 import { induce, featureMap } from './induceCore.mjs';
 import { assign } from './ruleMatch.mjs';
+import { reachOf, heroClass } from './heroReach.mjs';
 
 const ALPHA = 0.5;                       // Laplace/Jeffreys smoothing, applied to every rung
 
@@ -198,6 +199,60 @@ for (const r of ranked) {
   console.log(`${String(r.n).padStart(5)}  ${r.perDec.toFixed(3).padStart(8)}  `
     + `${r.total.toFixed(1).padStart(6)}  ${(100 * r.share).toFixed(1).padStart(5)}%  ${r.when.slice(0, 72)}`);
 }
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * LIFT x REACH — the spots hero can actually put himself in.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ *
+ * A ranked list of the spots where the card knows the most is a list of places hero might
+ * happen to end up. Crossed with who CHOSE each condition, the same list becomes places he can
+ * decide to be. A rule whose conditions are all dealt — his seat, the board, the stacks — is
+ * intelligence and not a plan; a rule with a lever is a spot hero manufactures by betting, and
+ * by choosing the size.
+ *
+ * The product of the two is the target list this whole instrument exists to produce.
+ */
+console.log(`\nLIFT x REACH — who chose the conditions`);
+console.log(`  bits/dec     n  reach   levers`);
+for (const r of ranked.filter((x) => x.perDec > 0).slice(0, 8)) {
+  const { reach, levers } = reachOf(rules[r.ri].predicate);
+  console.log(`  ${r.perDec.toFixed(3).padStart(7)} ${String(r.n).padStart(5)}  ${reach.padEnd(7)}`
+    + ` ${levers.join(', ') || '(none — the deal put him here)'}`);
+}
+const byReach = { lever: 0, shaped: 0, given: 0 };
+for (const r of ranked) {
+  if (r.total <= 0) continue;
+  byReach[reachOf(rules[r.ri].predicate).reach] += r.total;
+}
+const totalPos = Object.values(byReach).reduce((s, v) => s + v, 0);
+console.log(`\nshare of the card's advantage sitting in spots hero can CREATE:`);
+for (const k of ['lever', 'shaped', 'given']) {
+  console.log(`  ${k.padEnd(7)} ${(100 * byReach[k] / totalPos).toFixed(1).padStart(5)}%`);
+}
+
+/**
+ * WAITING COST — and why the line above does not discriminate on its own.
+ *
+ * `facing` is the induction's dominant split, so it sits on nearly every path, and since hero
+ * chooses it nearly every rule comes back `lever`. That is a true statement about the game —
+ * whether pressure arrives is hero's decision and it is the gateway to almost every spot — and
+ * it is useless for RANKING spots, because it does not vary.
+ *
+ * What varies, and what a player actually pays, is how many conditions he must WAIT for. A spot
+ * whose other conditions are all lever or shaped can be manufactured at will: bet, and you are
+ * in it. A spot that also demands a particular board, a particular seat and a particular stack
+ * depth is one hero can only take when the deal offers it. Same lift, very different frequency
+ * of use — and expected value is lift TIMES how often you can get there.
+ */
+console.log(`\nWAITING COST — conditions hero must be dealt before a spot is available`);
+console.log(`  bits/dec     n  given  must wait for`);
+for (const r of ranked.filter((x) => x.perDec > 0).slice(0, 8)) {
+  const preds = rules[r.ri].predicate || [];
+  const givens = preds.filter((c) => heroClass(c.feature) === 'given').map((c) => c.feature);
+  console.log(`  ${r.perDec.toFixed(3).padStart(7)} ${String(r.n).padStart(5)}  ${String(givens.length).padStart(5)}`
+    + `  ${givens.join(', ') || 'nothing — hero can create this spot at will'}`);
+}
+
 const top3 = ranked.slice(0, 3).reduce((s, r) => s + r.share, 0);
 const helping = ranked.filter((r) => r.perDec > 0);
 const hurting = ranked.filter((r) => r.perDec < 0);

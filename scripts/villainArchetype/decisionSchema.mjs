@@ -124,7 +124,24 @@ export const FIELDS = [
    * draw" — it ranks CURRENT showdown strength, so a naked nut-flush draw sits near the bottom
    * of it while being one of the best hands to hold. Draws are a second axis, not a rival.
    */
-  { name: 'str_basis', group: 'situation', get: d => d.strength?.basis ?? '-', describe: 'exact (his range is every hand) or assumed (composition filled by equity ordering)' },
+  /**
+   * PROVENANCE OF THE STRENGTH COLUMNS — and NOT conditionable, which it wrongly was.
+   *
+   * `str_basis` records whether the range behind every `str_*` figure was EXACT (he was the big
+   * blind in a limped pot, so his range genuinely is every hand) or ASSUMED (composition filled
+   * from his measured entry width by an equity ordering). That is a fact about OUR pipeline, not
+   * about him, and while it sat in the `situation` group the induction could split on it — so a
+   * rule could read "when our range model happened to be exact, he does X".
+   *
+   * It was not hypothetical. On villain 1 it appeared as a condition on the SECOND-highest-lift
+   * rule in the held-out scoring, 0.717 bits/decision over 37 decisions. That number was partly
+   * a measurement of our own instrument's coverage.
+   *
+   * The honest replacement is the game state it proxies — big blind, limped pot, nothing to call
+   * — which is already expressible from `is_blind`, `pf_pot_type` and `to_call_bb`. Given its own
+   * group so `SITUATION_FIELDS` excludes it while the column stays on every row for reading.
+   */
+  { name: 'str_basis', group: 'provenance', get: d => d.strength?.basis ?? '-', describe: 'exact (his range is every hand) or assumed (composition filled by equity ordering) — OUR measurement basis, never a condition' },
   { name: 'str_pct_mean', group: 'situation', get: d => d.strength?.pctMean ?? '-', describe: 'CANONICAL AXIS: mean board-normalised strength percentile of his range' },
   { name: 'str_pct_med', group: 'situation', get: d => d.strength?.pctMedian ?? '-', describe: 'median percentile — where the middle of his range sits on this board' },
   { name: 'str_pct_top10', group: 'situation', get: d => d.strength?.pctTop10 ?? '-', describe: 'the percentile his top decile reaches' },
