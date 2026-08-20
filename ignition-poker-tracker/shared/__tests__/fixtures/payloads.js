@@ -57,7 +57,11 @@ export const ACTION_PAYLOADS = {
   check:  { seat: 3, btn: 64,   bet: 0,   account: 10000 },
   bet:    { seat: 5, btn: 128,  bet: 100, account: 9900 },
   call:   { seat: 7, btn: 256,  bet: 100, account: 9900 },
-  raise:  { seat: 9, btn: 512,  bet: 300, account: 9700 },
+  // A RAISE FRAME CARRIES BOTH FIELDS AND THEY MEAN DIFFERENT THINGS (WS-555): `bet` is what
+  // was owed before the raise, `raise` is the chips actually committed. The adapter reads
+  // `raise`. This fixture used to carry `bet: 300` alone, which pinned the reading that
+  // recorded a call price as if it were a raise.
+  raise:  { seat: 9, btn: 512,  bet: 100, raise: 300, account: 9700 },
   fold:   { seat: 1, btn: 1024, bet: 0,   account: 10000 },
 };
 
@@ -114,7 +118,7 @@ export const FULL_HAND_SEQUENCE = [
   }},
   { pid: 'CO_SELECT_INFO', payload: { seat: 1, btn: 1024, bet: 0, account: 10000 } }, // fold
   { pid: 'CO_SELECT_INFO', payload: { seat: 3, btn: 256, bet: 100, account: 9900 } }, // call
-  { pid: 'CO_SELECT_INFO', payload: { seat: 5, btn: 512, bet: 300, account: 9700 } }, // raise
+  { pid: 'CO_SELECT_INFO', payload: { seat: 5, btn: 512, bet: 100, raise: 300, account: 9700 } }, // raise
   { pid: 'CO_SELECT_INFO', payload: { seat: 7, btn: 1024, bet: 0, account: 10000 } }, // fold
   { pid: 'CO_SELECT_INFO', payload: { seat: 8, btn: 1024, bet: 0, account: 9950 } }, // fold
   { pid: 'CO_SELECT_INFO', payload: { seat: 9, btn: 256, bet: 300, account: 9600 } }, // call

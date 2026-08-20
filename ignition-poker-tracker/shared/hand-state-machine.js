@@ -11,7 +11,7 @@
 
 import * as handFormat from './hand-format.js';
 import { adaptPayload } from './protocol-adapter.js';
-import { buildRecordFromState } from './record-builder.js';
+import { buildRecordFromState, toStreetTotals } from './record-builder.js';
 
 // Monotonic fallback hand number (tournaments that don't send PLAY_STAGE_INFO)
 let handSequenceCounter = 0;
@@ -113,6 +113,20 @@ export class HandStateMachine {
     this.pot = 0;
     this.stacks = {};
     this.blinds = { sb: 0, bb: 0 };
+
+    /**
+     * FIRST stack reading of the hand for each seat, with the action it came from.
+     *
+     * `this.stacks` is overwritten on every frame, so by the time the record is built it holds
+     * END-of-hand stacks. The quantity every SPR-keyed measurement needs is the START-of-hand
+     * stack, and nothing was keeping it — so an Ignition-built profile had `spr: null` on
+     * every decision, losing one of the four geometry coordinates WS-333 exists for.
+     *
+     * `account` on a CO_SELECT_INFO is the stack AFTER that action, so the start-of-hand stack
+     * is this reading plus everything the seat had put in by then. That addition needs the
+     * blinds, which is why it happens in `record-builder.js` and not here.
+     */
+    this.stackObs = {};
 
     // Result
     this.winners = [];
@@ -313,20 +327,8 @@ export class HandStateMachine {
         return;
       }
 
-      case 'action': {
-        this.actionOrder++;
-        const entry = {
-          seat: event.seat,
-          action: event.action,
-          street: this.currentStreet || 'preflop',
-          order: this.actionOrder,
-        };
-        if (event.amount !== null) entry.amount = event.amount;
-        this.actionSequence.push(entry);
-        if (event.action === 'fold') this.foldedSeats.add(event.seat);
-        if (event.stack !== null) this.stacks[event.seat] = event.stack;
-        return;
-      }
+      case 'action':
+        return this._recordAction(event);
 
       case 'heroHint':
         this.setHeroSeat(event.seat, false);
@@ -458,6 +460,41 @@ export class HandStateMachine {
     this.startTimestamp = Date.now();
   }
 
+  /**
+   * ONE ACTION, AS THE WIRE REPORTED IT — an INCREMENT, chips in now.
+   *
+   * The app's hand record wants a BET/RAISE `amount` as the seat's TOTAL commitment for the
+   * street ("raise to"), and that conversion happens ONCE, in `record-builder.js`, from the
+   * finished hand. It deliberately does NOT happen here.
+   *
+   * WHY NOT HERE, measured rather than assumed. A first version of this accumulated the
+   * running street commitment as the frames arrived, seeded from the CO_BLIND_INFO frames.
+   * Replaying the four real captures in `spike-data/captures/` showed the seed was empty at
+   * the first action of ALL 109 hands: the blind frames arrive before the hand-start message,
+   * and `_applyHandStart` calls `reset()`. (The blind AMOUNTS survive only because a later
+   * `tableInfo` event re-supplies them.) An accumulation that depends on frame ordering is
+   * the wrong instrument when the same fact can be DERIVED from the finished hand, where the
+   * button, the seat set and the blinds are all known at once.
+   */
+  _recordAction(event) {
+    this.actionOrder++;
+    const entry = {
+      seat: event.seat,
+      action: event.action,
+      street: this.currentStreet || 'preflop',
+      order: this.actionOrder,
+    };
+    if (event.amount !== null) entry.amount = event.amount;
+    this.actionSequence.push(entry);
+    if (event.action === 'fold') this.foldedSeats.add(event.seat);
+    if (event.stack !== null) {
+      this.stacks[event.seat] = event.stack;
+      if (this.stackObs[event.seat] === undefined) {
+        this.stackObs[event.seat] = { order: entry.order, stack: event.stack };
+      }
+    }
+  }
+
   _applyStreetChange(event) {
     const newState = TABLE_STATE_TO_FSM[event.stateValue];
     if (!newState) return;
@@ -501,6 +538,7 @@ export class HandStateMachine {
       heroSeat: this.heroSeat,
       heroSeatConfidence: this.heroSeatConfidence || 'unknown',
       actionSequence: this.actionSequence,
+      stackObs: this.stackObs,
       communityCards: this.communityCards,
       holeCards: this.holeCards,
       allPlayerCards: this.allPlayerCards,
@@ -653,7 +691,24 @@ export class HandStateMachine {
       // at this boundary. Without it the SW validation gate drops every
       // live-context push from the first fold onward (WS-217 seam finding).
       activeSeatNumbers: [...this.activeSeats].filter((s) => !this.foldedSeats.has(s)),
-      actionSequence: this.actionSequence.map(a => ({ ...a })),
+      /**
+       * ONE MONEY CONVENTION, AT EVERY BOUNDARY THIS FILE OWNS (WS-555).
+       *
+       * `this.actionSequence` holds the wire's INCREMENTS. `buildRecord` converts them to the
+       * app's total-street-commitment convention on the way out, and this boundary has to do
+       * the same or the extension speaks two conventions about the same hand — a live context
+       * where a three-bet reads as 2bb and a stored record where the same three-bet reads as
+       * 3bb. That is the exact "three representations of one hand drift apart" failure WS-555
+       * exists to close, reproduced inside one file.
+       *
+       * Same shape as the `activeSeatNumbers` subtraction above: the internal state keeps its
+       * own semantics and the normalisation happens only where the value leaves.
+       */
+      actionSequence: toStreetTotals(this.actionSequence, {
+        blinds: this.blinds,
+        dealerSeat: this.dealerSeat,
+        seatPlayers: this.seatPlayers,
+      }).map(a => ({ ...a })),
       blinds: { ...this.blinds },
       ante: this.ante,
       gameType: this.gameType,

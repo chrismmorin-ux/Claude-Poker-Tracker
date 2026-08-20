@@ -727,6 +727,25 @@ const renderMultiwayEquity = (multiwayEquity) => {
  * always-visible R-5.1 legend so swapping 3.6 grid ↔ 3.12 placeholder
  * does not reflow the legend strip.
  */
+/**
+ * WS-574: the range slot while the depth-1 answer is on screen and refinement is still running.
+ *
+ * Deliberately mirrors `renderNoAggressorPlaceholder` in shape — same wrapper class, same
+ * mounted legend strip — so the slot does not change SIZE when the refined push replaces it.
+ * A placeholder that reflows the panel is its own flicker.
+ */
+const renderRefiningPlaceholder = () => {
+  let html = '<div class="range-slot-placeholder">';
+  html += '<div class="range-slot-placeholder__text">Refining — ranges arriving</div>';
+  // Legend strip (3.8) must stay mounted even when the grid is absent.
+  html += '<div class="rg-legend rg-legend--muted">';
+  html += '<span><span class="rg-legend-swatch" style="background:rgba(20,83,45,0.5)"></span>In range</span>';
+  html += '<span><span class="rg-legend-swatch" style="background:var(--gold)"></span>Your hand</span>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+};
+
 const renderNoAggressorPlaceholder = () => {
   let html = '<div class="range-slot-placeholder">';
   html += '<div class="range-slot-placeholder__text">No aggression yet \u2014 click a seat to inspect</div>';
@@ -759,6 +778,15 @@ const renderVillainRangeSection = (advice, liveContext, focusedVillain) => {
   // No dynamic range data — fall back to static GTO grid on preflop,
   // or 3.12 no-aggressor placeholder on postflop (Rule V Q1-c).
   if (!villainRanges || villainRanges.length === 0) {
+    // WS-574: "not computed yet" is NOT "no ranges". The app delivers a provisional depth-1
+    // answer before refinement finishes, and villainRanges / multiwayEquity / narrowingLog
+    // are computed AFTER the game tree returns — so they are legitimately absent on that first
+    // push. Falling through to the fallback here would assert a range state that is simply not
+    // known yet, draw the static GTO grid, and then swap it for the real grid ~4s later.
+    // Showing a fallback that contradicts the next frame is worse than showing nothing.
+    if (advice?.isProvisional) {
+      return `<div class="range-slot">${renderRefiningPlaceholder()}</div>`;
+    }
     if (isPreflop) {
       const heroPos = getPositionName(liveContext?.heroSeat, liveContext?.dealerSeat);
       const grid = renderRangeGrid({

@@ -571,6 +571,40 @@ export const noTable = {
 };
 
 // =========================================================================
+// Z3-PROVISIONAL — WS-574: the FIRST of the two pushes per decision
+//
+// `evaluateGameTree` has been two-phase since WS-334 and the app now delivers the depth-1
+// answer immediately, so the panel receives a provisional push and then a refined one ~4s
+// later. On the provisional push `villainRanges` / `multiwayEquity` / `narrowingLog` do not
+// exist yet — they are computed AFTER the game tree returns.
+//
+// They are DELETED here, not set to null, because that is the real wire shape:
+// `validateActionAdvice` checks them with `!== undefined`, so an explicit null fails
+// validation while an absent key passes.
+//
+// Without the provisional branch in `renderVillainRangeSection` this fixture renders the
+// static GTO grid / no-aggressor placeholder — a range state the engine has not decided yet —
+// and then swaps to the real grid on the refined push.
+// =========================================================================
+
+export const z3_provisionalAdviceRanges = (() => {
+  const base = JSON.parse(JSON.stringify({
+    cachedSeatStats: flopWithAdvice.cachedSeatStats,
+    currentTableState: flopWithAdvice.currentTableState,
+    currentLiveContext: flopWithAdvice.currentLiveContext,
+    lastGoodAdvice: flopWithAdvice.lastGoodAdvice,
+    appSeatData: flopWithAdvice.appSeatData,
+    lastGoodExploits: flopWithAdvice.lastGoodExploits,
+  }));
+  base.lastGoodAdvice.isProvisional = true;
+  base.lastGoodAdvice.changedOnRefine = null;
+  delete base.lastGoodAdvice.villainRanges;
+  delete base.lastGoodAdvice.multiwayEquity;
+  delete base.lastGoodAdvice.narrowingLog;
+  return base;
+})();
+
+// =========================================================================
 // 10. PINNED VILLAIN OVERRIDE — Pinned differs from advice villain
 // =========================================================================
 
@@ -1668,4 +1702,5 @@ export const ALL_FIXTURES = {
   z4_userToggledPlanInHand,
   zx_recoveryBannerToTableSwitch,
   z3_streetCardFadeTimeout,
+  z3_provisionalAdviceRanges,
 };

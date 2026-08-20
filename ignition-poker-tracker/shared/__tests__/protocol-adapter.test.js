@@ -214,12 +214,35 @@ describe('adaptPayload — action', () => {
     expect(e.stack).toBe(99);
   });
 
-  it('decodes raise with amount (cents-to-dollars)', () => {
-    const events = adaptPayload(PID.CO_SELECT_INFO, { seat: 3, btn: ACTION_BITS.RAISE, bet: 600, account: 9400 });
+  /**
+   * ON A RAISE THE AMOUNT COMES FROM `raise`, NOT `bet` (WS-555).
+   *
+   * `bet` on a raise frame is the amount that was OWED before the raise; `raise` is what the
+   * seat actually put in. This test used to assert `bet`, i.e. it pinned the bug: a 6.00
+   * three-bet over a 2.00 open was recorded as an amount of 2.00.
+   *
+   * Verified against the four real captures in `spike-data/captures/` by reconciling every
+   * frame against the seat's own stack movement (`account` is the stack AFTER the action):
+   * 119 of 119 raises reconcile with `raise`, and the only frames that do not are ones where
+   * the stack went UP in between, i.e. the seat won a pot.
+   */
+  it('decodes raise using the raise field, not the call price in bet', () => {
+    const events = adaptPayload(PID.CO_SELECT_INFO, {
+      seat: 3, btn: ACTION_BITS.RAISE, bet: 200, raise: 600, account: 9400,
+    });
     const e = expectEvent(events, 'action');
     expect(e.action).toBe('raise');
     expect(e.amount).toBe(6);
     expect(e.stack).toBe(94);
+  });
+
+  it('reads bet, not raise, for a call', () => {
+    const events = adaptPayload(PID.CO_SELECT_INFO, {
+      seat: 4, btn: ACTION_BITS.CALL, bet: 600, raise: 0, account: 9400,
+    });
+    const e = expectEvent(events, 'action');
+    expect(e.action).toBe('call');
+    expect(e.amount).toBe(6);
   });
 
   it('decodes check', () => {

@@ -1525,3 +1525,91 @@ describe('State transition guards', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Money convention — WS-555
+// ---------------------------------------------------------------------------
+
+/**
+ * ONE MONEY CONVENTION, AND A BLIND THAT RAISES IS THE ONLY PLACE IT SHOWS.
+ *
+ * The wire reports an INCREMENT for every action — chips in now. The main app's hand record
+ * reports a BET/RAISE `amount` as the seat's TOTAL commitment for the street ("raise to";
+ * `src/utils/recordSeatAction.js` emits `amount: raiseTo`) and a CALL `amount` as the increment
+ * owed. Those two readings AGREE for every seat that had nothing in front of it, which is why
+ * this went unnoticed: no existing fixture contains a re-raise or a blind raising, so none of
+ * them could tell the conventions apart.
+ *
+ * This hand is built so they disagree. The big blind three-bets, so its own posted blind is the
+ * difference between the two readings — 8 under the wire, 9 under the app.
+ *
+ * The second assertion is the one that closes WS-555's actual failure mode: the record and the
+ * LIVE CONTEXT must report the same money. They are two different exits from the same state and
+ * a fix applied to one of them re-creates the drift the item exists to remove.
+ *
+ * Button on 5, seats 5/7/8/9 dealt in. Ring after the button: 7 (SB), 8 (BB), 9, 5.
+ */
+describe('money convention: the record speaks total street commitment (WS-555)', () => {
+  function threeBetHand() {
+    const { hsm, onHandComplete, onError } = makeHSM('ws555');
+    hsm.processMessage(PID.PLAY_STAGE_INFO, { stageNo: 'ws555-1' });
+    hsm.processMessage(PID.CO_DEALER_SEAT, { seat: 5 });
+    hsm.processMessage(PID.CO_TABLE_STATE, { state: 4 });   // blinds
+    hsm.processMessage(PID.CO_BLIND_INFO, { seat: 7, account: 9950, btn: 2, bet: 50, dead: 0 });
+    hsm.processMessage(PID.CO_BLIND_INFO, { seat: 8, account: 9900, btn: 4, bet: 100, dead: 0 });
+    hsm.processMessage(PID.CO_TABLE_STATE, { state: 8 });   // preflop
+    hsm.processMessage(PID.CO_CARDTABLE_INFO, {
+      seat5: [20, 38], seat7: [32896, 32896], seat8: [32896, 32896], seat9: [32896, 32896],
+    });
+    // seat 9 opens: owed 100, puts in 300.
+    hsm.processMessage(PID.CO_SELECT_INFO, { seat: 9, btn: 512, bet: 100, raise: 300, account: 9700 });
+    hsm.processMessage(PID.CO_SELECT_INFO, { seat: 5, btn: 1024, bet: 0, account: 10000 });
+    hsm.processMessage(PID.CO_SELECT_INFO, { seat: 7, btn: 1024, bet: 0, account: 9950 });
+    // the BIG BLIND three-bets: owed 200, puts in 800, so its street total is 900 — its own
+    // posted 100 included. This is the row the two conventions disagree about.
+    hsm.processMessage(PID.CO_SELECT_INFO, { seat: 8, btn: 512, bet: 200, raise: 800, account: 9100 });
+    // seat 9 calls: 300 in already, owes 600.
+    hsm.processMessage(PID.CO_SELECT_INFO, { seat: 9, btn: 256, bet: 600, account: 9100 });
+    return { hsm, onHandComplete, onError };
+  }
+
+  const amountsOf = (seq) => seq
+    .filter((a) => a.street === 'preflop' && typeof a.amount === 'number')
+    .map((a) => `${a.seat}:${a.action}:${a.amount}`);
+
+  it("a big blind's three-bet is recorded TO 9, not the 8 it put in", () => {
+    const { hsm } = threeBetHand();
+    const record = hsm.buildRecord();
+    const threeBet = record.gameState.actionSequence.find((a) => a.seat === 8 && a.action === 'raise');
+    expect(threeBet.amount).toBe(9);
+  });
+
+  it('an opener with nothing in front of it is unaffected — both readings say 3', () => {
+    const { hsm } = threeBetHand();
+    const record = hsm.buildRecord();
+    const open = record.gameState.actionSequence.find((a) => a.seat === 9 && a.action === 'raise');
+    expect(open.amount).toBe(3);
+  });
+
+  it('a call stays an INCREMENT — that is the app convention, not an oversight', () => {
+    const { hsm } = threeBetHand();
+    const record = hsm.buildRecord();
+    const call = record.gameState.actionSequence.find((a) => a.seat === 9 && a.action === 'call');
+    expect(call.amount).toBe(6);
+  });
+
+  it('the live context and the record report the same money', () => {
+    const { hsm } = threeBetHand();
+    const ctx = hsm.getLiveHandContext();
+    const record = hsm.buildRecord();
+    expect(amountsOf(ctx.actionSequence)).toEqual(amountsOf(record.gameState.actionSequence));
+    // and it is the converted reading, not the raw wire one
+    expect(amountsOf(ctx.actionSequence)).toContain('8:raise:9');
+  });
+
+  it('the raw internal sequence is still the wire increment — conversion happens at the exits', () => {
+    const { hsm } = threeBetHand();
+    const raw = hsm.actionSequence.find((a) => a.seat === 8 && a.action === 'raise');
+    expect(raw.amount).toBe(8);
+  });
+});

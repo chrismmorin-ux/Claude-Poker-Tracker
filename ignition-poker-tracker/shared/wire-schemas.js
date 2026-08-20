@@ -130,6 +130,16 @@ const ADVICE_FIELDS = [
   // recommendations[0].flopBreakdown fallback only exists on preflop
   // squeeze/call recommendations).
   'flopBreakdown',
+  // WS-574 two-phase advice. `evaluateGameTree` returns a depth-1 answer before refinement,
+  // and the app now delivers it immediately — so the panel receives TWO pushes per decision:
+  // a provisional one, then the refined one. Without these two fields on the wire the panel
+  // cannot tell them apart, and the provisional push (which legitimately has no villainRanges
+  // yet) is indistinguishable from "this villain has no range data", so the range section
+  // draws its GTO/no-aggressor fallback and then swaps.
+  //
+  // This is the same omission the `flopBreakdown` note above records: a field left off this
+  // list is dropped SILENTLY by `pick()`, and the HUD degrades without an error anywhere.
+  'isProvisional', 'changedOnRefine',
 ];
 
 /**

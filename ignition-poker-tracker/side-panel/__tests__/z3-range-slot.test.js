@@ -276,3 +276,55 @@ describe('SR-6.13 §3.10 — orphan removed from Z3', () => {
     expect(streetCardJs).toContain('Waiting for next hand');
   });
 });
+
+// ----------------------------------------------------------------------------
+// WS-574 — "not computed yet" is not "no ranges"
+//
+// The app is now two-phase: it delivers the depth-1 answer immediately and the refined one
+// ~4s later, so the panel gets TWO pushes per decision. On the first, villainRanges does not
+// exist yet — it is computed after the game tree returns. Without a provisional branch the
+// range slot falls through to the Rule V Q1-c no-aggressor placeholder (or the preflop GTO
+// grid), asserting a range state the engine has not decided, and then swaps.
+// ----------------------------------------------------------------------------
+
+describe('WS-574 — provisional advice does not assert a range state', () => {
+  const provisionalCtx = { ...flopCtxMultiway };
+  const provisional = {
+    ...flopAdviceMultiway,
+    isProvisional: true,
+    changedOnRefine: null,
+  };
+  // Absent, not null: `validateActionAdvice` checks with `!== undefined`, so an explicit null
+  // FAILS wire validation while an absent key passes.
+  delete provisional.villainRanges;
+
+  it('renders the refining placeholder instead of the no-aggressor fallback', () => {
+    const out = renderFlopContent(provisional, provisionalCtx, 2);
+    expect(out).toContain('class="range-slot"');
+    expect(out).toContain('Refining');
+    // The fallback must NOT appear — showing it would contradict the very next frame.
+    expect(out).not.toContain('No aggression yet');
+  });
+
+  it('keeps the legend mounted, so the slot does not resize when ranges arrive', () => {
+    // R-5.1: legend always rendered. A placeholder that reflows the panel is its own flicker.
+    const out = renderFlopContent(provisional, provisionalCtx, 2);
+    expect(out).toContain('rg-legend');
+  });
+
+  it('a REFINED payload with genuinely empty ranges still gets the no-aggressor fallback', () => {
+    // The guard must be scoped to the provisional phase only. If it leaked, a villain who
+    // really has no range data would show "Refining" forever.
+    const refinedEmpty = { ...flopAdviceMultiway, isProvisional: false, villainRanges: [] };
+    const out = renderFlopContent(refinedEmpty, provisionalCtx, 2);
+    expect(out).toContain('No aggression yet');
+    expect(out).not.toContain('Refining');
+  });
+
+  it('advice with no phase field at all is unaffected — the branch is additive', () => {
+    const legacy = { ...flopAdviceMultiway, villainRanges: [] };
+    const out = renderFlopContent(legacy, provisionalCtx, 2);
+    expect(out).toContain('No aggression yet');
+    expect(out).not.toContain('Refining');
+  });
+});

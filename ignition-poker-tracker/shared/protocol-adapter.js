@@ -184,17 +184,44 @@ function adaptSelectReq(payload) {
   return [{ kind: 'heroHint', seat: payload.seat, source: 'selectReq' }];
 }
 
+/**
+ * ON A RAISE, `bet` IS NOT THE RAISE. It is the amount that was OWED before the raise.
+ *
+ * CO_SELECT_INFO carries two money fields and they do different jobs:
+ *   - `bet`   — chips this seat is putting in now, for CHECK / BET / CALL.
+ *   - `raise` — chips this seat is putting in now, for RAISE. `bet` on the same frame is
+ *               the call portion of it, i.e. what was owed a moment ago.
+ *
+ * This function read `bet` for every action, so every raise in every captured hand recorded
+ * THE CALL PRICE instead of the raise. Measured on the four real captures in
+ * `spike-data/captures/` by reconciling each frame against the seat's own stack movement
+ * (`account` is the stack AFTER the action): using `raise` on a raise, 119 of 119 raises
+ * reconcile exactly; using `bet`, none of the raises that were more than a call do. The
+ * remaining mismatches are all frames where the stack went UP between observations, i.e. the
+ * seat won a pot in between — not action frames at all.
+ *
+ * What that corrupted, concretely: an open to 3bb over a 1bb blind was recorded as an amount
+ * of 1bb. The sidebar's "faced bet" (render-orchestrator) read that number, and any villain
+ * measurement keyed on raise SIZE would have pooled a min-open with a pot-sized open — which
+ * is the exact defect `scripts/villainArchetype/__checks__/sizeConditioning.check.mjs` exists
+ * to catch on the corpus side.
+ *
+ * BOTH FIELDS ARE INCREMENTS — chips in now, not "raise to". The record layer converts to the
+ * app's total-street-commitment convention; see `hand-state-machine.js` `_recordAction`.
+ */
 function adaptAction(payload) {
-  const { seat, btn, bet, account } = payload;
+  const { seat, btn, bet, raise, account } = payload;
   const action = protocol.decodeAction(btn);
   if (!action || typeof seat !== 'number') return [];
+
+  const chips = action === 'raise' ? raise : bet;
 
   return [{
     kind: 'action',
     seat,
     action,
     amount: (action === 'bet' || action === 'call' || action === 'raise') &&
-            typeof bet === 'number' && bet > 0 ? bet / 100 : null,
+            typeof chips === 'number' && chips > 0 ? chips / 100 : null,
     stack: typeof account === 'number' ? account / 100 : null,
   }];
 }
