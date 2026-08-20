@@ -36,6 +36,22 @@ const SHIPPED_FIELDS = {
     domain: 'object', rules: 'array', residual: 'object',
     contentHash: 'string|null', surfaceKind: 'string',
   },
+  // The Read surface's record form (founder-named 2026-08-18). Pairs with the Strategy Card:
+  // a Strategy Card is what someone SAYS they will do, a Conduct Card is what a player DID.
+  conductCard: {
+    cardId: 'string', schemaVersion: 'number', subjectId: 'string', surfaceKind: 'string',
+    dealBook: 'object', evidence: 'object', rules: 'array', residual: 'object',
+    coverage: 'number', unresolved: 'array', separatorSearch: 'object', induction: 'object',
+    gates: 'array', occupancy: 'object|null', manifest: 'object',
+    disclaimerRegisterVersion: 'string|null', contentHash: 'string|null', population: 'string',
+    // v2: the era coordinates (site, date window, stake, table sizes) an archetype
+    // trajectory is plotted in. `population` was prose, and prose does not sort.
+    provenance: 'object|null',
+    // v3 (WS-578): the size axis the card's actions are banded on, carried ON the card — both
+    // arms' full boundary tables, the arm delta, and the shrinkage declaration. A card stamping
+    // only a scheme name and a version is still silently re-basable by a later lattice change.
+    sizingBanding: 'object|null',
+  },
   decisionAtom: {
     schemaVersion: 'number', atomId: 'string', situationKey: 'string', carried: 'object',
     surfaceId: 'string', action: 'object', ruleId: 'string|null', warrant: 'string|null',
@@ -200,6 +216,15 @@ const SHIPPED_FIELDS = {
   'metrics.style-collapse': {
     kind: 'string', villainPrediction: 'object', advicePath: 'object', absoluteEV: 'object',
     determinism: 'object',
+  },
+  // WS-534 - the villain rule-evolution card. Mirrored here deliberately: this list is a
+  // SECOND, independent statement of the schema, so adding a kind to metricsSchemas.js alone
+  // fails until someone confirms the shape here too.
+  'metrics.villain-model-card': {
+    kind: 'string', villainScope: 'object', ruleCount: 'number', vocabulary: 'object',
+    behavioralCoverage: 'object', evCoverage: 'object', residualShare: 'number|null',
+    frontier: 'array', shapeTest: 'object', axes: 'array', census: 'object',
+    evFidelity: 'object',
   },
   'metrics.teachable-arms': {
     kind: 'string', arms: 'object', shareOfEngineEdge: 'object',

@@ -183,12 +183,33 @@ describe('the declared v1 shapes match real committed artifacts', () => {
     ['study-ladder', '.artifacts/study-ladder.card.json'],
   ];
 
+  // WS-537: the NET/GROSS pairing is a CROSS-FIELD publish rule, not a shape claim. A card
+  // minted before the change ledger existed carries a NET with no GROSS anywhere on it and is
+  // now correctly refused — that refusal is the rule working on a real artifact, and it is
+  // asserted by name below rather than being allowed to mask a genuine transcription error
+  // here. Everything this describe block is actually about — types, key sets, required-ness —
+  // must still come back clean.
+  const isNetGrossRefusal = (p) => /is a NET .* published without/.test(p);
+
   for (const [kind, rel] of cases) {
     it(`${rel} validates as ${kind} once a kind is attached`, () => {
       const card = readCard(rel);
-      expect(metricsProblems({ kind, ...card.metrics })).toEqual([]);
+      expect(metricsProblems({ kind, ...card.metrics }).filter((p) => !isNetGrossRefusal(p)))
+        .toEqual([]);
     });
   }
+
+  it('RC-depth-ablation.json is REFUSED for publishing a NET with no GROSS (WS-537)', () => {
+    // The card this ticket was written against: `depthDeltaBB: -0.4711` beside
+    // `flipShareByStreet {flop 0.0072, turn 0.039, river 0.80}`. The advice movement was
+    // already decomposed by street and the EV figure could not say so, and a change that
+    // helped one street while hurting another by the same amount would have printed this same
+    // number. The refusal is the point; a passing assertion here would mean the guard is off.
+    const card = readCard('docs/standard-of-record/cards/RC-depth-ablation.json');
+    const problems = metricsProblems({ kind: 'depth-ablation', ...card.metrics });
+    expect(problems.filter(isNetGrossRefusal)).toHaveLength(1);
+    expect(problems.find(isNetGrossRefusal)).toContain('changeLedgerGrossBB');
+  });
 });
 
 describe('legacy asymmetry — committed cards stay legible, become unpublishable', () => {
@@ -208,7 +229,19 @@ describe('legacy asymmetry — committed cards stay legible, become unpublishabl
 
   it('a fully-declared card passes the wired publish path end to end', () => {
     const card = readCard('docs/standard-of-record/cards/RC-depth-ablation.json');
-    const withKind = { ...card, metrics: { kind: 'depth-ablation', ...card.metrics } };
+    const withKind = {
+      ...card,
+      metrics: {
+        kind: 'depth-ablation',
+        ...card.metrics,
+        // WS-537 — the pair this era of card predates. Supplied here because the test is
+        // about the WIRING (does resultCardProblems reach metricsProblems at all), and a
+        // card left unpaired would pass or fail on the pairing rule instead. The unpaired
+        // card's refusal is asserted on its own, above.
+        changeLedgerNetBB: card.metrics.depthDeltaBB,
+        changeLedgerGrossBB: Math.abs(card.metrics.depthDeltaBB) * 3,
+      },
+    };
     // The manifest half may or may not hold problems of its own era; assert only that the
     // metrics half is clean — no problem mentions metrics.
     expect(resultCardProblems(withKind).filter((p) => p.includes('resultCard.metrics'))).toEqual([]);

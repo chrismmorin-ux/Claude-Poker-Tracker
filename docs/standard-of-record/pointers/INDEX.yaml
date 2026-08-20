@@ -1,0 +1,140 @@
+# Conduct Card Pointer Index — fast-scan summary of all card pointers
+# GENERATED — DO NOT EDIT. Rebuild from: docs/standard-of-record/pointers/*.json
+# Rebuilt by: scripts/villainArchetype/conductCardPointer.mjs (regenerateIndex)
+# The per-file pointer records are the source of truth; this file is a derived view.
+
+total_pointers: 8
+generated_at: "2026-08-20T19:04:33.740Z"
+by_standing:
+  current: 1
+  unrankable: 7
+
+pointers:
+  - file: "CC-Ah5FmohxpLfw-7b307115e946.json"
+    cardId: "CC-Ah5FmohxpLfw"
+    subjectId: "Ah5FmohxpL/fw4DrPlLd/w"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:7b307115e94623eb6bb5d33241c72a07f44ea27377a8d5aafd242929f6d2e2a5"
+    byteSize: 186105
+    rules: 45
+    decisions: 20413
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/profiles-6max/Ah5FmohxpLfw.conduct-card.json"
+    engineCommit: "fa5268017cca88ef844d9b02537e84a20309db0d"
+    dealBookHash: "sha256:e859c1e589ef0f604d59aeb0cece749249f93b0fbabecc352f4508bfbde4c388"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"
+  - file: "CC-SO0OmHLLvkJp-1d45a94ce67a.json"
+    cardId: "CC-SO0OmHLLvkJp"
+    subjectId: "SO0Om/HLLvkJps9pZmbgqQ"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:1d45a94ce67a8a3eb1ecf5ad408f79e646b31a0ccdbe93c5115a184b8cf104ee"
+    byteSize: 39030
+    rules: 18
+    decisions: 3386
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/profiles-full/SO0OmHLLvkJp.conduct-card.json"
+    engineCommit: "32d968a43ba796188deb7480685b95d31d0b9d93"
+    dealBookHash: "sha256:e859c1e589ef0f604d59aeb0cece749249f93b0fbabecc352f4508bfbde4c388"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"
+  - file: "CC-SO0OmHLLvkJp-9d098a0327c8.json"
+    cardId: "CC-SO0OmHLLvkJp"
+    subjectId: "SO0Om/HLLvkJps9pZmbgqQ"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:9d098a0327c805c9624be533a61a8b97013e46fd910cb4f5a01825c2012dab2d"
+    byteSize: 39399
+    rules: 18
+    decisions: 3386
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/regress/SO0OmHLLvkJp.conduct-card.json"
+    engineCommit: "fa5268017cca88ef844d9b02537e84a20309db0d"
+    dealBookHash: "sha256:e859c1e589ef0f604d59aeb0cece749249f93b0fbabecc352f4508bfbde4c388"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"
+  - file: "CC-SO0OmHLLvkJp-cc1e640d1383.json"
+    cardId: "CC-SO0OmHLLvkJp"
+    subjectId: "SO0Om/HLLvkJps9pZmbgqQ"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:cc1e640d1383f1d76006cc30218681f39be4e61b1f9602f1278e739592c47b97"
+    byteSize: 28447
+    rules: 19
+    decisions: 1937
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/profiles/SO0OmHLLvkJp.conduct-card.json"
+    engineCommit: "e7cb1fe13bc7bbf27ff2bbebe06f4dc344b1f0dc"
+    dealBookHash: "sha256:f433277c7bc0794f81e0b865f75b4972f888db09d013f907ee5ddcab2f906a11"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"
+  - file: "CC-SO0OmHLLvkJp-f397062eb72d.json"
+    cardId: "CC-SO0OmHLLvkJp"
+    subjectId: "SO0Om/HLLvkJps9pZmbgqQ"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:f397062eb72d2cbc4d8ed234cd1d4e69eb28daced4d05b0b59643c7c73386a40"
+    byteSize: 44535
+    rules: 25
+    decisions: 3386
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/profiles-fixed/SO0OmHLLvkJp.conduct-card.json"
+    engineCommit: "ca89f9e2a256d397a9a4a08de2ed27cef9ea4311"
+    dealBookHash: "sha256:e859c1e589ef0f604d59aeb0cece749249f93b0fbabecc352f4508bfbde4c388"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"
+  - file: "CC-gxPR88KqCYXW-bc7b098a-544e943e2cd1.json"
+    cardId: "CC-gxPR88KqCYXW-bc7b098a"
+    subjectId: "gxPR88+KqCYXWEdBATZVGw"
+    rulesetHash: "bc7b098a4f0f6d1164395c9f1d2d31b12ee876fcbe417646589a6226c74ae522"
+    fileSha256: "sha256:544e943e2cd1d80fde18e29f663132d0c6b8dd21ca653042d27bf95ffa9b8745"
+    byteSize: 140760
+    rules: 18
+    decisions: 1156
+    standing: "current"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/ws551/gxPR88KqCYXW.conduct-card.json"
+    engineCommit: "534b6ee5bf3f4042310b6b7ed0a88fe1f9712a6c"
+    dealBookHash: "sha256:ecdb55399bafaf91e64ae82317bd416da36033d8cb789ea1343fa08fd6cd3f73"
+    emittedAt: "2026-08-20T19:04:33.722Z"
+    provenanceMode: "emit-time"
+  - file: "CC-jSCaL6Fm4lAi-96ae05ea0e87.json"
+    cardId: "CC-jSCaL6Fm4lAi"
+    subjectId: "jSCaL6Fm4lAiTDVH2dFATQ"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:96ae05ea0e87c75311e870a3b097b6d950188515d59b44337d62ff579ff30bca"
+    byteSize: 110195
+    rules: 45
+    decisions: 9442
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/profiles-v2/jSCaL6Fm4lAi.conduct-card.json"
+    engineCommit: "838416e690c563f99b4aa75e9b907105dbc5375a"
+    dealBookHash: "sha256:e859c1e589ef0f604d59aeb0cece749249f93b0fbabecc352f4508bfbde4c388"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"
+  - file: "CC-jSEItZVTvrRp-a3c371df38fc.json"
+    cardId: "CC-jSEItZVTvrRp"
+    subjectId: "jSEItZVTvrRpBvsunDhQxw"
+    rulesetHash: "unrecoverable"
+    fileSha256: "sha256:a3c371df38fcb5e43fb688fa2d0e5c25fed6fb825969e35358108d31a47a5afa"
+    byteSize: 117102
+    rules: 41
+    decisions: 13723
+    standing: "unrankable"
+    location_role: "not-yet-canonical"
+    location_node: "G16"
+    location_path: ".tmp-arch/profiles-fullring/jSEItZVTvrRp.conduct-card.json"
+    engineCommit: "fa5268017cca88ef844d9b02537e84a20309db0d"
+    dealBookHash: "sha256:e859c1e589ef0f604d59aeb0cece749249f93b0fbabecc352f4508bfbde4c388"
+    emittedAt: "unrecoverable"
+    provenanceMode: "retroactive"

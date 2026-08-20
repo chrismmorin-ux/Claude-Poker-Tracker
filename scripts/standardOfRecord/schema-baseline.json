@@ -49,6 +49,116 @@
       }
     ]
   },
+  "conductCard": {
+    "version": 4,
+    "fields": [
+      {
+        "name": "cardId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "subjectId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "surfaceKind",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "dealBook",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "evidence",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "rules",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "residual",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "coverage",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "unresolved",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "separatorSearch",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "induction",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "gates",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "occupancy",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "manifest",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "disclaimerRegisterVersion",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "contentHash",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "population",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "sizingBanding",
+        "type": "object|null",
+        "since": 3
+      },
+      {
+        "name": "score",
+        "type": "object|null",
+        "since": 4
+      },
+      {
+        "name": "provenance",
+        "type": "object|null",
+        "since": 2
+      }
+    ]
+  },
   "decisionAtom": {
     "version": 3,
     "fields": [
@@ -796,7 +906,7 @@
     ]
   },
   "metrics.hero-ev": {
-    "version": 2,
+    "version": 3,
     "fields": [
       {
         "name": "kind",
@@ -893,11 +1003,59 @@
         "type": "number|null",
         "since": 2,
         "unit": "bb"
+      },
+      {
+        "name": "changeLedgerNetBB",
+        "type": "number|null",
+        "since": 3,
+        "unit": "bb per substituted decision"
+      },
+      {
+        "name": "changeLedgerGrossBB",
+        "type": "number|null",
+        "since": 3,
+        "unit": "bb per substituted decision"
+      },
+      {
+        "name": "changeLedgerNetBB100",
+        "type": "number|null",
+        "since": 3,
+        "unit": "bb/100 hands"
+      },
+      {
+        "name": "changeLedgerGrossBB100",
+        "type": "number|null",
+        "since": 3,
+        "unit": "bb/100 hands"
+      },
+      {
+        "name": "changeLedgerRedistributionRatio",
+        "type": "number|null",
+        "since": 3,
+        "unit": "ratio (GROSS / |NET|)"
+      },
+      {
+        "name": "changeLedgerNetShareOfGross",
+        "type": "number|null",
+        "since": 3,
+        "unit": "share [0,1] (|NET| / GROSS)"
+      },
+      {
+        "name": "changeLedgerBranchCount",
+        "type": "number|null",
+        "since": 3,
+        "unit": "count (branches)"
+      },
+      {
+        "name": "changeLedgerKeyCompleteness",
+        "type": "object|null",
+        "since": 3,
+        "unit": "map (branch axis → {known, unknown})"
       }
     ]
   },
   "metrics.depth-ablation": {
-    "version": 3,
+    "version": 4,
     "fields": [
       {
         "name": "kind",
@@ -1036,6 +1194,54 @@
         "type": "boolean",
         "since": 1,
         "unit": "flag"
+      },
+      {
+        "name": "changeLedgerNetBB",
+        "type": "number|null",
+        "since": 4,
+        "unit": "bb per substituted decision"
+      },
+      {
+        "name": "changeLedgerGrossBB",
+        "type": "number|null",
+        "since": 4,
+        "unit": "bb per substituted decision"
+      },
+      {
+        "name": "changeLedgerNetBB100",
+        "type": "number|null",
+        "since": 4,
+        "unit": "bb/100 hands"
+      },
+      {
+        "name": "changeLedgerGrossBB100",
+        "type": "number|null",
+        "since": 4,
+        "unit": "bb/100 hands"
+      },
+      {
+        "name": "changeLedgerRedistributionRatio",
+        "type": "number|null",
+        "since": 4,
+        "unit": "ratio (GROSS / |NET|)"
+      },
+      {
+        "name": "changeLedgerNetShareOfGross",
+        "type": "number|null",
+        "since": 4,
+        "unit": "share [0,1] (|NET| / GROSS)"
+      },
+      {
+        "name": "changeLedgerBranchCount",
+        "type": "number|null",
+        "since": 4,
+        "unit": "count (branches)"
+      },
+      {
+        "name": "changeLedgerKeyCompleteness",
+        "type": "object|null",
+        "since": 4,
+        "unit": "map (branch axis → {known, unknown})"
       }
     ]
   },
@@ -2056,6 +2262,83 @@
         "type": "array",
         "since": 1,
         "unit": "rows ({site, defect, live})"
+      }
+    ]
+  },
+  "metrics.villain-model-card": {
+    "version": 2,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "villainScope",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({level: 'field'|'stratum'|'individual', id, nDecisions})"
+      },
+      {
+        "name": "ruleCount",
+        "type": "number",
+        "since": 1,
+        "unit": "count (rules)"
+      },
+      {
+        "name": "vocabulary",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({predicateCount, sharedPredicateCount, reuseRate, permutationNull})"
+      },
+      {
+        "name": "behavioralCoverage",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({top1Accuracy, logLoss, entropyCeiling, n})"
+      },
+      {
+        "name": "evCoverage",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({capturedShare, ruleSetEdgeBB, fullModelEdgeBB, n})"
+      },
+      {
+        "name": "residualShare",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share (0-1) of EV"
+      },
+      {
+        "name": "frontier",
+        "type": "array",
+        "since": 1,
+        "unit": "array ({ruleCount, behavioralCoverage, evCoverage})"
+      },
+      {
+        "name": "shapeTest",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({heroGrammarCoverage, grammarFreeCoverage, gapBehavioral, gapEv, verdict, namedMissingAxis})"
+      },
+      {
+        "name": "axes",
+        "type": "array",
+        "since": 1,
+        "unit": "array (axis names)"
+      },
+      {
+        "name": "census",
+        "type": "object",
+        "since": 1,
+        "unit": "record (axis -> {observed-zero, unexamined, dropped})"
+      },
+      {
+        "name": "evFidelity",
+        "type": "object",
+        "since": 2,
+        "unit": "record ({targetScope, targetEdgeBB, ruleSetEdgeBB, matchErrorBB, mdeDetectBB, n})"
       }
     ]
   },

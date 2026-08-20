@@ -1,0 +1,74 @@
+{
+  "pointerVersion": 1,
+  "cardId": "CC-SO0OmHLLvkJp",
+  "subjectId": "SO0Om/HLLvkJps9pZmbgqQ",
+  "surfaceKind": "Read",
+  "cardSchemaVersion": 2,
+  "identity": {
+    "rulesetHash": "unrecoverable",
+    "rulesetHashReason": "The card predates rulesetHash being stamped (emitConductCard.mjs mints it as of the WS-599-era change). It is not recoverable from the card: the rule ids are positional (r01..rNN), so any digest over them is a function of the rule count and collides across distinct subjects. See mintPointer() for the measurement.",
+    "stampedContentHash": "sha256:ad725fe1ce49c4920066123875c975c23dc840fbbcd964adca9a873081225ec7",
+    "contentHashAlgorithm": "legacy-allowlist",
+    "contentHashCoversWholeCard": false,
+    "contentHashNote": "Reproduced under the defective pre-WS-599 digest: a replacer allowlist that hashes only top-level scalars (~500-700 bytes). It identifies the card for citation but cannot detect corruption of any rate, interval, holding or gate inside it.",
+    "fileSha256": "sha256:cc1e640d1383f1d76006cc30218681f39be4e61b1f9602f1278e739592c47b97",
+    "byteSize": 28447
+  },
+  "location": {
+    "role": "not-yet-canonical",
+    "node": "G16",
+    "path": ".tmp-arch/profiles/SO0OmHLLvkJp.conduct-card.json",
+    "gitignored": true,
+    "migrationObligation": {
+      "requiredNode": "CM-NODE1",
+      "rule": ".claude/rules/artifact-location.md",
+      "ticket": "WS-599",
+      "status": "outstanding",
+      "note": "Produced by a G16 run into a gitignored scratch directory before the pointer standard existed. Migration to CM-NODE1 is held pending a node1 run; until then this pointer names where the artifact actually is."
+    }
+  },
+  "manifest": {
+    "engineCommit": "e7cb1fe13bc7bbf27ff2bbebe06f4dc344b1f0dc",
+    "engineDirty": true,
+    "engineCommitIdentifiesCode": false,
+    "dealBookHash": "sha256:f433277c7bc0794f81e0b865f75b4972f888db09d013f907ee5ddcab2f906a11",
+    "decisionSchemaVersion": 12,
+    "constants": {
+      "minRule": 25,
+      "maxDepth": 5,
+      "alpha": 0.05,
+      "requireSignificance": true
+    },
+    "seeds": {},
+    "disclaimerRegisterVersion": "FR-1+5875fc0c199f"
+  },
+  "emittedAt": "unrecoverable",
+  "emittedAtReason": "No Conduct Card field carries an emission timestamp, and the pointer was minted after the fact. Filesystem mtime is recorded separately as an observation — it is not a stamp and a copy would overwrite it.",
+  "observedFileMtime": "2026-08-19T22:56:30.241Z",
+  "evidence": {
+    "decisions": 1937,
+    "hands": 1516,
+    "corpusFiles": 120,
+    "rules": 19,
+    "unresolved": 1
+  },
+  "corpus": {
+    "site": "PokerStars",
+    "dateStart": "2009-07-01",
+    "dateEnd": "2009-07-23",
+    "stake": "50NLH",
+    "tableSizes": {
+      "4": 96,
+      "5": 438,
+      "6": 982
+    }
+  },
+  "population": "online-50NL-2009 (HandHQ). NOT the founder's live 9-handed 1/2-1/3 game.",
+  "standing": "unrankable",
+  "standingReason": "No current card can be named for this subject: rulesetHash is unrecoverable, so the (subjectId, rulesetHash) currency key cannot be formed. `latestKnownForSubject` is a filesystem observation, not an authority claim. Re-derive the card through the WS-599 emit path to obtain a rankable one.",
+  "supersededBy": null,
+  "registeredAt": "2026-08-20T18:40:36.449Z",
+  "registeredBy": "WS-599 registerExistingCards.mjs",
+  "provenanceMode": "retroactive",
+  "latestKnownForSubject": true
+}

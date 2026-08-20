@@ -1,0 +1,32 @@
+{
+  "__meta": {
+    "purpose": "Ledger of every document in docs/guides/. A null ledger is a violation: --update records that a document EXISTS, it never asserts anyone DECIDED anything about it.",
+    "inert_deadline": "2026-10-15",
+    "inert_owner": "WS-519",
+    "inert_note": "The guide form shipped 2026-08-16 with one document, and that document is the authored root — which by construction is not evidence that anything is derived. After this date, zero derived Guides FAILS the gate. A standard with no instances passes every conformance check and prints a green tick; that is prog-strategy-of-record's own baseline finding (7 of 13 modules, 1,679 lines, zero non-test consumers, 304 passing tests)."
+  },
+  "docs/guides/GUIDE-STANDARD.md": {
+    "ledger": "GUIDE:guide-standard"
+  },
+  "docs/guides/hand-class-99-TT-JJ.md": {
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "ticket": "WS-519",
+    "since": "2026-08-16"
+  },
+  "docs/guides/HAND_CLASS_STUDY_METHOD.md": {
+    "ledger": "EXCLUDED:method-doc"
+  },
+  "docs/guides/audit-pedagogy.md": {
+    "ledger": "EXCLUDED:pedagogy"
+  },
+  "docs/guides/next-command-pedagogy.md": {
+    "ledger": "EXCLUDED:pedagogy"
+  },
+  "docs/guides/pulse-pedagogy.md": {
+    "ledger": "EXCLUDED:pedagogy"
+  },
+  "docs/guides/straddle-structure-wind-creek-1-3.md": {
+    "ledger": "GUIDE:straddle-structure-wind-creek-1-3",
+    "since": "2026-08-20"
+  }
+}

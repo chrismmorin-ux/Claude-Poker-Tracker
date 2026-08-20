@@ -22,7 +22,7 @@
  */
 
 import { SOR_SCHEMAS, checkAgainstSchema } from './schemas.js';
-import { METRICS_KINDS } from './metricsSchemas.js';
+import { METRICS_KINDS, METRICS_NET_GROSS_PAIRS } from './metricsSchemas.js';
 
 export { METRICS_KINDS };
 
@@ -84,6 +84,52 @@ export const overallEvFactorProblems = (metrics, { label = 'resultCard.metrics' 
         + 'opportunities). Compose via overallEv.composeOverallEv',
       );
     }
+  }
+  return problems;
+};
+
+/**
+ * THE WS-537 NET/GROSS RULE — a NET is never published alone, and this is where a CARD is
+ * refused for trying. Same shape as `overallEvFactorProblems` above and for the same reason:
+ * a cross-field obligation that a field list cannot express, enforced at the card boundary so
+ * a producer that bypasses the composer is still caught.
+ *
+ * THE FAILURE IT CLOSES, stated as arithmetic. A change that helps flops by +5 bb and hurts
+ * rivers by −5 bb publishes the SAME NET as a change that did nothing at all. Measured on the
+ * live hero-EV path 2026-08-20: NET −0.0485 against GROSS 0.6952 across 18 branches —
+ * `GROSS/|NET|` = 14.32, so ninety-three percent of the per-branch movement cancelled before
+ * it reached the headline. `scripts/backtest/changeLedger.mjs` has computed and printed that
+ * pair since WS-537, and `renderChangeLedgerLines` puts GROSS on the same physical line as NET
+ * so neither can be quoted alone off the page. None of that binds a CARD: the Ladder and the
+ * fault-register matchers read `metrics`, and a NET protected only in a renderer is protected
+ * in the one place nobody parses.
+ *
+ * WHY REJECT AND NOT ANNOTATE. A note beside a number is read by whoever is already looking at
+ * the number; the whole problem is the reader downstream who receives it stripped of context.
+ * The producers make the same choice one layer up (`netPublishProblems` NULLS the Result Card
+ * rather than minting one with a caveat), and a card-boundary rule that merely warned would be
+ * the weaker half of a pair whose stronger half already refuses.
+ *
+ * ONLY A FINITE NET TRIGGERS IT. A null headline has nothing to redistribute, and an empty or
+ * refused run must still be allowed to write its artifact saying so — the same stance
+ * `overallEvFactorProblems` takes on a null product.
+ */
+export const changeLedgerPairProblems = (metrics, { label = 'resultCard.metrics' } = {}) => {
+  if (!isPlainObject(metrics)) return [];
+  const pairs = METRICS_NET_GROSS_PAIRS[METRICS_KINDS[metrics.kind]] ?? [];
+  const problems = [];
+  for (const { net, gross } of pairs) {
+    if (!Number.isFinite(metrics[net])) continue;
+    if (Number.isFinite(metrics[gross])) continue;
+    problems.push(
+      `${label}.${net} is a NET (a paired difference over one decision set) published without `
+      + `${label}.${gross} beside it — got ${metrics[gross] === undefined ? 'nothing' : metrics[gross]}. `
+      + 'NET = Σ_b Δ_b and GROSS = Σ_b |Δ_b|; until GROSS is on the card, a NET near zero is '
+      + 'indistinguishable from "the change did nothing" and "large gains exactly cancelled large '
+      + 'losses", and those are opposite findings (SCORED-READOUT-SPEC §9.3). Build the '
+      + 'decomposition with scripts/backtest/changeLedger.mjs buildChangeLedger and emit the block '
+      + 'via changeLedgerMetricsFields — do not hand-set these keys',
+    );
   }
   return problems;
 };
@@ -154,6 +200,9 @@ export const metricsProblems = (metrics, { label = 'resultCard.metrics' } = {}) 
   problems.push(...walkConditionedRates(metrics, label));
 
   problems.push(...overallEvFactorProblems(metrics, { label }));
+  // WS-537 — NET is never published without GROSS. Last, so a card that is malformed for
+  // simpler reasons reports those first.
+  problems.push(...changeLedgerPairProblems(metrics, { label }));
   return problems;
 };
 

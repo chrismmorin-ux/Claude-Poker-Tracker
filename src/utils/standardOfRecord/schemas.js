@@ -45,6 +45,20 @@ import {
  */
 export const SOR_SCHEMA_VERSIONS = Object.freeze({
   strategyCard: 1,
+  // The Read surface's record form — the sibling Declared surfaces have had since WS-322 and
+  // Read surfaces never did. Founder-named 2026-08-18: Strategy Card is what he SAYS he will
+  // do, Conduct Card is what he DID.
+  // v2: +provenance, the era coordinates an archetype trajectory has to be plotted in.
+  // v3 (WS-578): +sizingBanding, and a `sizing` sub-distribution on every rule action. The
+  // action distribution was over the action NAME alone, so a raise to 3.5bb and a raise to 12bb
+  // were one row — 1,676 of 1,676 populated sizes reaching zero rules. A simulator's transition
+  // function is undefined without `(action, amount)`, which is why WS-580 and WS-582 stalled here.
+  // v4 (WS-551): +score, the HELD-OUT number. Every accuracy figure the card had ever quoted was
+  // resubstitution — `induce` reports right/covered over the same decisions the tree was grown on,
+  // so it can only rise as rules are added and nothing could falsify it. The field carries a
+  // walk-forward log-loss against four named baselines, with a paired interval and a verdict, or
+  // a NAMED refusal and no numbers at all.
+  conductCard: 4,
   decisionAtom: 3,
   coverageCensus: 2,
   comparisonCensus: 1,
@@ -190,6 +204,94 @@ const DECISION_ATOM_FIELDS = [
     note: '{p, k, d} canonical run coordinates (WS-433) — ties an atom to its decision-record row and admission wave, so "same measurement" is checkable rather than asserted.' },
   { name: 'omissions', type: 'object|null', since: 3, required: false,
     note: 'fieldName → reason for every DELIBERATE non-capture (e.g. beliefState: no producer exists). Distinguishes "not captured, and why" from "captured empty" forever — the discriminator rule, shipped before the producer writes.' },
+];
+
+/**
+ * A CONDUCT CARD — what one player DID, as a rule, stated in his own terms.
+ *
+ * FOUNDER, 2026-08-18: *"My read on a villain is that he'll overfold to me. This villain
+ * profile has got zero elements of overfolding, overbetting, or overanything — it's his game
+ * in his terms, and that makes it not a read."*
+ *
+ * That objection is structural, not stylistic, and it is why this object needs its own form.
+ * **"Over-" is a comparative operator.** Overfold, overbet, overcall each require a second
+ * argument — over relative to what. A Conduct Card has no second argument anywhere in it, so
+ * it cannot express a read even in principle. Three distinct objects follow, separated by what
+ * their second argument is:
+ *
+ *   Conduct Card   second argument: NONE      "I fold 89% here"
+ *   Appraisal      second argument: a STANDARD "that fold was -EV" / "6% off best response"
+ *   Read           second argument: HERO      "he overfolds TO ME"
+ *
+ * Only the first is not a comparative claim, which is exactly why only the first needs a new
+ * record form: ADR-009 already binds the other two to Result Cards with declared `metrics`
+ * variants. Minting card types for them would create the second comparison path the ADR forbids.
+ *
+ * PAIRED WITH THE STRATEGY CARD, deliberately. A Strategy Card is a `Declared` surface — what
+ * someone SAYS they will do, on purpose, with reasons. A Conduct Card is what a player DID, as
+ * a rule. Same shape of object, opposite provenance.
+ *
+ * THE `Read` SURFACE-KIND COLLISION, recorded rather than renamed. `SURFACE_KINDS` carries
+ * `Read` = "what our model believes THIS villain does", which IS this object — the register's
+ * definition is right and its word is wrong, because poker already uses "read" for the
+ * relational claim above. The enum is shipped and frozen, so the collision is documented here
+ * and in VOCABULARY.md rather than retyped: code-`Read` means Conduct.
+ *
+ * WHY `separatorSearch` IS REQUIRED. On 2026-08-18 a rule was published as a MIX — "nothing he
+ * could see separates this" — and an independent search over 113,704 OR-combinations refuted
+ * it at corrected p=0.024. The claim was not wrong because the test was wrong; it was wrong
+ * because the test only ever examined ONE FEATURE AT A TIME and the card did not say so. A
+ * card that cannot state how hard it looked lets "no separator found" be read as "no separator
+ * exists", which is the WS-291 mechanism in miniature. Declaring the search is what makes a
+ * mix verdict falsifiable instead of merely confident.
+ */
+const CONDUCT_CARD_FIELDS = [
+  { name: 'cardId', type: 'string', since: 1, required: true,
+    note: 'Stable, greppable identity. Two cards with this id and different content are a bug, which contentHash catches.' },
+  { name: 'schemaVersion', type: 'number', since: 1, required: true,
+    note: 'Refuse a version this loader does not understand rather than duck-type it.' },
+  { name: 'subjectId', type: 'string', since: 1, required: true,
+    note: 'The pseudonymous player key this card describes. ONE villain (founder scope decision, 2026-08-18) — a stratum-level or pool-level subject is an additive extension, not a retype.' },
+  { name: 'surfaceKind', type: 'string', since: 1, required: true,
+    note: 'Always "Read" — the shipped SURFACE_KINDS value whose definition is this object. See the collision note above; the word is wrong and the enum is frozen.' },
+  { name: 'dealBook', type: 'object', since: 1, required: true,
+    note: 'What hand history this is rooted to: {dealBookHash, hands, decisions}. "Of unknown length" is the point — a card carries its own extent so a thin one cannot pass as a thick one.' },
+  { name: 'evidence', type: 'object', since: 1, required: true,
+    note: 'The observable budget: decisions, revealedDecisions, revealedShare, and how many revealed hands were VOLUNTARILY entered. The last matters because free big-blind showdowns are not a sample of anything he chose.' },
+  { name: 'rules', type: 'array', since: 1, required: true,
+    note: 'The mixes. Each is a spot plus the FULL action distribution with a Wilson interval per action — never a majority label with the remainder discarded. The residue is his range in that spot. v3 (WS-578): each action also carries `sizing` — null for fold/check/call, which have no size, and a banded sub-distribution for bet/raise with k/n and an interval per band, the bands summing to the action\'s own k. NOT a joint over (action x size), which multiplies the leaf count and starves every cell; a sub-distribution WITHIN the action, banded the way the situation features already are. See `sizingBanding` for the lattice those bands are measured on.' },
+  { name: 'residual', type: 'object', since: 1, required: true,
+    note: 'THE ENCLOSURE CLAUSE, same role as a Strategy Card\'s. Names the rule carrying decisions no other rule reaches. Absent = load failure.' },
+  { name: 'coverage', type: 'number', since: 1, required: true,
+    note: 'Always 1 BY CONSTRUCTION, and recorded so nobody reads it as an achievement — the last rule is always "everything else". Rule count is the informative quantity (founder rule 1).' },
+  { name: 'unresolved', type: 'array', since: 1, required: true,
+    note: 'Rules whose split is NOT explained, each with what would resolve it. First-class content: a card with no unresolved rows and no negative findings fails review, because the naive direction rewards looking less.' },
+  { name: 'separatorSearch', type: 'object', since: 1, required: true,
+    note: 'HOW HARD THE CARD LOOKED before calling anything a mix: {arity, correction, alpha, featuresTested}. arity 1 means single features only — combinations unsearched, and a refuted mix verdict on 2026-08-18 is why this is required rather than optional.' },
+  { name: 'induction', type: 'object', since: 1, required: true,
+    note: 'The load-bearing constants: minRule, maxDepth, alpha, requireSignificance. A rule count is a function of these, so a card without them is not comparable to another card.' },
+  { name: 'gates', type: 'array', since: 1, required: true,
+    note: 'The instrument self-checks that PASSED before induction ran, each a known answer tied to a bug that actually shipped. A card whose gates did not run is not a thinner card, it is an unverified one.' },
+  { name: 'occupancy', type: 'object|null', since: 1, required: true,
+    note: 'The situations this subject actually LIVED THROUGH, per the register term. Bounds every downstream claim: the card is dense where he played and silent where he did not, so a best-response computed outside it measures our ignorance rather than his weakness.' },
+  { name: 'manifest', type: 'object', since: 1, required: true,
+    note: 'The replication manifest. Same argument as the Result Card: a card whose engine commit is unknown is not slightly worse, it is uncheckable forever.' },
+  { name: 'disclaimerRegisterVersion', type: 'string|null', since: 1, required: true,
+    note: 'registerVersion() at build time. What lets a fault confirmed tomorrow find the cards that depended on it yesterday.' },
+  { name: 'contentHash', type: 'string|null', since: 1, required: false,
+    note: 'sha256 over the canonical body. Null at author time, stamped by the builder — a card cannot claim a hash it does not have.' },
+  { name: 'population', type: 'string', since: 1, required: true,
+    note: 'Where this subject was observed. "online-50NL-2009" is NOT the founder\'s live 1/2-1/3 game, and every rate on the card is therefore TRANSFERRED, not measured.' },
+
+  // ── v3 (2026-08-20, WS-578): the SIZE AXIS. ─────────────────────────────────────────
+  { name: 'sizingBanding', type: 'object|null', since: 3, required: true,
+    note: 'v3 (WS-578). THE SIZE AXIS THE CARD\'S ACTIONS ARE BANDED ON, carried on the card rather than looked up. Each rule action now holds a `sizing` sub-distribution — banded, with k/n and an interval per band, and the bands summing to the action\'s own k, the same residue constraint the action distribution already satisfies against n. This field is the header that makes those cells readable: {primary, arms[{scheme, version, kind, rationale, regimes{regime -> [{name, lo, hi}]}, resolution}], delta, shrinkage, conventions}. THE BOUNDARY TABLE RIDES ON THE CARD ON PURPOSE — a card stamping only a scheme name and a version is still silently re-basable by a later lattice change, and a re-based cell is a wrong number that never has to meet a right one (WS-291\'s mechanism). TWO ARMS, because a banding is an unmeasured constant and `.claude/rules/unmeasured-constants.md` requires both arms be run and the DELTA reported as a result rather than looked at once: S2 is data-derived (the 3.5bb point mass — 675 of 1,106 preflop raises — gets its own band), S3 is the fixed convention (the repo\'s own induceCore bet_x_pot table postflop). Neither is the answer by default; `primary` is a declared choice. SHRUNK, NOT REFUSED: a sizing band is a DECISION INPUT feeding a simulator\'s transition function, never a displayed comparative claim, so per `.claude/rules/sparsity-refuse-or-shrink.md` a thin cell shrinks toward its parent (the action\'s card-level sizing distribution, itself shrunk toward the regime population) and carries the flag, because class is set by where the number ENDS UP. NULL is the positive declaration that a card records no sizing at all, which is a different fact from a v2 card that could not.' },
+  // ── v4 (2026-08-20, WS-551): the HELD-OUT SCORE. ────────────────────────────────────
+  { name: 'score', type: 'object|null', since: 4, required: false,
+    note: 'v4 (WS-551). THE NUMBER TWO CARDS COMPETE ON, and the only figure on this object that could ever fall. Every accuracy the card quoted before this was RESUBSTITUTION — `induce` grades right/covered over the very decisions the tree was grown on, so adding rules can only improve it and nothing can falsify it, which is WS-291\'s mechanism in the place it is hardest to see. Shape: {kind:\'conduct-card-held-out-score\', version, scoringRule, unit:\'bits/decision\', rankingMetric, bits{complete{card,...baselines}, covered{...}}, lift{baseline}, liftInterval{baseline{diff,lo,hi,seed,resamples,unit:\'hand\'}}, verdict{baseline: card-better|card-worse|inconclusive}, coverage{evalDecisions,covered,offSupport,share,fallback}, split{unit:\'hand\',cuts,basis}, floors, seam, refused}. FOUR THINGS RIDE ON IT THAT A BARE NUMBER WOULD NOT CARRY. (1) `rankingMetric` names `bits.complete` and never `bits.covered`: `complete` scores EVERY held-out decision, off-support ones by a declared fallback, so refusing to predict cannot improve it — a card that spoke only where it was sure would otherwise outscore one that covered everything. (2) Every lift carries a PAIRED bootstrap over HANDS, and `verdict` is three-valued, because an interval wholly BELOW zero says the BASELINE beat the card and a better/not-better label would file that under "no lift" and lose it. The first real run did exactly that: an 18-rule card at 0.9302 bits/dec lost to `legality-conditioned` at 0.8651, interval [-0.1099, -0.0209], entirely below zero. (3) The split is BY HAND in time order — the same holding drives a hand\'s flop, turn and river, so a by-decision split grades the model on rows correlated with its own fit block; `split.basis` says whether the order was temporal or merely corpus arrival, so a fallback can never pass as a measurement. (4) A held-out score RANKS CARDS, so it is a number someone acts on and cites — a comparative claim, which per `.claude/rules/sparsity-refuse-or-shrink.md` REFUSES rather than shrinks. A non-null `refused` therefore carries a reason from the closed enum and NO bits at all; a refusal that still ships numbers is the defect. NULL is the positive declaration that this card was never scored, distinct from a v3 card that could not be.' },
+  // ── v2 (2026-08-18): the ERA COORDINATES. ───────────────────────────────────────────
+  { name: 'provenance', type: 'object|null', since: 2, required: false,
+    note: 'WHERE AND WHEN, precisely: {site, dateStart, dateEnd, spanDays, stake, tableSizes}. Added because `population` was a prose string and prose does not sort. Villain 1 read "online-50NL-2009"; the checkable fact is PokerStars, 50NL, 2009-07-01 to 2009-07-23, short-handed ONLY (6-max 982 hands, 5-handed 438, 4-handed 96, nine-handed ZERO) — four distinctions the string hid, one of which (table size) changes what every positional figure on the card means. It is also the coordinate system an archetype TRAJECTORY is plotted in: without (site, date, stake, tableSize) on every card, "how this type changed over time" can be asserted but never computed. Derived from the hands the card ACTUALLY contains, never from the wider slice that was scanned.' },
 ];
 
 /**
@@ -573,6 +675,7 @@ const DECISION_RECORD_SUMMARY_FIELDS = [
 /** Every registered object type, by name. */
 export const SOR_SCHEMAS = Object.freeze({
   strategyCard: Object.freeze(STRATEGY_CARD_FIELDS),
+  conductCard: Object.freeze(CONDUCT_CARD_FIELDS),
   decisionAtom: Object.freeze(DECISION_ATOM_FIELDS),
   coverageCensus: Object.freeze(COVERAGE_CENSUS_FIELDS),
   comparisonCensus: Object.freeze(COMPARISON_CENSUS_FIELDS),

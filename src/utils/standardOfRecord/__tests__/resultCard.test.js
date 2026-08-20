@@ -62,6 +62,19 @@ const cardInput = () => ({
     controlEdgeBB: 0.0000004, liveShiftedCiLowBB: 0.02, pbrEdgeBB: 1.9,
     exploitationEfficiency: 0.22, exploitationEfficiencyUnavailableReason: null,
     overallEvBB100: 0.42 * 2.1 * 100, opportunitiesPerHand: 2.1,
+    // WS-537: `edgeBB` and `overallEvBB100` are NETs, and metricsProblems REJECTS either one
+    // published without a GROSS on the same scale beside it. The fixture carries the pair on
+    // both scales for that reason — a card that omitted them would no longer be "a valid
+    // card", which is what every test below is asserting through this input.
+    changeLedgerNetBB: 0.42, changeLedgerGrossBB: 3.1,
+    changeLedgerNetBB100: 0.42 * 2.1 * 100, changeLedgerGrossBB100: 3.1 * 2.1 * 100,
+    changeLedgerRedistributionRatio: 7.38, changeLedgerNetShareOfGross: 0.1355,
+    changeLedgerBranchCount: 18,
+    changeLedgerKeyCompleteness: {
+      street: { known: 4210, unknown: 0 },
+      facingAction: { known: 4210, unknown: 0 },
+      isIP: { known: 4210, unknown: 0 },
+    },
   },
   clusterUnit: 'players',
   admissibility: { admissible: true, blockers: [], warnings: [], clusters: 44 },

@@ -144,6 +144,31 @@ export {
   exactlyAblatable,
 } from './layerAblation.js';
 
+// The Read surface's record form. Named by the founder 2026-08-18 to pair with the Strategy
+// Card: a Strategy Card is what someone SAYS they will do, a Conduct Card is what a player DID.
+// It is the only one of the four villain objects that makes no comparative claim, which is why
+// it is a form of its own and an Appraisal or a Read is a Result Card variant.
+export {
+  MIX_VERDICTS,
+  VERDICT_SPEC_ANALOGUE,
+  isMixVerdict,
+  buildMix,
+  buildConductCard,
+  conductCardProblems,
+  isValidConductCard,
+  conductCaveat,
+  // WS-578 — the sizing vocabulary. The record form owns the WORDS (the closed regime list,
+  // the unsized cell, which actions have a size at all); the induction owns the BOUNDARIES,
+  // in scripts/villainArchetype/sizingBands.mjs, because a lattice is a property of the corpus
+  // that was measured and not of the record form — and because `src/` must not import `scripts/`.
+  // A consumer validating or reading a card needs these; it does not need the boundaries, which
+  // ride on the card itself.
+  SIZING_REGIMES,
+  SIZING_UNSIZED_BAND,
+  SIZED_ACTIONS,
+  UNSIZED_ACTIONS,
+} from './conductCard.js';
+
 export {
   MATCHABLE_AXES,
   ABSTAIN_REASONS,

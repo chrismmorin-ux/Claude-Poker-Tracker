@@ -1,0 +1,72 @@
+{
+  "pointerVersion": 1,
+  "cardId": "CC-gxPR88KqCYXW-bc7b098a",
+  "subjectId": "gxPR88+KqCYXWEdBATZVGw",
+  "surfaceKind": "Read",
+  "cardSchemaVersion": 3,
+  "identity": {
+    "rulesetHash": "bc7b098a4f0f6d1164395c9f1d2d31b12ee876fcbe417646589a6226c74ae522",
+    "stampedContentHash": "sha256:3f02e7d91bfee16dc25ba2f79c60a856f75fae98461a1d2e2ded2f95849eca87",
+    "contentHashAlgorithm": "recursive-canonical",
+    "contentHashCoversWholeCard": true,
+    "fileSha256": "sha256:544e943e2cd1d80fde18e29f663132d0c6b8dd21ca653042d27bf95ffa9b8745",
+    "byteSize": 140760
+  },
+  "location": {
+    "role": "not-yet-canonical",
+    "node": "G16",
+    "path": ".tmp-arch/ws551/gxPR88KqCYXW.conduct-card.json",
+    "gitignored": true,
+    "migrationObligation": {
+      "requiredNode": "CM-NODE1",
+      "rule": ".claude/rules/artifact-location.md",
+      "ticket": "WS-599",
+      "status": "outstanding",
+      "note": "Heavy artifacts live outside the repo and CM-NODE1 is their canonical home. This artifact has not been migrated, and this pointer records where it actually is rather than where the ruling says it belongs."
+    }
+  },
+  "manifest": {
+    "engineCommit": "534b6ee5bf3f4042310b6b7ed0a88fe1f9712a6c",
+    "engineDirty": true,
+    "engineCommitIdentifiesCode": false,
+    "dealBookHash": "sha256:ecdb55399bafaf91e64ae82317bd416da36033d8cb789ea1343fa08fd6cd3f73",
+    "decisionSchemaVersion": 13,
+    "constants": {
+      "minRule": 25,
+      "maxDepth": 5,
+      "alpha": 0.05,
+      "requireSignificance": true
+    },
+    "seeds": {},
+    "disclaimerRegisterVersion": "FR-1+1c1671079aa7"
+  },
+  "emittedAt": "2026-08-20T19:04:33.722Z",
+  "evidence": {
+    "decisions": 1156,
+    "hands": 866,
+    "corpusFiles": 40,
+    "rules": 18,
+    "unresolved": 3
+  },
+  "corpus": {
+    "site": "FullTilt",
+    "dateStart": "2009-07-01",
+    "dateEnd": "2009-07-23",
+    "stake": "50NLH",
+    "tableSizes": {
+      "5": 1,
+      "6": 10,
+      "7": 89,
+      "8": 379,
+      "9": 387
+    }
+  },
+  "population": "online-50NL-2009 (HandHQ). NOT the founder's live 9-handed 1/2-1/3 game.",
+  "standing": "current",
+  "standingReason": "Current for (subjectId, rulesetHash): newest of 2 pointers sharing this key.",
+  "supersededBy": null,
+  "registeredAt": "2026-08-20T19:04:33.724Z",
+  "registeredBy": "profileVillain.mjs",
+  "provenanceMode": "emit-time",
+  "latestKnownForSubject": true
+}
