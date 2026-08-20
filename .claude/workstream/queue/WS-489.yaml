@@ -78,3 +78,12 @@ status_note: |
   on WS-440's useCanvasFit rotation mechanics (the felt keeps them; in portrait the
   rotated felt and the unrotated real-px column must be designed together — Phase A's
   first design question).
+
+  2026-08-20 — PHASE B'S UNMEASURED SURFACE JUST GREW. ENGINE_VERSION v129 (WS-574/575)
+  added two new elements to LiveAdviceBar: a `REFINING` badge while the depth-3 pass runs,
+  and a `WAS <action>` label when refinement flips the recommendation. Both render mid-hand,
+  which is exactly the state `tests/playwright/touch-floor.spec.js:131` records as `test.fixme`
+  pending this ticket — so their RENDERED size at the S22's ~0.695 scale is unmeasured, and
+  a badge added to a bar is the shape that overflows first. Component tests cover the two-phase
+  BEHAVIOUR (LiveAdviceBar.test.jsx); nothing covers its geometry. Phase B's accept criterion
+  should name LiveAdviceBar explicitly alongside the action grid and sizing panel.
