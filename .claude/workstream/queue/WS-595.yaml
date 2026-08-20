@@ -1,0 +1,51 @@
+id: "WS-595"
+title: "WS-594 FAILED on cm-node1 — Error: Cannot find module 'C:\\cj\\ws-594-4de0a32e99b8\\scripts\\backtest\\probe-depth2-coverag"
+legacy_id: ""
+type: bug
+status: dismissed
+claimed_by: ses-20260820-1618-80f6de17
+claimed_at: "2026-08-20T17:12:13.821Z"
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 92
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A compute job on cm-node1 reached a terminal state WITHOUT succeeding. It produced no
+  artifacts, so it landed in no inbox — nothing else would ever have surfaced it, and the
+  machine went idle having achieved nothing.
+
+  JOB       : ws-594-4de0a32e99b8
+  SOURCE    : WS-594 — Depth-2 budget sweep on cm-node1 — the coverage curve WS-574's default is chosen from
+  OUTCOME   : failed
+  DETAIL    : Error: Cannot find module 'C:\cj\ws-594-4de0a32e99b8\scripts\backtest\probe-depth2-coverag
+    Error: Cannot find module 'C:\cj\ws-594-4de0a32e99b8\scripts\backtest\probe-depth2-coverage.mjs'
+    Error: Cannot find module 'C:\cj\ws-594-4de0a32e99b8\scripts\backtest\probe-depth2-coverage.mjs'
+
+  Retries are already exhausted at the runner level (maxAttempts), so re-submitting the
+  identical spec will fail identically. The spec or the code has to change first — which
+  also re-keys the job hash and lets the feeder pick it up again.
+accept_criteria: |
+  - The cause is identified and fixed in the code or the compute_job block, not worked
+    around by shrinking the run until it fits.
+  - WS-594 either runs to completion or its blocker is stated explicitly.
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest — failed job ws-594-4de0a32e99b8"
+created_at: "2026-08-20T05:59:46.852Z"
+dismissed_at: "2026-08-20"
+dismiss_reason: "Duplicate report of the defect WS-592 fixed: WS-594 died on a step script absent at the pinned commit, which missingScriptsAtCommit now refuses by name (falsifier exercised 2026-08-20 against a pre-introduction commit: missing=[probe-depth2-coverage.mjs]). node1 is back at parity and WS-594 is compute_ready again."
+superseded_by: "WS-592"
+transitioned_by_event: "ev-1787242864183-304ada35d389"

@@ -1249,6 +1249,98 @@ export const SUSPECTED_FAULTS = Object.freeze([
   }),
 
   buildFaultEntry({
+    faultId: 'FAULT-ess-driven-edge-bias',
+    title: 'The importance-weighted edge is biased as a function of ESS — measured r = -0.97, and support-matching does not fix it',
+    site: 'statistics',
+    mechanism:
+      'THREE ENTRIES LIVE NEAR EACH OTHER AND ONLY THIS ONE IS ABOUT THE SIGN. '
+      + '`FAULT-precision-overstatement` says ESS makes the INTERVAL too narrow — wrong width, '
+      + 'right centre. `FAULT-hand-clustering` says the resampling unit is wrong — also width. '
+      + 'This one says the CENTRE IS WRONG, and wrong by enough to invert the sign of a '
+      + 'quantity whose true sign is guaranteed in advance by domination. '
+      + 'The estimator self-normalises: `edge = wisValue - poolValue`, where `wisValue` divides '
+      + 'by the sum of weights. Self-normalised importance sampling is biased at finite sample, '
+      + 'and the bias scales with how DISPERSED the weights are — which is exactly what ESS '
+      + 'measures. As weights concentrate on a few decisions, the estimate is dragged toward '
+      + 'those decisions and away from the population value. '
+      + 'THE NAMED SUSPECT WAS THE WRONG ONE, AND THIS WAS MEASURED, NOT ARGUED. The original '
+      + 'diagnosis was NARROW SUPPORT — zero-weight rows counting in the denominator of `poolValue` '
+      + 'but not in that of `wisValue`, putting the two terms on different populations. That effect is '
+      + 'real and removing it helps, but it is NOT the driver: across eight arms the edge '
+      + 'correlates with ESS share at r = -0.967 and with SUPPORT share at r = -0.010. Four arms '
+      + 'with FULL support (supportShare exactly 1, no zero-weight rows at all) still returned '
+      + 'confidently wrong positive signs, and their errors ranked by ESS. Support is nearly '
+      + 'orthogonal to the bias; weight dispersion explains it.',
+    contaminates:
+      'Every importance-weighted edge figure computed at low ESS — the rule-ladder rungs, the '
+      + 'strategy arms, the depth-ablation arms, and any hero-EV headline. Figures at high ESS '
+      + 'are substantially unaffected, which is why this cannot be read off the edge alone and '
+      + 'why a card that omits ESS cannot show it is clear.',
+    // Value-based, not just key-based: the fault has a measured dose-response, so the matcher
+    // can ask whether THIS card was computed inside the damaged region rather than flagging
+    // every card that used the estimator.
+    //
+    // Threshold 0.75 is deliberately conservative and is NOT the shipped `lowSupport` 0.5. The
+    // measurement brackets the sign flip between essShare 0.448 (wrong) and 0.738 (right); 0.5
+    // sits INSIDE that bracket, so a 0.5 gate would silently clear cards in the band where
+    // nothing has been observed to be correct. A card that reports no ESS at all also matches —
+    // it cannot demonstrate it is above the bracket.
+    matches: (card) => {
+      const m = card?.metrics ?? {};
+      if (!Object.keys(m).some((k) => /^edgeBB/.test(k))) return false;
+      const { n, ess } = m;
+      if (!Number.isFinite(n) || !Number.isFinite(ess) || n <= 0) return true;
+      return (ess / n) < 0.75;
+    },
+    matchesOn: ['metrics.keys', 'metrics.values'],
+    falsifier:
+      'Re-run the WS-543 calibration set (scripts/backtest/run-calibration.mjs) under a candidate '
+      + 'estimator. The entry retires only for a run in which EVERY dominated arm returns its '
+      + 'pre-registered sign AND `clone-the-pool` still returns exactly 0.0000. A candidate that '
+      + 'repairs the first while breaking the second has traded one bias for another. A partial '
+      + 'reduction in magnitude does NOT clear it — that outcome has already been observed and '
+      + 'recorded as FIX_INSUFFICIENT.',
+    probability: 1.0,
+    probabilityBasis:
+      'CONFIRMED twice, against signs registered BEFORE each run. The runner refuses to execute '
+      + 'without the pre-registration file, so neither result can be a post-hoc read. The second '
+      + 'run also falsified the stated MECHANISM of the first, which is why this entry is named '
+      + 'for ESS rather than for support.',
+    priorBreadth: 0.6,
+    status: 'confirmed',
+    evidence: [
+      'out/calibration-v1.json, 2026-08-18, n=2,155 decisions over 467 player clusters, prereg '
+      + 'PREREG-WS-543-CALIBRATION sha256 '
+      + '9e2711c69848e1c5e5d99e41529ea026eedd426e259ec49b06e42add1f1a0a8b, verdict '
+      + 'INSTRUMENT_FALSIFIED. `never-fold` +2.8478 bb CI [+1.2067, +4.6704] at ESS 37.1%; '
+      + '`raise-everything` +4.3176 bb CI [+1.6244, +7.2434] at ESS 21.4%. Both pre-registered '
+      + 'negative on domination. The intervals exclude zero on the WRONG SIDE.',
+      'Dose-response in the same run: where ESS is high the signs are RIGHT. '
+      + '`fold-every-small-bet` -0.4242 at ESS 87.2% and `always-fold` -1.1751 at ESS 73.8%, '
+      + 'both as predicted. Correct at ESS >= 74%, confidently wrong at ESS <= 37%.',
+      'out/calibration-ws546.json, 2026-08-20, same corpus and n, verdict FIX_INSUFFICIENT. The '
+      + 'support-matched estimand reduced the error without flipping a single sign: `never-fold` '
+      + '+2.8478 -> +1.9849, `raise-everything` +4.3176 -> +3.2963. Commit b5e54400 records the '
+      + 'outcome in its subject line.',
+      'THE DISCRIMINATING EVIDENCE, from the same run: four arms deliberately built with full '
+      + 'support (never-fold-mixed-low/high, raise-everything-mixed-low/high; supportShare '
+      + 'exactly 1, so support-matching is a no-op and their two edge figures are identical) '
+      + 'were STILL wrong — +2.6652, +2.2787, +3.9439, +3.2225 — and their magnitudes rank by '
+      + 'ESS (0.393, 0.448, 0.241, 0.316). Over the eight arms that actually fired, '
+      + 'r(essShare, edgeBB) = -0.967 while r(supportShare, edgeBB) = -0.010.',
+      '`clone-the-pool` returned exactly 0 at ESS 2155/2155, mean weight 1.000000, in BOTH runs. '
+      + 'The algebraic identity holds, so the estimator is not manufacturing signal in general — '
+      + 'the defect is specifically finite-sample bias under dispersed weights, which is what '
+      + 'makes it separable from an implementation bug.',
+      'Hand-clustering rather than player-clustering widened the intervals by only 1.013x at the '
+      + 'median, so the sign errors are NOT explained by `FAULT-hand-clustering` and are not a '
+      + 'width problem at all.',
+      'Narrative record docs/research/ws543-instrument-calibration-2026-08-18.md; DEC-112 and '
+      + 'DEC-113 in system/decisions.md. Open follow-up: WS-596.',
+    ],
+  }),
+
+  buildFaultEntry({
     faultId: 'FAULT-showdown-selection',
     title: 'Showdown-conditional quantities are a selected set',
     site: 'statistics',
