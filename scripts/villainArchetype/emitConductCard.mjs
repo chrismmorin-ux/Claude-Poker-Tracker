@@ -36,7 +36,31 @@ export const dealBookHashOf = (files) => {
   return `sha256:${h.digest('hex')}`;
 };
 
-const canonical = (card) => JSON.stringify(card, Object.keys(card).sort());
+/**
+ * CANONICAL BODY — an explicit, ordered, FULL-DEPTH projection.
+ *
+ * The previous one-liner was `JSON.stringify(card, Object.keys(card).sort())`, which reads
+ * like a key-ordering and is actually a replacer allowlist applied at every depth. It hashed
+ * 639 of 70,195 bytes. Sabotaging every rate, interval, holding, gate and hash inside the card
+ * left the digest identical - so every downstream citation of a card by contentHash was
+ * citing a rule count.
+ *
+ * Written as a recursive sort rather than a hand-listed projection because a hand-listed one
+ * silently stops covering fields added later, and this schema is explicitly additive.
+ */
+const canonicalize = (v) => {
+  if (Array.isArray(v)) return v.map(canonicalize);
+  if (v && typeof v === 'object') {
+    const out = {};
+    for (const k of Object.keys(v).sort()) out[k] = canonicalize(v[k]);
+    return out;
+  }
+  return v;
+};
+// Exported so the known-answer check tests THIS function rather than a copy of it. A check
+// that reimplements what it verifies is two representations that never have to agree - the
+// exact defect this directory has been bitten by twice.
+export const canonical = (card) => JSON.stringify(canonicalize(card));
 
 /**
  * The ERA COORDINATES, parsed from the corpus directory name.

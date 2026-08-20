@@ -359,6 +359,10 @@ export const strengthAt = (d, widthFor) => {
   for (const m of MADE) made[m] = 0;
   for (const t of DRAWS) draw[t] = 0;
   let total = 0; let blockers = 0; let nuts = 0; let cleanHit = 0; let vulnHit = 0; let coolers = 0;
+  // COUNTED, never subtracted. `air` used to be no-pair minus the draw sums, which treats
+  // two independent axes as one partition and double-subtracts any combo carrying two
+  // kinds of draw. It was negative on 60% of postflop rows and shipped to the page.
+  let airCombos = 0;
 
   for (const c of combos) {
     const k = classify(c.card1, c.card2, board, boardRanks);
@@ -369,6 +373,7 @@ export const strengthAt = (d, widthFor) => {
     if (k.hitQuality === 'clean') cleanHit += c.weight;
     else if (k.hitQuality === 'vulnerable') vulnHit += c.weight;
     if (k.cooler) coolers += c.weight;
+    if (k.made === 'no-pair' && k.draw === 'none') airCombos += c.weight;
     const pct = pctTable.get(comboKey(c.card1, c.card2));
     if (pct != null) { pctSum += pct * c.weight; pctVals.push([pct, c.weight]); }
     total += c.weight;
@@ -414,7 +419,9 @@ export const strengthAt = (d, widthFor) => {
     drawVulnerable: +(vulnHit / total).toFixed(4),  // completes into a board where better also completes
     cooler: +(coolers / total).toFixed(4),          // HE holds the redraw - full house over a flush
     blocker: +(blockers / total).toFixed(4),  // holds the ace of a 3-flush board
-    air: +(mp['no-pair'] - sum(dp, REAL_DRAW) - sum(dp, BACKDOOR)).toFixed(4),
+    // No pair AND no draw of any kind - a disjoint count, so it is a share and cannot be
+    // negative. This is the direct input to a bluff-frequency read.
+    air: +(airCombos / total).toFixed(4),
     combos: combos.length,
   };
 };

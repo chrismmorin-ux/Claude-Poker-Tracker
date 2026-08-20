@@ -882,10 +882,22 @@ export const labelDecisions = (hand, seat) => {
          */
         myRaiseToBB: (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet')
           && Number.isFinite(e.amount) ? +(e.amount / geo.bb).toFixed(2) : null,
+        /**
+         * MY BET AS A FRACTION OF THE POT IT WENT INTO.
+         *
+         * The previous form divided by `potBB - myBet`, subtracting my own bet from a pot that
+         * never contained it: `potBB` is the pot standing when I act, before my action. On a
+         * 3.5bb open into a 1.5bb pot that denominator is -2, clamps to 0.01, and the column
+         * reads 350. Measured across villain 2: 1,351 of 1,676 values exceeded 3 - impossible
+         * for a pot fraction - with a median of exactly 350 (= 3.5/0.01, the clamp) and a
+         * maximum of 15,900.
+         *
+         * It is an `action` field so no rule could ever condition on it, which is why the
+         * induction was unaffected and why nothing caught it. Any sizing model would have been.
+         */
         myBetOverPotBefore: (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet')
-          && Number.isFinite(e.amount) && potBB
-          ? +(((e.amount / geo.bb) - inStreet)
-            / Math.max(potBB - ((e.amount / geo.bb) - inStreet), 0.01)).toFixed(3) : null,
+          && Number.isFinite(e.amount) && potBB > 0
+          ? +(((e.amount / geo.bb) - inStreet) / potBB).toFixed(3) : null,
         // ---- what we could see of their hand ----
         handKnown: !!shown,
         holeCards: shown || null,

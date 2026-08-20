@@ -123,6 +123,32 @@ const shownClass = (d) => {
  * @param used      feature names already spent on the path to this leaf
  * @param alpha     family-wise error rate, Bonferroni-split across testable features
  */
+/**
+ * Exact test by permutation, for tables the chi-square approximation cannot serve.
+ *
+ * The observed G is compared against G under action labels shuffled within the leaf. That
+ * null is exactly right regardless of how sparse the table is, which is the whole point: a
+ * 25-decision leaf over three actions has no valid asymptotic test and this one needs no
+ * asymptotics. Seeded so a rerun of the same leaf yields the same p - a verdict that moved
+ * between identical runs would not be a record.
+ */
+const REPS = 2000;
+export const permutationP = (pairs, observedG, seed = 0x9e3779b9) => {
+  const vals = pairs.map((x) => x[0]);
+  const acts = pairs.map((x) => x[1]);
+  let s = seed >>> 0;
+  const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  let atLeast = 1;                       // +1 for the observed table itself
+  for (let r = 0; r < REPS; r++) {
+    const shuffled = acts.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    if (gTest(vals.map((v, i) => [v, shuffled[i]])).G >= observedG) atLeast++;
+  }
+  return atLeast / (REPS + 1);
+};
 export const classifyLeaf = (pool, features, used, { alpha = 0.05 } = {}) => {
   const tally = new Map();
   for (const d of pool) tally.set(d.action, (tally.get(d.action) || 0) + 1);
@@ -137,6 +163,8 @@ export const classifyLeaf = (pool, features, used, { alpha = 0.05 } = {}) => {
 
   // -- every unused feature, NO minimum-n floor: the floor is what hid the condition --
   const candidates = [];
+  // Features too fine-grained to test at this leaf size. Reported, never silently dropped.
+  const unusable = [];
   for (const [fname, fn] of Object.entries(features)) {
     if (used.has(fname)) continue;
     const pairs = [];
@@ -148,7 +176,109 @@ export const classifyLeaf = (pool, features, used, { alpha = 0.05 } = {}) => {
     }
     if (!complete) continue;
     const t = gTest(pairs);
-    if (t.df > 0) candidates.push({ feature: fname, ...t });
+    /**
+     * THE CHI-SQUARE APPROXIMATION HAS A CONDITION, AND IT WAS NOT CHECKED.
+     *
+     * With one row per distinct value, G degenerates to 2*n*H(marginal) with df = n-1 and
+     * stops depending on the association entirely. Measured: a shuffled unique id at n=330
+     * with a 204/126 marginal produced G = 438.9 = 2*n*H exactly, and was declared a
+     * separator at pAdj = 1.4e-4.
+     *
+     * The standard guard is a floor on the EXPECTED cell counts. A feature that cannot clear
+     * it is marked `unusable` rather than dropped, because "not testable at this resolution"
+     * and "does not separate" are different facts and the whole point of this file is to stop
+     * the second one being asserted when only the first was established.
+     */
+    const acts = new Set(pairs.map((x) => x[1])).size;
+    const density = (ps) => {
+      const lv = new Set(ps.map((x) => x[0])).size;
+      return acts > 0 && lv > 0 ? ps.length / (lv * acts) : 0;
+    };
+    if (t.df > 0 && density(pairs) >= 5) { candidates.push({ feature: fname, ...t }); continue; }
+
+    /**
+     * TOO FINE TO TEST AT FULL RESOLUTION - so test it at a resolution where the test is
+     * valid, rather than discarding it. Quantile bands from the leaf's own distribution keep
+     * the feature's ORDER (which is where a continuous separator's signal lives) while making
+     * the contingency table dense. A real monotone effect survives this; the degenerate
+     * one-row-per-value artifact cannot, because banding is precisely what destroys it.
+     */
+    /**
+     * ORDERED FEATURES ARRIVE AS LABEL STRINGS - 'str hit vuln = 32', not 32.
+     *
+     * The first version of this tested Number(x[0]), which is NaN for every such label, so the
+     * banding branch below was DEAD CODE and every continuous feature fell through to the
+     * frequency-collapse path instead. Collapsing a continuous quantity to its most COMMON
+     * values plus 'other' is an arbitrary grouping, and it manufactured a separator: leaf n=66
+     * reported str_hit_vuln at pAdj=0.0115, while the same feature banded by VALUE gives
+     * G=3.54, permutation p=0.32, and an independent 20,000-shuffle test gives 0.81.
+     *
+     * Parse the trailing number so ordering is recovered and the bands mean something.
+     */
+    const numOf = (lab) => {
+      const m = /=\s*(-?[0-9.]+)\s*$/.exec(String(lab));
+      return m ? Number(m[1]) : Number(lab);
+    };
+    const numeric = pairs.every((x) => Number.isFinite(numOf(x[0])));
+    if (numeric) {
+      const vals = pairs.map((x) => numOf(x[0])).sort((a, b) => a - b);
+      for (const k of [4, 3, 2]) {
+        const cuts = Array.from({ length: k - 1 },
+          (_, i) => vals[Math.floor(((i + 1) / k) * (vals.length - 1))]);
+        const banded = pairs.map(([v, a]) => {
+          const x = numOf(v);
+          let b = 0; while (b < cuts.length && x > cuts[b]) b++;
+          return [`q${b}`, a];
+        });
+        const bt = gTest(banded);
+        if (bt.df > 0 && density(banded) >= 5) {
+          candidates.push({ feature: fname, ...bt, banded: k });
+          break;
+        }
+      }
+      if (!candidates.some((c) => c.feature === fname)) {
+        // Banding could not make the approximation valid, so test the 2-band table exactly.
+        const cuts2 = [vals[Math.floor(0.5 * (vals.length - 1))]];
+        const b2 = pairs.map(([v, a]) => [numOf(v) > cuts2[0] ? 'hi' : 'lo', a]);
+        const t2 = gTest(b2);
+        if (t2.df > 0) {
+          candidates.push({ feature: fname, ...t2, p: permutationP(b2, t2.G), exact: 'permutation', banded: 2 });
+        } else {
+          unusable.push({ feature: fname, reason: 'constant within this leaf' });
+        }
+      }
+      continue;
+    }
+    /**
+     * A SPARSE CATEGORICAL IS COLLAPSED, NOT DISCARDED. Rare levels are pooled into 'other'
+     * until the table is dense enough to test. Dropping them instead left some leaves with
+     * NOTHING testable, and the post-induction gate correctly refused the whole ruleset - a
+     * mix verdict on a leaf where nothing could be tested is a blank, not a finding.
+     */
+    const freq = new Map();
+    for (const [v] of pairs) freq.set(v, (freq.get(v) || 0) + 1);
+    const ranked = [...freq.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+    let collapsed = null;
+    for (let keep = Math.min(ranked.length - 1, 6); keep >= 1; keep--) {
+      const top = new Set(ranked.slice(0, keep));
+      const cand = pairs.map(([v, a]) => [top.has(v) ? v : 'other', a]);
+      const ct = gTest(cand);
+      if (ct.df > 0 && density(cand) >= 5) { collapsed = { ...ct, levels: keep + 1 }; break; }
+    }
+    if (collapsed) candidates.push({ feature: fname, ...collapsed, collapsedTo: collapsed.levels });
+    else {
+      /**
+       * Nothing the approximation can serve. Take the exact route rather than dropping the
+       * feature: dropping it is what left leaves with zero testable features and got two
+       * rulesets refused by the gate.
+       */
+      const t2 = gTest(pairs);
+      if (t2.df > 0) {
+        candidates.push({ feature: fname, ...t2, p: permutationP(pairs, t2.G), exact: 'permutation' });
+      } else {
+        unusable.push({ feature: fname, reason: 'constant within this leaf' });
+      }
+    }
   }
   /**
    * ONE FAMILY, m + 1 TESTS. The m observable features and the single card test are compared
@@ -190,6 +320,7 @@ export const classifyLeaf = (pool, features, used, { alpha = 0.05 } = {}) => {
     : (cardTest && cardTest.pAdj < alpha) ? 'needs-cards'
       : 'mix';
 
-  return { verdict, dist, n, tested: candidates.length, family: m, separators,
+  return { verdict, dist, n, tested: candidates.length, family: m,
+    untestable: unusable, separators,
     cardTest, nearMiss, shownCount: shown.length };
 };

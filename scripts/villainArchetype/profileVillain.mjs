@@ -663,7 +663,7 @@ writeFileSync(`${OUT}/${safe}.json`, JSON.stringify({
           const key = `${d.street}|${d.strength.basis}`;
           if (!g.has(key)) g.set(key, { street: d.street, basis: d.strength.basis, n: 0, value: 0, draw: 0, air: 0, bet: 0 });
           const a = g.get(key);
-          a.n++; a.value += d.strength.value; a.draw += d.strength.draw; a.air += d.strength.air;
+          a.n++; a.value += d.strength.value; a.draw += d.strength.realDraw; a.air += d.strength.air;
           if (d.action === 'bet' || d.action === 'raise') a.bet++;
         }
         return [...g.values()].map(a => ({
