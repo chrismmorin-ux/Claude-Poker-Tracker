@@ -67,6 +67,10 @@ import {
   DEFAULT_BOOTSTRAP_RESAMPLES, DEFAULT_BOOTSTRAP_ALPHA, Z_DETECT, Z80_POWER,
 } from './ipsEstimator.mjs';
 import { MIN_CLUSTERS_FOR_CI } from './heroEvReport.mjs';
+import {
+  buildChangeLedger, netPublishProblems, renderChangeLedgerLines, changeLedgerMetricsFields,
+  CELL_MIN_DISCORDANT,
+} from './changeLedger.mjs';
 import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
 import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manifest.js';
 
@@ -411,6 +415,11 @@ export const buildDepthAblationReport = (run, {
   baseArm = 'depth1',
   testArm = 'depth2',
   weightCap = DEFAULT_WEIGHT_CAP,
+  // WS-537. Factor 2 of the bb/100-hands scaling, from a coverage census over the Deal Book.
+  // Null (the default) REFUSES the scaled column rather than deriving a denominator from the
+  // scored subset — the substitution `coverageCensus.attachOpportunityCount` structurally
+  // forbids for `overallEvBB100` and which is no more legitimate here.
+  opportunitiesPerHand = null,
 } = {}) => {
   const d = run.decisions ?? [];
   const opts = { weightCap };
@@ -435,9 +444,49 @@ export const buildDepthAblationReport = (run, {
   const delta = pairedDelta(d, { baseArm, testArm, weightCap });
   const admissibility = assessDepthAdmissibility(run, delta, divergence, control);
 
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // WS-537 — THE CHANGE LEDGER. `delta.deltaBB` above is a NET, and this report has been
+  // publishing it alone for the life of the instrument. The card that ships beside this code
+  // shows exactly what that costs: `flipShareByStreet {flop 0.0072, turn 0.039, river 0.80}`
+  // beside a single `depthDeltaBB: -0.4711`. The advice movement was already known to be a
+  // river phenomenon and the EV figure could not say so — and a change that helped one street
+  // while hurting another by the same amount would have printed the same NET as no change.
+  //
+  // The ledger is handed the headline it must reproduce, so the identity is CHECKED rather
+  // than assumed; a mismatch refuses the ledger outright, which then refuses the card below.
+  // Same `weightCap` as `pairedDelta` above, deliberately — a different cap is a different
+  // decision set and the identity would (correctly) fail.
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  const changeLedger = buildChangeLedger(d, {
+    baseArm,
+    testArm,
+    weightCap,
+    headlineDeltaBB: delta.deltaBB,
+    opportunitiesPerHand,
+    // The cluster half of the gate comes from `heroEvReport`'s single definition; only the
+    // discordance half is this module's. See CELL_MIN_DISCORDANT for why the bar is on
+    // discordance and not on n.
+    cellGate: { minClusters: MIN_CLUSTERS_FOR_CI, minDiscordant: CELL_MIN_DISCORDANT },
+  });
+
+  // THE PUBLISH REFUSAL. Not a warning printed near the number — an entry in the same
+  // `resultCardProblems` channel that already means "this figure must not be quoted", so a
+  // NET that lost its GROSS reaches a reader through the mechanism they already read.
+  const netProblems = netPublishProblems(changeLedger, {
+    netBB: delta.deltaBB,
+    field: 'metrics.depthDeltaBB',
+  });
+
   const stamp = run.replicationStamp ?? null;
   let card = { resultCard: null, resultCardProblems: ['no replication stamp on the run — this figure cannot be replicated and must not be quoted.'] };
-  if (stamp) {
+  if (netProblems.length) {
+    // NO CARD. The publish path that emits NET alone is refused, and refusing means the card
+    // is not minted — not that it is minted with a note attached. `netPublishProblems` returns
+    // [] when there is no headline to protect, so this fires only when a real `depthDeltaBB`
+    // exists and its decomposition does not: an identity violation or degenerate weights,
+    // both of which mean the headline itself is over a decision set nobody can name.
+    card = { resultCard: null, resultCardProblems: netProblems };
+  } else if (stamp) {
     try {
       const manifest = buildReplicationManifest({
         ...stamp,
@@ -467,6 +516,13 @@ export const buildDepthAblationReport = (run, {
           // smallest delta this run could have resolved, on the same bb scale.
           depthDeltaMdeDetectBB: delta.deltaMdeDetectBB ?? null,
           depthDeltaMdePower80BB: delta.deltaMdePower80BB ?? null,
+          // WS-537 (v4) — GROSS BESIDE NET, ON THE CARD. `depthDeltaBB` above is a NET and
+          // this instrument published it alone for its whole life; `flipShareByStreet` below
+          // has been decomposing the ADVICE movement by street since v1 while the EV figure
+          // stayed a scalar, so the card said "river 0.80" and "-0.4711" and could not connect
+          // them. metricsProblems now REJECTS a depth-ablation card carrying the first of
+          // these without changeLedgerGrossBB, so this line is not optional decoration.
+          ...changeLedgerMetricsFields(changeLedger),
           // ── the absolute arms. NOT quotable below the cluster bar; see admissibility ──
           edgeBaseArmBB: armEdges[baseArm]?.edgeBB ?? null,
           edgeTestArmBB: armEdges[testArm]?.edgeBB ?? null,
@@ -532,6 +588,11 @@ export const buildDepthAblationReport = (run, {
     estimand: DEPTH_ABLATION_ESTIMAND,
     divergence,
     delta,
+    // WS-537 — the per-branch decomposition of `delta`. Sits BESIDE the delta rather than
+    // inside it so a consumer that reads `delta.deltaBB` cannot get the NET without the
+    // ledger being on the same object; `renderDepthAblationReport` prints them adjacently
+    // for the same reason.
+    changeLedger,
     armEdges,
     control,
     admissibility,
@@ -603,6 +664,12 @@ export const renderDepthAblationReport = (r) => {
     if (Object.keys(dl.skipped ?? {}).length) L.push(`    unscorable: ${JSON.stringify(dl.skipped)}`);
   }
   L.push('');
+
+  // WS-537 — printed IMMEDIATELY after the NET above, never further down the page. A GROSS
+  // the reader has to scroll to is a GROSS that gets separated from its NET the first time
+  // someone quotes the delta, which is the same argument `renderPiers` makes for putting the
+  // PBR warning above the ceiling.
+  if (dl.n) L.push(...renderChangeLedgerLines(r.changeLedger ?? null));
 
   L.push('  3. THE ABSOLUTE ARMS  (each vs population-typical play — read only if quotable below)');
   L.push('  ' + '─'.repeat(92));

@@ -26,6 +26,10 @@ import { exploitationPremium } from './equilibriumPost.mjs';
 import { buildPositions, exploitationEfficiency } from './strategyPosition.mjs';
 import { composeOverallEv, renderOverallEvLines } from './overallEv.mjs';
 import { sampleAdmissibility } from './sampleAdmissibility.mjs';
+import {
+  buildChangeLedger, netPublishProblems, renderChangeLedgerLines, changeLedgerMetricsFields,
+  CELL_MIN_DISCORDANT,
+} from './changeLedger.mjs';
 
 const CORPUS_CAVEAT =
   'HandHQ online cash, July 2009, numeric stakes (SRC-011). Measures advice against THAT ' +
@@ -205,7 +209,7 @@ const withNet = (decisions, field) => decisions.map((d) => ({ ...d, netBB: d[fie
  * card is not quotable. That mirrors how `admissibility` already works: compute the verdict,
  * state the blockers, never silently suppress the arithmetic.
  */
-const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
+const buildCardFor = (run, arms, headline, pbr = null, overallEv = null, changeLedger = null) => {
   const stamp = run.replicationStamp ?? null;
   if (!stamp) {
     return {
@@ -259,6 +263,15 @@ const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
         // could have resolved, on the same bb scale as edgeBB above.
         mdeDetectBB: headline.mdeDetectBB ?? null,
         mdePower80BB: headline.mdePower80BB ?? null,
+        // WS-537 (v3) — GROSS BESIDE NET, ON THE CARD. `edgeBB` is V(π_ours) − V(π_pool) over
+        // one decision set: a paired difference, hence a NET, and it has shipped alone since
+        // the instrument existed. Measured 2026-08-20 on the live path: NET -0.0485 against
+        // GROSS 0.6952 over 18 branches, GROSS/|NET| = 14.32 — seven percent of the movement
+        // survived to the headline. `overallEvBB100` above is the same NET rescaled and is
+        // paired with changeLedgerGrossBB100 for the same reason. metricsProblems REJECTS
+        // either NET without its companion, so this spread is load-bearing, not additive
+        // decoration.
+        ...changeLedgerMetricsFields(changeLedger),
       },
       // PLAYERS, not hands. The CI is a cluster bootstrap over players because decisions
       // inside one player are not independent (POKER_THEORY 14.3).
@@ -617,6 +630,51 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20, oppor
   const headline = arms.engineRaked;
   const admissibility = assessAdmissibility(run, arms);
 
+  // WS-428 — the §3.3 headline. Composed only from a census carrying a Deal-Book-structure
+  // opportunity count; `composeOverallEv` throws on any other basis, so a scored-subset
+  // substitution cannot reach this field. Null (not zero) when no census was supplied.
+  //
+  // HOISTED ABOVE THE LEDGER BY WS-537, deliberately: the ledger's bb/100-hands column uses
+  // the SAME `opportunitiesPerHand`, and composing it twice would be two chances to disagree
+  // about factor 2 of the same product.
+  const overallEv = opportunityCensus
+    ? composeOverallEv({ edgeBB: headline.edgeBB, census: opportunityCensus })
+    : null;
+
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // WS-537 — THE CHANGE LEDGER OVER THE HEADLINE EDGE.
+  //
+  // WHY THE EDGE IS A LEGITIMATE SUBJECT FOR THIS INSTRUMENT, and not a stretch of it. The
+  // ledger decomposes "the difference between two runs on an identical decision set", and
+  // `edgeBB = V(π_ours) − V(π_pool)` is exactly that with the FIELD as the base arm: same
+  // decisions, same realized outcomes, same propensity denominator, two policies. Scoring
+  // the pool against itself yields `w = 1` on every scored row, so `V(π_pool)` reduces to
+  // the plain mean `poolValue` — which is why NET here reproduces `edgeBB` and not some
+  // near-miss of it. This is the same paired arithmetic `pairedDelta` performs, reached
+  // through the same `weightFor`; a bespoke path would be the second comparison path
+  // ADR-009 forbids.
+  //
+  // WHAT IT ANSWERS THAT THE HEADLINE CANNOT: an edge of +0.3 bb built from +4 on rivers
+  // and −3.7 on flops is a different strategy from one that gains 0.3 everywhere, and until
+  // now both printed +0.3. GROSS is what separates them.
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  const changeLedger = buildChangeLedger(d, {
+    basePolicyOf: (x) => x.piPool,
+    testPolicyOf: (x) => x.piOurs,
+    baseLabel: 'field (population-typical)',
+    testLabel: 'engine advice (rake modelled)',
+    weightCap,
+    headlineDeltaBB: headline.edgeBB,
+    // Factor 2, read off the ONE composition above. Null when no census was supplied, which
+    // refuses the scaled column rather than inventing a denominator.
+    opportunitiesPerHand: overallEv?.factors?.opportunitiesPerHand ?? null,
+    cellGate: { minClusters: MIN_CLUSTERS_FOR_CI, minDiscordant: CELL_MIN_DISCORDANT },
+  });
+  const netProblems = netPublishProblems(changeLedger, {
+    netBB: headline.edgeBB,
+    field: 'metrics.edgeBB',
+  });
+
   const gate = {
     // C3 bar: edge positive with a 95% CI excluding zero, in BOTH the corpus arm and
     // the live-shifted arm (founder decision 2026-07-28).
@@ -638,14 +696,17 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20, oppor
   // suppressing the number entirely would hide a trend that is worth watching across runs.
   gate.armsWouldPass = gate.corpusArmPasses && gate.liveShiftedArmPasses;
 
-  // WS-428 — the §3.3 headline. Composed only from a census carrying a Deal-Book-structure
-  // opportunity count; `composeOverallEv` throws on any other basis, so a scored-subset
-  // substitution cannot reach this field. Null (not zero) when no census was supplied.
-  const overallEv = opportunityCensus
-    ? composeOverallEv({ edgeBB: headline.edgeBB, census: opportunityCensus })
-    : null;
-
-  const card = buildCardFor(run, arms, headline, pbr, overallEv);
+  // WS-537 — the ledger is threaded INTO the card builder, not attached beside it. The card's
+  // `edgeBB` and its `changeLedgerGrossBB` have to come from the same object or the pair the
+  // publish rule enforces could be assembled from two different runs.
+  const card = buildCardFor(run, arms, headline, pbr, overallEv, changeLedger);
+  // WS-537 — refuse the publish path that emits NET alone. Appended to the channel that
+  // already means "must not be quoted" rather than opening a second one nobody reads. It is
+  // empty whenever there is no headline to protect, so an empty run is unaffected.
+  if (netProblems.length) {
+    card.resultCard = null;
+    card.resultCardProblems = [...netProblems, ...(card.resultCardProblems ?? [])];
+  }
 
   // EVERY STRATEGY AS A POSITION, NEVER A SCALAR. The builder refuses a bare number, so this
   // is the shape enforced rather than a shape recommended. One coordinate — own
@@ -671,6 +732,10 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20, oppor
     // WS-428 — additive. Null on a run with no opportunity census; carries both factors,
     // the opportunity provenance, and the HC-011 population statement when present.
     overallEv,
+    // WS-537 — additive. The per-branch decomposition of the headline edge: NET (which IS
+    // `arms.engineRaked.edgeBB`, by construction and asserted) beside GROSS, with
+    // `GROSS/|NET|` as the redistribution detector. NET is never published without it.
+    changeLedger,
     admissibility,
     // WS-295 — the optimizer's curse, as a shape. Reports its own unavailability with a reason
     // on a run that predates the stated-EV capture.
@@ -891,6 +956,10 @@ export const renderHeroEvReport = (r) => {
 
   // WS-428 — both factors first, product second, population inline (HC-011).
   if (r.overallEv) L.push(...renderOverallEvLines(r.overallEv));
+
+  // WS-537 — printed directly under the arms table, where the headline edge was just shown.
+  // The NET above must not travel further down the page than its GROSS.
+  if (r.arms.engineRaked?.n) L.push(...renderChangeLedgerLines(r.changeLedger ?? null));
 
   L.push(...renderPiers(r));
 

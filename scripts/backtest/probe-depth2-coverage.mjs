@@ -108,11 +108,28 @@ const main = async () => {
     const heroCards = ['A♥', 'K♥'].map(parseAndEncode);
     const boards = drawBoards(N, 3, heroCards, 0xB0A2D5);
 
-    // Per-stage tallies. The stage names come from the evaluator's own ledger.
+    // Per-stage tallies, keyed by the evaluator's own `rec.stage` name.
+    //
+    // WS-574: this used to key on `Object.entries(perStage)`'s KEY, and `lat.stages` is an
+    // ARRAY — so every stage was tallied under its array index. That is not merely unnamed,
+    // it is not a stable identifier: `raiseResponseDepth2` is gated inside
+    // `for (const betCandidate of toRefineD2)` (gameTreeEvaluator.js, up to 3 candidates), so
+    // the array holds a variable number of records per board and index 5 can be a different
+    // stage on the next board. The per-stage rows were aggregates over different stages.
+    // The aggregate figures were unaffected (they sum over all records regardless of name).
+    //
+    // Repeated records under one name are summed — that is the correct reading for a stage
+    // that legitimately runs once per bet candidate.
     const stages = {};
     const bump = (name, field) => {
       const s = stages[name] ?? (stages[name] = {
         ran: 0, completed: 0, partial: 0, gated: 0, other: 0,
+        // WS-574: gated is TWO different facts wearing one number. A stage blocked by
+        // `street` is CORRECT gating (riverPerCombo on a flop has nothing to do); a stage
+        // blocked by `budget` is the defect this probe exists to measure. Reporting them
+        // together is how "2 of 6 stages never run" reads as alarming or as normal
+        // depending on which the reader assumes.
+        gatedBudget: 0, gatedOther: 0,
         weightSum: 0, weightN: 0, weightFull: 0,
       });
       s[field] = (s[field] ?? 0) + 1;
@@ -144,16 +161,23 @@ const main = async () => {
         if (!lat) continue;
         const perStage = lat.stages ?? lat;
         let sawOne = false;
-        for (const [name, rec] of Object.entries(perStage)) {
+        for (const [key, rec] of Object.entries(perStage)) {
           if (!rec || typeof rec !== 'object') continue;
           if (!('ran' in rec) && !('outcome' in rec)) continue;
           sawOne = true;
-          const s = bump(name, 'ran');
+          // `rec.stage` is the evaluator's own name for itself (gameTreeEvaluator.js,
+          // the record built in `gateStage`). `key` is an array index and is only a
+          // fallback for a metadata shape that predates it.
+          const s = bump(rec.stage ?? key, 'ran');
           const outcome = rec.outcome ?? (rec.ran ? 'completed' : 'gated');
           if (outcome === 'completed') s.completed++;
           else if (outcome === 'partial') s.partial++;
-          else if (outcome === 'gated') s.gated++;
-          else s.other++;
+          else if (outcome === 'gated') {
+            s.gated++;
+            const by = Array.isArray(rec.blockedBy) ? rec.blockedBy : [];
+            if (by.includes('budget')) s.gatedBudget++;
+            else s.gatedOther++;
+          } else s.other++;
           if (Number.isFinite(rec.weightConsumed)) {
             s.weightSum += rec.weightConsumed;
             s.weightN++;
@@ -174,9 +198,17 @@ const main = async () => {
       completed: s.completed,
       partial: s.partial,
       gated: s.gated,
+      gatedBudget: s.gatedBudget,
+      gatedOther: s.gatedOther,
       meanWeightConsumed: s.weightN ? s.weightSum / s.weightN : null,
       fullCoverageShare: s.weightN ? s.weightFull / s.weightN : null,
     })).sort((a, b) => b.ran - a.ran);
+
+    // WS-574 accept criterion: the shipped budget must gate NO stage. This is the number the
+    // budget is chosen against, so it is computed and printed rather than left to be read off
+    // the per-stage table.
+    const budgetGatedTotal = rows.reduce((n, r) => n + r.gatedBudget, 0);
+    const budgetGatedStages = rows.filter((r) => r.gatedBudget > 0).map((r) => r.stage);
 
     const totalRan = rows.reduce((n, r) => n + r.ran, 0);
     const totalPartial = rows.reduce((n, r) => n + r.partial, 0);
@@ -202,7 +234,10 @@ const main = async () => {
       evaluated,
       evaluationsWithRefinement: anyRefinement,
       elapsedMs,
-      totals: { stageRuns: totalRan, partial: totalPartial, partialShare, meanWeightConsumed: meanWeight },
+      totals: {
+        stageRuns: totalRan, partial: totalPartial, partialShare, meanWeightConsumed: meanWeight,
+        budgetGated: budgetGatedTotal, budgetGatedStages,
+      },
       verdict,
       stages: rows,
     };
@@ -212,11 +247,13 @@ const main = async () => {
     const f = (x, d = 3) => (x === null || x === undefined ? 'n/a' : x.toFixed(d));
     console.log(`\n  budget ${budget}ms · ${evaluated} boards · ${Math.round(elapsedMs / 1000)}s`);
     console.log(`  evaluations where any refinement stage ran: ${anyRefinement}/${evaluated}\n`);
-    console.log('  stage                  ran  completed  partial  gated   meanWeight  fullCov');
+    console.log('  stage                     ran  completed  partial  gated:budget  gated:other   meanWeight  fullCov');
     for (const r of rows) {
-      console.log(`  ${r.stage.padEnd(20)} ${String(r.ran).padStart(4)} ${String(r.completed).padStart(10)} ${String(r.partial).padStart(8)} ${String(r.gated).padStart(6)}   ${f(r.meanWeightConsumed).padStart(9)}  ${f(r.fullCoverageShare).padStart(7)}`);
+      console.log(`  ${r.stage.padEnd(23)} ${String(r.ran).padStart(4)} ${String(r.completed).padStart(10)} ${String(r.partial).padStart(8)} ${String(r.gatedBudget).padStart(13)} ${String(r.gatedOther).padStart(12)}   ${f(r.meanWeightConsumed).padStart(9)}  ${f(r.fullCoverageShare).padStart(7)}`);
     }
     console.log(`\n  partial share ${f(partialShare)} · mean weightConsumed ${f(meanWeight)}`);
+    console.log(`  budget-gated stage records: ${budgetGatedTotal}`
+      + (budgetGatedTotal ? ` — ${budgetGatedStages.join(', ')}` : ' (none — the budget starves nothing)'));
     console.log(`\n  VERDICT: ${verdict}\n`);
     if (out) console.log(`Wrote ${out}`);
   } finally {

@@ -1,0 +1,75 @@
+{
+  "id": "PREREG-WS-596-HOLDING-CONFOUND",
+  "declaredAt": "2026-08-20",
+  "ticket": "WS-596",
+  "sprint": "SPR-196",
+  "declaredBefore": "any holding-conditional propensity was fitted or any edge under it was computed",
+  "purpose": "Test whether the ASYMPTOTIC component of the hero-EV estimator's bias is caused by the behaviour policy omitting the acting seat's holding. Measured 2026-08-20 (docs/research/ws596-ess-bias-decomposition-2026-08-20.md): 81-86% of the bias survives n -> infinity, so it is not the finite-sample SNIS bias WS-596's brief names. This document tests the replacement explanation.",
+  "hypothesisUnderTest": "pi_pool conditions on [isAgg, isIP, texture, street, posCategory, sizeBucket] and on nothing about the acting seat's holding. The holding drives BOTH the action and the realized outcome, so it is an unmeasured confounder and IPS is biased at every n. This is stated as the CORRECTION to WS-596's brief, not as the founder's claim, and the run is permitted to refute it.",
+  "primaryPrediction": "On the revealed subset, conditioning pi_pool on the acting seat's holding-strength band reduces |edge| for the dominated arms relative to the same-subset marginal propensity.",
+  "falsifier": "If the mean reduction in |edge| across the dominated arms is <= 0, or is inside the across-draw noise, then holding-confounding is NOT the mechanism and section 6 of the research doc is WRONG. That result is recorded unhedged and the doubly-robust brief is re-opened from the top.",
+  "rejectionCondition": "clone-the-pool must return EXACTLY 0.0000 under BOTH propensities. Every weight in that arm is 1 by construction, so conditioning the propensity on anything cannot move it. A candidate that breaks the identity is rejected regardless of what else it repairs -- same rule as PREREG-WS-546-SUPPORT.",
+  "estimands": {
+    "edgeMarginal": "wisValue - poolValueOverSupport using pi_pool(a | s), restricted to the REVEALED subset. This is the baseline arm and it is NOT the full-sample edge -- restricting to revealed rows changes the population, so it is recomputed rather than carried over.",
+    "edgeHoldingConditional": "the same quantity using pi_pool(a | s, strengthBand(h)) fitted on the revealed subset.",
+    "delta": "edgeHoldingConditional - edgeMarginal, reported with both arms per .claude/rules/unmeasured-constants.md. A delta of zero is a finding, not an absence."
+  },
+  "structuralLimitsDeclaredInAdvance": [
+    "WHAT IS ACTUALLY FITTED IS pi(a | s, h, REVEALED), NOT pi(a | s, h). Hands reach showdown conditionally on the action taken (rangeCalibrationProbe.mjs:149-164 already records this). The revealed subset is therefore selected, and the fitted propensity carries that selection.",
+    "THE FOLD BRANCH IS STRUCTURALLY UNIDENTIFIABLE. A hand that folded is never revealed, so pi(fold | s, h) cannot be estimated from showdown data at any n. This is exactly what WS-527's title means by 'folds included'. Arms whose support depends on fold mass are marked and are not scored as if they were.",
+    "THIS IS A DIRECTIONAL FALSIFIER, NOT A CORRECTED ESTIMATE. It can show the bias MOVES when the holding enters the conditional. It cannot deliver the debiased number, because of the two limits above. It is the evidence that justifies WS-527, never a substitute for it.",
+    "The corpus is online 50NL 2009. Every figure here is a claim about the INSTRUMENT, which is the one class of claim that transfers to a live population (.claude/rules/corpus-transfer-is-earned.md)."
+  ],
+  "reportedRegardlessOfVerdict": [
+    "the REVEAL RATE on each arm's support -- the share of support rows whose holding was actually shown. An arm below the stated floor reports `unexamined` with that reason and NEVER a number (.claude/rules/sparsity-refuse-or-shrink.md).",
+    "both edges and the delta, for every arm",
+    "clone-the-pool under both propensities",
+    "the strength-band distribution of the revealed subset, so a degenerate band (all mass in one bucket) is visible rather than silently producing a null delta",
+    "the cell counts of the holding-conditional fit, so a delta produced by thin cells rather than by conditioning is visible",
+    "any arm that never fired, as `unexamined` with its reason -- call-every-large-bet has now failed to fire three times and its cause is recorded in section 10 of the research doc",
+    "held-out vs in-sample edge for the holding-conditional propensity, and the gap between them (the leakage magnitude)",
+    "the FIT/SCORE player split sizes, so a split too thin to fit is visible rather than silently returning the prior"
+  ],
+  "revealRateFloor": {
+    "value": 0.1,
+    "rationale": "An arm whose support is less than 10% revealed is being scored on a subset small enough that the strength-band fit is mostly prior. The floor is declared here rather than chosen after seeing which arms clear it. It is an UNMEASURED CONSTANT and is reported as such; if an arm lands near it, that proximity is itself reported."
+  },
+  "shrinkage": {
+    "construction": "The holding-conditional propensity is carved from the MARGINAL propensity as its parent, never fitted independently (.claude/rules/subclass-grids-carved-from-parent, DEC-025 Amd 1). Every broader level primes the next as its prior, with no threshold anywhere -- the same construction behaviorPolicy.mjs already uses.",
+    "shrinkWeight": 10,
+    "rationale": "Same value the marginal policy ships with, so the delta measures the added conditioning and not a changed shrinkage."
+  },
+  "strengthDimension": {
+    "feature": "strengthBand(comboStrengthPercentile(hole[0], hole[1], board))",
+    "source": "the same classifier rangeCalibrationProbe.mjs:636 already uses",
+    "rationale": "An equity-ordered percentile of the actual two cards against the actual board. It is computed from game state, never from a label or a bucket name, per POKER_THEORY 7 and .claude/rules first-principles decision modelling.",
+    "scaleCorrection": "AMENDED 2026-08-20, before any valid result was produced. The classifier this document named -- rangeCalibrationProbe.mjs:144 -- thresholds a 0-1 scale while comboStrengthPercentile (handEvaluator.js:421) returns 0-100, so it assigns 'strong' to essentially every hand (measured: 628 strong / 0 medium / 3 weak on 631 reveals; zero 'medium' is the signature). This probe implements the INTENT of those bands on the correct scale (>=80 strong, >=50 medium) and does NOT inherit the defect. The upstream bug is filed separately and is not fixed here."
+  },
+  "supersedes": null,
+  "relatedTo": {
+    "PREREG-WS-546-SUPPORT": "the run this one follows; returned FIX_INSUFFICIENT",
+    "PROBE-WS-596-ESS-SCALING": "established that 81-86% of the bias is asymptotic, which is what makes this test the right next one"
+  },
+  "leakageControl": {
+    "addedAt": "2026-08-20, BEFORE any propensity was fitted or any edge computed",
+    "theTrap": "The marginal pi_pool was mined on the pool-train half, so it is out-of-sample for the rows it scores. A holding-conditional REFINEMENT fitted on the same revealed rows it then scores is in-sample, and overfitting a propensity to the actions actually observed drives every weight toward 1 -- which drives |edge| toward zero. That is the SAME DIRECTION as this probe's primary prediction. Without a split, a confirmation is unfalsifiable: leakage alone would produce it.",
+    "control": "Revealed players are split by player-id hash into FIT and SCORE halves. pi(a | s, band) is fitted on FIT players ONLY and every edge is computed on SCORE players ONLY. No player appears in both.",
+    "reportedAlongside": "The IN-SAMPLE version (fit and score on the same rows) is computed and reported TOO. The gap between held-out and in-sample IS the leakage magnitude, and it is a number worth having rather than a hazard to avoid -- it calibrates how much any future in-sample propensity work would have flattered itself.",
+    "verdictRule": "ONLY the held-out arm may be read as evidence for or against the hypothesis. If held-out shows no reduction while in-sample does, the falsifier has FIRED and holding-confounding is refuted -- the apparent effect was leakage."
+  },
+  "probeDefectsFoundAndFixed": [
+    "SCALE: strengthBand thresholds were inherited verbatim from the broken upstream classifier, collapsing every reveal into one band and making the conditioning a no-op. Fixed to the 0-100 scale.",
+    "FALLBACK IDENTITY: substituting the conditional propensity into pi_pool while leaving pi_ours at the marginal breaks every row that fell back to the pool policy -- where pi_ours IS pi_pool by construction. It moved clone-the-pool off exactly zero (held-out +0.0021, in-sample -0.6904), which is this document's own rejection condition, and it would have injected spurious weights on the 69% of raise-everything rows that are pool fallbacks. Fixed: a row whose pi_ours equalled the original pi_pool has BOTH sides substituted.",
+    "FLAT CARVE: the band refinement was carved at the FULL seven-tuple context only -- the thinnest cell available -- so the conditional came back ~91% prior and the run could not tell a small effect from an absent fit. Fixed: the refinement now shrinks through a ladder, band-alone first (counts in the hundreds) then progressively deeper context prefixes, mirroring behaviorPolicy.mjs's own hierarchy.",
+    "NON-FIRING ARMS SCORED AS ZERO: call-every-large-bet and fold-every-small-bet never fired on the scored subset, returned edge exactly 0.0000 under pool fallback, and were AVERAGED INTO the mean -- pulling it from 0.2278 to 0.1708. run-calibration.mjs:120-135 documents this exact trap and it was reproduced anyway. Fixed: coverage decides, not the edge, and a non-firing arm reports unexamined.",
+    "ALWAYS_FOLD MISSING: it is not in the calibration SPEC (9 arms); run-calibration.mjs:76-84 adds it from strategyArm.mjs. This probe used only loadCalibrationArms() and silently lost a dominated arm. Fixed: added the same way."
+  ],
+  "powerGate": {
+    "addedAt": "2026-08-20, after the first valid run and BEFORE the re-run",
+    "why": "The first valid run reported SUPPORTED off a conditional whose median deepest cell held ONE observation. At shrinkWeight 10 that returns ~91% the parent, so conditioning on the holding conditioned on almost nothing, and the 2.6-4.2% movement it reported is what a no-op produces. The original pre-registration had NO power condition. That was a gap in it and this closes it.",
+    "metric": "median total-variation distance between the holding-conditional propensity and the marginal it was carved from, across the scored rows",
+    "floor": 0.02,
+    "rule": "Below the floor the verdict is INCONCLUSIVE regardless of the measured reduction. Above it, a non-positive reduction is a genuine FALSIFICATION rather than an unfitted model -- the fit cannot be blamed once it has been shown to move.",
+    "note": "TV distance replaces cell-count as the diagnostic because a HIERARCHICAL carve has thin deep cells by construction even when the broad levels carrying the signal are dense. What matters is whether the resulting distribution moved."
+  }
+}

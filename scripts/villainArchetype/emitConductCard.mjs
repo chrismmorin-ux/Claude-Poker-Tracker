@@ -17,9 +17,17 @@
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { buildConductCard, buildMix } from '../../src/utils/standardOfRecord/conductCard.js';
+import {
+  buildConductCard, buildMix, SIZED_ACTIONS, SIZING_REGIMES,
+} from '../../src/utils/standardOfRecord/conductCard.js';
 import { registerVersion } from '../../src/utils/standardOfRecord/faultRegister.js';
 import { SCHEMA_VERSION } from './decisionSchema.mjs';
+import { induceSizing } from './induceCore.mjs';
+import {
+  SIZING_SCHEME_VERSIONS, SIZING_PRIOR_WEIGHT,
+  regimeForStreet, sizingValue, bandFor, bandNamesOf, bandingDeclaration, cellKey,
+  shrinkBands, armComparison, armResolution, bandShape,
+} from './sizingBands.mjs';
 
 const git = (args, fallback) => {
   try { return execFileSync('git', args, { encoding: 'utf8' }).trim(); }
@@ -162,11 +170,264 @@ export const emitConductCard = async ({
     .join(" AND ");
   const ruleId = (r) => `r-${createHash("sha256").update(canonicalPredicate(r)).digest("hex").slice(0, 10)}`;
 
+  /**
+   * ────────────────────────────────────────────────────────────────────────────────────────
+   * SIZING (v3, WS-578) — the line below used to be where the amount was thrown away.
+   * ────────────────────────────────────────────────────────────────────────────────────────
+   *
+   * `r.mix.dist` is `classifyLeaf`'s tally keyed on the action NAME (mixTest.mjs:153-155), so
+   * `[action, k]` never carried an amount and the card recorded none. Measured on villain 2:
+   * `my_raise_to_bb` populated on 1,676 of 1,676 aggressive actions and reaching the card on
+   * ZERO rules. `r.pool` has held the labelled decisions all along — the sizes were one filter
+   * away the entire time.
+   *
+   * NOT a joint over (action x size), per the ticket: that multiplies the leaf count and
+   * starves every cell. A sub-distribution WITHIN the action, banded the way the situation
+   * features already are.
+   */
+  const PRIMARY_SCHEME = 'S2';
+  const ALT_SCHEME = 'S3';
+  const SCHEMES = [PRIMARY_SCHEME, ALT_SCHEME];
+
+  const sizeSample = (d) => ({ sizeBb: d.myRaiseToBB ?? null, potBb: d.potBB ?? null, street: d.street });
+  const sizedDecisions = decisions.filter((d) => SIZED_ACTIONS.includes(d.action));
+
+  /** `(regime, band)` -> k over any row set, under one scheme. Cells, never bare band names. */
+  const tallyCells = (rows, scheme) => {
+    const m = new Map();
+    for (const d of rows) {
+      const key = cellKey(regimeForStreet(d.street), bandFor(d.myRaiseToBB ?? null, d.potBB ?? null, d.street, scheme));
+      m.set(key, (m.get(key) || 0) + 1);
+    }
+    return m;
+  };
+
+  /**
+   * THE PARENT CHAIN, computed ONCE over the whole card rather than per leaf.
+   *
+   * `.claude/rules/sparsity-refuse-or-shrink.md`: a sizing band is a DECISION INPUT — it feeds
+   * a simulator's transition function and is never a displayed comparative claim — so a thin
+   * cell SHRINKS toward its parent rather than refusing. The parent is this action's card-level
+   * sizing distribution; ITS parent is every sized action on the card pooled. Refusal is the
+   * wrong operation here: at the repo's own MIN_RULE_DEFAULT only a handful of (rule, action)
+   * pairs clear the floor, and those few hold the large majority of the aggressive decisions —
+   * the cells are thin, the MASS is not, and a transition function must return something at
+   * every node it can be stepped into.
+   */
+  const sizeParents = {};
+  const sizePopulation = {};
+  for (const scheme of SCHEMES) {
+    sizePopulation[scheme] = { counts: tallyCells(sizedDecisions, scheme), n: sizedDecisions.length };
+    sizeParents[scheme] = {};
+    for (const act of SIZED_ACTIONS) {
+      const rows = sizedDecisions.filter((d) => d.action === act);
+      sizeParents[scheme][act] = { counts: tallyCells(rows, scheme), n: rows.length };
+    }
+  }
+
+  /**
+   * One band distribution over an arbitrary row set, under one arm.
+   *
+   * Factored out of `armBands` (WS-552) so the INDUCED sizing sub-rules go through the identical
+   * shrinkage, interval and shape pipeline as the leaf-level block. A sub-rule with its own
+   * hand-rolled band construction would be a second representation of one fact, which is the
+   * defect this directory has already been bitten by three times (`BANDS.can_raise`,
+   * `my_bet_x_pot`, the canonical-body replacer).
+   */
+  const bandsOver = ({ scheme, rows, regimes, parentCounts, parentN, popCounts, popN, parentLabel }) => {
+    // EVERY band of every regime PRESENT here, zeros included. The zeros are the holes and they
+    // are the informative part — the same argument the coverage census makes about its own empty
+    // cells. Regimes absent from the row set are not invented.
+    const cells = regimes.flatMap((regime) => bandNamesOf(regime, scheme).map((band) => ({ regime, band })));
+    const counts = tallyCells(rows, scheme);
+    const observed = new Map();
+    for (const d of rows) {
+      const v = sizingValue(sizeSample(d));
+      if (!v) continue;
+      const key = cellKey(v.regime, bandFor(d.myRaiseToBB ?? null, d.potBB ?? null, d.street, scheme));
+      observed.set(key, [...(observed.get(key) || []), v.value]);
+    }
+    return shrinkBands({
+      cells, counts, n: rows.length, parentCounts, parentN, popCounts, popN, parentLabel,
+    }).map((b) => ({
+      ...b,
+      // The interval is on the RAW count, because that is what an interval is about. `p` is
+      // the shrunk estimate and it deliberately sits outside its own raw interval when the
+      // cell is thin — which is the visible signature of the shrinkage, not a defect.
+      ci: wilson(b.k, rows.length),
+      // WS-578 AC5, in a queryable form. This is what makes the S2 `>=8` merge impossible to
+      // miss: a band reporting distinctValues 14 with modalShare 0.63 is a point mass wearing
+      // a tail's name, and a near-deterministic size is itself an exploitable fact.
+      shape: bandShape(observed.get(cellKey(b.regime, b.band)) || []),
+    }));
+  };
+
+  /**
+   * ────────────────────────────────────────────────────────────────────────────────────────
+   * THE SIZING RULES (WS-552) — the induction now predicts HOW BIG, not only WHICH.
+   * ────────────────────────────────────────────────────────────────────────────────────────
+   *
+   * WS-578 made the card RECORD the size. It did not make the SEARCH see it, so the sharpest
+   * rule a villain has could still be invisible: a spot where he always bets but bets 3/4 pot
+   * instead of 1/2 is action-PURE, and `induce` stops at a pure leaf before testing a single
+   * feature. Measured on villain 1, the rule that fires on 104 of 111 opening raises is a sizing
+   * rule, and it is the only rule on his card that needs no hole cards — the highest-evidence
+   * thing about him was the one thing the model was blind to.
+   *
+   * BOTH ARMS, because the induction's target labels come FROM the banding, so a banding change
+   * can change which rules exist — not merely how their cells are counted. That makes the arm
+   * delta here structural (which strata split, on which feature) rather than a scalar, and
+   * `.claude/rules/unmeasured-constants.md` wants it reported either way. Running the second arm
+   * costs one more in-memory tree over rows already loaded.
+   */
+  const sizingInduction = {};
+  for (const scheme of SCHEMES) {
+    sizingInduction[scheme] = induceSizing(ordered, {
+      sizedActions: SIZED_ACTIONS,
+      cellOf: (d) => {
+        // `null` is the unsized row, and `induceSizing` holds those OUT of the search rather
+        // than banding them: a split separating "we could derive his size" from "we could not"
+        // is a rule about our pipeline, not about him.
+        if (!sizingValue(sizeSample(d))) return null;
+        return {
+          regime: regimeForStreet(d.street),
+          band: bandFor(d.myRaiseToBB ?? null, d.potBB ?? null, d.street, scheme),
+        };
+      },
+      minRule: induction.minRule,
+      maxDepth: induction.maxDepth,
+      alpha: induction.alpha,
+      requireSignificance: induction.requireSignificance,
+    });
+  }
+
+  /** A sizing rule's identity is its PREDICATE, for the same reason a rule's is — never its rank. */
+  const sizingRuleId = (rule, action, regime, leaf) => `s-${createHash('sha256')
+    .update([ruleId(rule), action, regime, canonicalPredicate(leaf)].join(' >> '))
+    .digest('hex').slice(0, 10)}`;
+
+  /**
+   * One action's sizing block, or `null` — and null is a POSITIVE statement (WS-578 AC2) that
+   * this action has no size, never "we did not record it". A fold and a check move no chips; a
+   * call is at a price someone else set.
+   */
+  const buildSizing = (rows, action, rule) => {
+    if (!SIZED_ACTIONS.includes(action)) return null;
+    const regimes = [...new Set(rows.map((d) => regimeForStreet(d.street)))].sort();
+    const parentN = sizeParents[PRIMARY_SCHEME][action].n;
+
+    const armBands = (scheme) => bandsOver({
+      scheme,
+      rows,
+      regimes,
+      parentCounts: sizeParents[scheme][action].counts,
+      parentN: sizeParents[scheme][action].n,
+      popCounts: sizePopulation[scheme].counts,
+      popN: sizePopulation[scheme].n,
+      parentLabel: `${action}@card (n=${sizeParents[scheme][action].n}), itself shrunk toward all sized actions on this card (n=${sizePopulation[scheme].n})`,
+    });
+
+    /**
+     * THE INDUCED SUB-RULES for one arm, and the STRATA THAT DID NOT SPLIT beside them.
+     *
+     * Both halves ship. "This spot was searched and his sizing did not separate" is a finding —
+     * it says the size here is a single policy and a simulator may use the leaf block directly —
+     * and a card carrying only the hits would let "no sizing rule" read as "not looked for",
+     * which is the `separatorSearch` failure one level down.
+     *
+     * The chain gains a level rather than a branch: sub-rule cell -> this (rule, action) ->
+     * `action`@card -> every sized action. Each level shrinks toward its immediate parent, which
+     * was itself shrunk, so a thin sub-rule cannot be pulled toward a parent treated as ground
+     * truth merely because it sits one step up.
+     */
+    const armSubRules = (scheme) => {
+      const strata = (sizingInduction[scheme].byRule.get(rule)?.get(action)) || [];
+      const parentCounts = tallyCells(rows, scheme);
+      return strata.map((st) => ({
+        regime: st.regime,
+        n: st.n,
+        // Held out of the search, so it is counted where a reader will see it rather than
+        // absorbed into a band.
+        unsizedExcluded: st.unsizedExcluded,
+        bandsOccupied: st.bandsOccupied,
+        outcome: st.outcome,
+        split: st.split,
+        rules: st.leaves.map((leaf) => ({
+          sizingRuleId: sizingRuleId(rule, action, st.regime, leaf),
+          when: leaf.conds.map((c) => c.value).join(' AND ') || 'everything else',
+          predicate: leaf.predicate,
+          condValues: leaf.condValues,
+          regime: st.regime,
+          n: leaf.n,
+          band: leaf.band,
+          k: leaf.k,
+          // A first-class rule carries its own interval, exactly as an action does.
+          ci: wilson(leaf.k, leaf.n),
+          pure: leaf.pure,
+          bands: bandsOver({
+            scheme,
+            rows: leaf.pool,
+            regimes: [st.regime],
+            parentCounts,
+            parentN: rows.length,
+            popCounts: sizeParents[scheme][action].counts,
+            popN: sizeParents[scheme][action].n,
+            parentLabel: `${action} under rule ${ruleId(rule)} (n=${rows.length}), itself shrunk toward ${action}@card (n=${sizeParents[scheme][action].n})`,
+          }),
+        })),
+      }));
+    };
+
+    const unsizedK = rows.filter((d) => !sizingValue(sizeSample(d))).length;
+    return {
+      regimes,
+      scheme: PRIMARY_SCHEME,
+      schemeVersion: SIZING_SCHEME_VERSIONS[PRIMARY_SCHEME],
+      altScheme: ALT_SCHEME,
+      altSchemeVersion: SIZING_SCHEME_VERSIONS[ALT_SCHEME],
+      k: rows.length,
+      sizedK: rows.length - unsizedK,
+      unsizedK,
+      shrunk: true,
+      thin: rows.length < SIZING_PRIOR_WEIGHT,
+      parent: `${action}@card`,
+      parentN,
+      priorWeight: SIZING_PRIOR_WEIGHT,
+      // CLASS IS SET BY WHERE THE NUMBER ENDS UP, not by where it was computed. `p` is a
+      // decision input and may be consumed as one; the moment it is displayed, cited or
+      // compared it has changed class and must carry the shrunk flag or refuse.
+      classNote: 'decision input — `p` is a posterior mean shrunk toward the parent, `pRaw` is the '
+        + 'raw rate, `k`/`n` are counts. If a consumer SHOWS or CITES one of these it has become a '
+        + 'comparative claim and must carry `shrunk` on its face or refuse (sparsity-refuse-or-shrink.md).',
+      bands: armBands(PRIMARY_SCHEME),
+      altBands: armBands(ALT_SCHEME),
+      /**
+       * WS-552 — the induced SIZING rules, one entry per (regime) stratum, hanging off the same
+       * `sizing` block rather than in a parallel structure. A second home for a size on this card
+       * would be a second axis nothing forces to agree with the first, and that is exactly the
+       * shape WS-291 survived inside for the life of the project.
+       *
+       * These sub-rule bands sum to the SUB-RULE's own n, not to the action's k — the strata
+       * partition only the SIZED decisions of this action, since unsized rows are held out of
+       * the search. `unsizedExcluded` on each stratum is what keeps that visible.
+       */
+      subRules: armSubRules(PRIMARY_SCHEME),
+      altSubRules: armSubRules(ALT_SCHEME),
+    };
+  };
+
   const mixes = ordered.map((r) => buildMix({
     ruleId: ruleId(r),
     when: r.conds.map((c) => c.value).join(' AND ') || 'everything else',
     n: r.n,
-    actions: r.mix.dist.map(([action, k]) => ({ action, k, ci: wilson(k, r.n) })),
+    actions: r.mix.dist.map(([action, k]) => ({
+      action,
+      k,
+      ci: wilson(k, r.n),
+      // `r.mix.dist` is a straight tally over `r.pool` by action (mixTest.mjs:153-155), so this
+      // filter recovers exactly those k decisions. `buildMix` throws if it ever does not.
+      sizing: buildSizing(r.pool.filter((d) => d.action === action), action, r),
+    })),
     verdict: r.verdict,
     separators: (r.mix.separators || []).slice(0, 5).map((s) => ({ feature: s.feature, p: s.pAdj })),
     shown: r.pool.filter((d) => d.handKnown)
@@ -294,6 +555,102 @@ export const emitConductCard = async ({
     // AWAITED. `registerVersion` is async; calling it bare stamped a Promise, and the card
     // validator caught it on the first live run — which is what the validator is for.
     disclaimerRegisterVersion: await registerVersion(),
+    /**
+     * THE SIZE AXIS, ON THE CARD.
+     *
+     * Not a pointer to `sizingBands.mjs`: the full boundary table rides here, so a stored card
+     * can never be silently re-based by a later lattice change. A card carrying only
+     * `{scheme:'S2', version:1}` still reads wrong under a build whose S2 means something else,
+     * and the reader has no way to notice — which is WS-291's mechanism (a wrong number that
+     * never has to meet a right one) reproduced in miniature.
+     *
+     * BOTH ARMS SHIP, per `.claude/rules/unmeasured-constants.md`: a banding is a constant that
+     * has not been proven, so the estimate and the alternative both run and the DELTA between
+     * them is a reported result rather than a diagnostic glanced at once. Same decisions, same
+     * sizes, same shrinkage — the arms differ only in the boundaries, so the delta measures the
+     * constant and not the setup. A delta of zero is a finding: it says the banding is not
+     * load-bearing on this path. Neither arm is the answer by default; `primary` is a declared
+     * choice a downstream consumer may override, never an implicit default that drifts.
+     */
+    sizingBanding: sizedDecisions.length === 0 ? null : {
+      primary: PRIMARY_SCHEME,
+      arms: SCHEMES.map((scheme) => ({
+        ...bandingDeclaration(scheme),
+        resolution: armResolution(sizedDecisions.map(sizeSample), scheme),
+      })),
+      delta: armComparison(sizedDecisions.map(sizeSample), { primary: PRIMARY_SCHEME, alt: ALT_SCHEME }),
+      /**
+       * WS-552 — HOW HARD THE CARD LOOKED FOR A SIZING RULE, and what it found.
+       *
+       * The exact counterpart of `separatorSearch` one level up, and required for the same
+       * reason: without it, "no sizing rules on this card" reads as "his sizing does not vary"
+       * when it may only mean "every stratum sat under the floor". The per-stratum outcomes are
+       * on each action's `sizing.subRules`; this is the card-level summary of the same facts.
+       *
+       * BOTH ARMS, and the delta between them is STRUCTURAL rather than scalar: the induction's
+       * target labels come from the banding, so a different lattice can produce a different set
+       * of rules, not merely different counts in the same cells. `armsAgree` is the honest
+       * one-line answer to "did the banding decide the finding".
+       */
+      induction: {
+        arms: Object.fromEntries(SCHEMES.map((scheme) => [scheme, {
+          ...sizingInduction[scheme].summary,
+          search: sizingInduction[scheme].search,
+        }])),
+        primary: PRIMARY_SCHEME,
+        delta: {
+          split: sizingInduction[ALT_SCHEME].summary.split - sizingInduction[PRIMARY_SCHEME].summary.split,
+          sizingRules: sizingInduction[ALT_SCHEME].summary.sizingRules
+            - sizingInduction[PRIMARY_SCHEME].summary.sizingRules,
+          sign: `positive = ${ALT_SCHEME} finds MORE than ${PRIMARY_SCHEME}`,
+          armsAgree: JSON.stringify(sizingInduction[PRIMARY_SCHEME].summary.features)
+            === JSON.stringify(sizingInduction[ALT_SCHEME].summary.features),
+          note: 'A delta of zero is a finding: it says the banding did not decide which sizing '
+            + 'rules exist, only how their cells are counted. A non-zero delta promotes the '
+            + 'banding from a recording convention to a load-bearing modelling choice.',
+        },
+      },
+      shrinkage: {
+        operation: 'shrink-toward-parent',
+        why: 'A sizing band is a DECISION INPUT feeding a simulator\'s transition function, never '
+          + 'a displayed comparative claim, so `.claude/rules/sparsity-refuse-or-shrink.md` says shrink '
+          + 'rather than refuse. Refusal is the right operation where a band reaches a human (a ranked '
+          + 'spot list, a Guide); class is set by where the number ENDS UP, which is why every band '
+          + 'carries `shrunk` and every block carries `classNote`.',
+        estimator: 'posterior mean (k + m*qParent) / (n + m), applied UNIFORMLY rather than only '
+          + 'below the floor — a threshold-triggered shrink puts a discontinuity at n = m and makes '
+          + 'a cell at n = 24 and a cell at n = 26 incomparable in a way nothing on the card shows',
+        priorWeight: SIZING_PRIOR_WEIGHT,
+        priorWeightSource: 'induceCore.mjs MIN_RULE_DEFAULT — the repo\'s own minimum leaf size, reused rather than re-chosen',
+        chain: 'cell (rule, action, regime, band) -> action across this card -> all sized actions on this card',
+        thinAt: SIZING_PRIOR_WEIGHT,
+        note: 'A zero band keeps a NON-ZERO estimate on purpose: a simulator must not assign '
+          + 'probability zero to a size this player demonstrably uses elsewhere merely because one '
+          + 'leaf never contained it.',
+      },
+      conventions: {
+        [SIZING_REGIMES.PREFLOP_BB]: 'raise-TO, cumulative for the street, in big blinds (decisionLabeler myRaiseToBB)',
+        [SIZING_REGIMES.POSTFLOP_POT_FRACTION]: 'raise-TO over the pot INCLUDING the live bet (myRaiseToBB / potBB). '
+          + 'Named rather than assumed: decisionLabeler deleted a field that conflated this with the '
+          + 'INCREMENTAL cost under a legend saying only "as a fraction of the pot". Raise-to is the '
+          + 'right numerator for a transition function — the environment needs where the chips go, not '
+          + 'this player\'s share of getting them there. The two coincide except where he already had '
+          + 'chips in on the street (12 of 570 postflop aggressive actions on villain 2).',
+        excluded: 'my_bet_x_pot as it stands in the ARCHIVED v2 TSVs — that column divided by '
+          + 'potBB - myBet, subtracting his own bet from a pot that never contained it (median 350, '
+          + 'max 15,900). Fixed in decisionLabeler on 2026-08-19; the archived cards predate the fix.',
+      },
+      knownLimitation: 'S2 v2 split the v1 `>=8` tail after measurement showed it carried '
+        + '8,325,235 of 8,327,391 preflop sum-of-squares — essentially ALL the reconstruction error '
+        + '— with 121 of its 191 observations at exactly 12bb. Preflop RMSE fell 8.68 -> 2.50 bb. '
+        + 'STILL MERGED, and named rather than hidden: (a) `12.25-79` pools 4-bets (13-19bb, 32 obs) '
+        + 'with large 3-bets and mid shoves (23-58bb, 20 obs) at RMSE 11.17 — the same '
+        + 'different-actions argument applies again, and it is not split because no comparable gap '
+        + 'exists there, so any edge would be fitted rather than found; (b) `>=79` is a SIZE PROXY '
+        + 'for "he is all-in", not an all-in flag, and at a different stack depth the proxy is '
+        + 'wrong with nothing here to notice. Per-band `shape` makes both inspectable.',
+      declaredBy: 'scripts/villainArchetype/sizingBands.mjs',
+    },
     population,
     provenance: provenanceOf(
       sourcePaths || files.map((f) => (typeof f === 'string' ? f : f.path)),

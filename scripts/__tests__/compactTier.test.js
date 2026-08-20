@@ -34,7 +34,16 @@ const TEXTISH = /\.(md|markdown|txt|ya?ml|json|jsonl|cjs|mjs|js|ts|tsx|jsx|sh|ht
 const MAX_BYTES = 512 * 1024;
 
 function walk(dir, acc = []) {
-  const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.venv', '.cwos-snapshots']);
+  // `worktrees` (2026-08-16): `.claude/worktrees/<branch>/` holds ANOTHER CHECKOUT of this same
+  // repo, so each one contains its own copy of the emitter and of this test — four false
+  // offenders the moment a worktree exists, and the suite went red for everyone who had one.
+  //
+  // This is NOT the move the block comment below forbids. Adding those copies to
+  // MARKER_ALLOWLIST would be, because it would whitelist specific paths and the next cached
+  // artifact would land beside them unnoticed. This is a SCOPE fix: the claim under test is
+  // "no artifact in this checkout caches the tier", and a nested checkout is not this one. Its
+  // copy of the hook is the emitter, already allowlisted at its own relative path.
+  const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.venv', '.cwos-snapshots', 'worktrees']);
   let entries;
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return acc; }
   for (const e of entries) {

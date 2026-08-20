@@ -41,7 +41,11 @@ export const loadVillain = async ({ maxFiles = 2000, villain = null, rank = 1 } 
     const counts = new Map();
     for (const f of files) {
       for await (const h of iterAppHands(f.path)) {
-        for (const p of Object.values(h.seatPlayers || {})) counts.set(p, (counts.get(p) || 0) + 1);
+        // NINE-HANDED ONLY: Rank by nine-handed hand count, not total hands.
+        // This fixes WS-579: both previous subjects were six-max by selection artifact.
+        if (Object.keys(h.seatPlayers || {}).length === 9) {
+          for (const p of Object.values(h.seatPlayers || {})) counts.set(p, (counts.get(p) || 0) + 1);
+        }
       }
     }
     const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);

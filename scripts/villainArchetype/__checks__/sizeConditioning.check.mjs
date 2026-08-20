@@ -21,6 +21,8 @@
 import { measureFoldToOpenCurve, curveCell, CURVE_CELL_STATUS } from '../foldToOpenCurve.mjs';
 import { labelDecisions } from '../decisionLabeler.mjs';
 
+const PRIM_FOLD = 'fold';
+
 let failed = 0;
 const is = (name, got, want) => {
   const ok = Object.is(got, want);
@@ -83,7 +85,7 @@ const curve = await measure([
   hand({ openTo: 4, bbAction: 'call', id: 'c' }),
   hand({ openTo: 4, bbAction: 'call', id: 'd' }),
 ]);
-const at = (bucket) => curveCell(curve, { seat: 'BB', bucket, stake: '50NLH' });
+const at = (bucket) => curveCell(curve, { seat: 'BB', bucket, stake: '50NLH', liveOpponents: 1 });
 is('BB to2.0 folds', at('to2.0')?.pooled.k, 2);
 is('BB to2.0 total', at('to2.0')?.pooled.n, 2);
 is('BB to2.0 rate', at('to2.0')?.pooled.rate, 1);
@@ -139,7 +141,7 @@ ok('and it says why', /cannot face a single open/.test(curve.cells.UTG?._structu
 // ── 6. refusal is written down, not omitted ─────────────────────────────────────────────────
 console.log('\na cell short of players REFUSES — and is persisted with its shortfall');
 const thin = await measure([hand({ openTo: 2, bbAction: 'fold', id: 'x' })], { minPlayersPerCell: 40 });
-const tc = curveCell(thin, { seat: 'BB', bucket: 'to2.0', stake: '50NLH' });
+const tc = curveCell(thin, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 1 });
 ok('the cell EXISTS rather than being omitted', tc != null, 'an absent key is indistinguishable from a lookup bug');
 is('status', tc?.status, CURVE_CELL_STATUS.DROPPED);
 is('have', tc?.have, 1);
@@ -159,8 +161,8 @@ const twoStakes = await measureFoldToOpenCurve({
     yield { hand: hand({ openTo: 2, bbAction: 'call', id: 's2' }), stakeLabel: '200NLH' };
   }()),
 });
-is('50NLH cell', curveCell(twoStakes, { seat: 'BB', bucket: 'to2.0', stake: '50NLH' })?.pooled.rate, 1);
-is('200NLH cell', curveCell(twoStakes, { seat: 'BB', bucket: 'to2.0', stake: '200NLH' })?.pooled.rate, 0);
+is('50NLH cell', curveCell(twoStakes, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 1 })?.pooled.rate, 1);
+is('200NLH cell', curveCell(twoStakes, { seat: 'BB', bucket: 'to2.0', stake: '200NLH', liveOpponents: 1 })?.pooled.rate, 0);
 is('two distinct cells, not one merged', Object.keys(twoStakes.cells.BB ?? {}).length, 2);
 
 // ── 9. the subject survives a threshold that removes everyone else ──────────────────────────
@@ -174,17 +176,50 @@ const withSubject = await measureFoldToOpenCurve({
   subjectIds: [PID(2)],                                    // seat 2 is the big blind
   handSource: source([hand({ openTo: 2, bbAction: 'fold', id: 'r1' })]),
 });
-const rc = curveCell(withSubject, { seat: 'BB', bucket: 'to2.0', stake: '50NLH' });
+const rc = curveCell(withSubject, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 1 });
 is('subject kept despite minCellN=999', rc?.players.length, 1);
 is('and it is him', rc?.players[0]?.pid, PID(2));
 const withoutSubject = await measureFoldToOpenCurve({
   minCellN: 999, minPlayersPerCell: 1, selection: null, root: null, subjectIds: [],
   handSource: source([hand({ openTo: 2, bbAction: 'fold', id: 'r2' })]),
 });
-const rc2 = curveCell(withoutSubject, { seat: 'BB', bucket: 'to2.0', stake: '50NLH' });
+const rc2 = curveCell(withoutSubject, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 1 });
 is('without the retention he is dropped', rc2?.players.length, 0);
 ok('and the drop is recorded, not silent', rc2?.playersBelowThreshold === 1,
   `playersBelowThreshold = ${rc2?.playersBelowThreshold}`);
+
+// -- 10. LIVE OPPONENTS IS PART OF THE KEY ---------------------------------------------------
+// The v1 defect. The card prices P(SB folds) x P(BB folds), so the BB's rate must be conditioned
+// on the state he actually faces, including how many opponents are still live. Measured on the
+// real subject the pooled and conditioned curves do not even agree in direction:
+//   2bb  heads-up 19/19 (100.0%)  someone else live  9/13 (69.2%)
+//   4bb  heads-up 37/45 ( 82.2%)  someone else live 28/29 (96.6%)
+console.log('\nlive-opponent count is part of the key - two different states never share a cell');
+const withCaller = (id) => {
+  const seq = []; let order = 0;
+  const push = (seat, action, amount) => seq.push({ order: order++, seat, action, street: 'preflop', ...(amount != null ? { amount } : {}) });
+  push(3, PRIM_FOLD); push(4, PRIM_FOLD);
+  push(6, 'raise', 2);          // BTN opens to 2bb
+  push(5, 'call', 2);           // CO calls -> an extra live opponent
+  push(1, PRIM_FOLD);           // SB folds
+  push(2, PRIM_FOLD);           // BB folds, facing the SAME 2bb open
+  return { handId: id, seatPlayers: Object.fromEntries(SEATS.map((x) => [x, PID(x)])),
+    gameState: { actionSequence: seq, dealerButtonSeat: 6, mySeat: null, communityCards: [],
+      showdownCards: {}, currentStreet: 'preflop', potSize: 10, blinds: { sb: 0.5, bb: 1 } } };
+};
+const mixed = await measure([hand({ openTo: 2, bbAction: 'fold', id: 'hu' }), withCaller('mw')]);
+const hu = curveCell(mixed, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 1 });
+const mw = curveCell(mixed, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 2 });
+ok('heads-up cell exists', hu != null);
+ok('two-opponents cell exists', mw != null, 'same seat, same size, same stake - a DIFFERENT cell');
+is('heads-up n', hu?.pooled.n, 1);
+is('two-opponents n', mw?.pooled.n, 1);
+is('they did NOT merge into one n=2 cell', Object.keys(mixed.cells.BB ?? {}).length, 2);
+ok('a lookup with the wrong live count returns nothing, not a plausible number',
+  curveCell(mixed, { seat: 'BB', bucket: 'to2.0', stake: '50NLH', liveOpponents: 9 }) == null);
+console.log('\nopener composition is recorded even though it is not in the key');
+ok('the cell names who opened', JSON.stringify(hu?.openerComposition ?? {}).includes('BTN'),
+  JSON.stringify(hu?.openerComposition));
 
 console.log(`\n${failed ? `FAILED — ${failed} check(s)` : 'all checks passed'}`);
 process.exit(failed ? 1 : 0);

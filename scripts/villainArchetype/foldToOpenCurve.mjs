@@ -34,7 +34,7 @@ import {
   OPEN_SIZE_AXIS_VERSION, openSizeBucket, openSizeRange, openConditional,
 } from './openSizeAxis.mjs';
 
-export const FOLD_TO_OPEN_SCHEMA_VERSION = 1;
+export const FOLD_TO_OPEN_SCHEMA_VERSION = 2;
 
 /**
  * Cell statuses, mirroring `src/utils/standardOfRecord/coverageCensus.js` CELL_STATUSES.
@@ -57,7 +57,60 @@ export const CURVE_CELL_STATUS = Object.freeze({
 /** Seats that cannot face a single open in an unopened pot: the opener acts first. */
 const STRUCTURALLY_UNREACHABLE = Object.freeze(['UTG']);
 
-export const cellKey = (seat, bucket, stake) => `${seat}|${bucket}|${stake}`;
+/**
+ * LIVE OPPONENTS IS PART OF THE KEY, and leaving it out was the defect in v1.
+ *
+ * The exploit card prices a line as P(SB folds) x P(BB folds). For that product to mean
+ * anything, the BB's rate must be conditioned on the state the BB actually faces when he acts —
+ * which includes how many opponents are still live. v1 conditioned on street, raise-count, seat,
+ * size and stake, and pooled every live-opponent count into one cell.
+ *
+ * Measured on the subject, the two are not close and they do not even agree in direction:
+ *   open 2bb   heads-up 19/19 (100.0%)   someone else live  9/13 (69.2%)
+ *   open 4bb   heads-up 37/45 (82.2%)    someone else live 28/29 (96.6%)
+ * Pooling those produced 37/43 and 71/83 — a curve that is flat-to-humped where the conditioned
+ * one is not. `decisionGeometry` states it directly: PLAYERS REMAINING IS A COORDINATE. It was a
+ * coordinate of nothing.
+ *
+ * `liveOpponents` here means opponents still live AT THE MOMENT THIS SEAT ACTS — 1 is heads-up
+ * against the opener. Dealt-in count would not do it.
+ */
+export const cellKey = (seat, bucket, stake, liveOpponents) =>
+  `${seat}|${bucket}|${stake}|vs${liveOpponents}`;
+
+/**
+ * Live opponents for each seat at the moment it first acts preflop, derived from the action
+ * sequence directly.
+ *
+ * NOT read from `decisionLabeler`'s `opponentsLive`. That field comes from
+ * `decisionGeometryFull`, which returns null for any decision it cannot place — the same
+ * nullable geometry that produced the crash this module already had to tally. A coordinate in
+ * the CELL KEY must not be able to arrive as null: every row it nulls on would be silently
+ * excluded, and the sample would quietly stop being the sample. This is derivable from the
+ * sequence with no dependency at all, so it is.
+ *
+ * @returns {Map<string, number>} seat -> opponents still live when that seat first acts preflop
+ */
+const liveOpponentsAtFirstAction = (hand) => {
+  const seats = Object.keys(hand?.seatPlayers ?? {});
+  const dealtIn = seats.length;
+  const seq = [...(hand?.gameState?.actionSequence ?? [])]
+    .filter((e) => !e.street || e.street === 'preflop')
+    .sort((a, b) => a.order - b.order);
+  const out = new Map();
+  const folded = new Set();
+  const acted = new Set();
+  for (const e of seq) {
+    const seat = String(e.seat);
+    if (!acted.has(seat)) {
+      acted.add(seat);
+      // Everyone dealt in, minus this seat, minus those already folded before it acts.
+      out.set(seat, (dealtIn - 1) - folded.size);
+    }
+    if (e.action === 'fold') folded.add(seat);
+  }
+  return out;
+};
 
 const quantile = (sorted, f) => (sorted.length
   ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.floor(f * (sorted.length - 1))))]
@@ -94,7 +147,7 @@ export const measureFoldToOpenCurve = async ({
   // are invisible is how a sample stops representing what its name says it represents.
   const excluded = {
     notPreflop: 0, notFacingSingleRaise: 0, limpedOrRaisedPot: 0,
-    noAggressorSize: 0, unbucketable: 0, noBlinds: 0,
+    noAggressorSize: 0, unbucketable: 0, noBlinds: 0, noLiveOpponentCount: 0,
     // A THROW IS NOT A NOT-APPLICABLE. This tally exists because the first version of this
     // loop swallowed `labelDecisions` errors with a bare `catch { continue }`, and that hid a
     // real crash (decisionLabeler dereferenced a null geometry on every raise row) behind what
@@ -104,10 +157,20 @@ export const measureFoldToOpenCurve = async ({
   const labelErrors = new Map();
   let hands = 0, counted = 0;
 
-  const bump = (seat, bucket, stake, pid, folded, raiseToBB) => {
-    const key = cellKey(seat, bucket, stake);
+  const bump = (seat, bucket, stake, live, pid, folded, raiseToBB, openerPos) => {
+    const key = cellKey(seat, bucket, stake, live);
     let c = cells.get(key);
-    if (!c) { c = { seat, bucket, stake, players: new Map(), k: 0, n: 0, sizes: [] }; cells.set(key, c); }
+    if (!c) {
+      c = { seat, bucket, stake, live, players: new Map(), k: 0, n: 0, sizes: [], openers: new Map() };
+      cells.set(key, c);
+    }
+    // Opener position is NOT in the key — splitting on it would thin every cell four ways — but
+    // its composition is recorded, because it differs sharply by size bucket and a consumer that
+    // does not know that will compare two cells drawn from different opener mixes. Measured on a
+    // 40-file slice: min-opens are 24.3% small-blind opens against 17.2% in the fit range, and
+    // the big blind defends the small blind roughly 19 points wider. That single confound was
+    // worth 13 percentage points in an earlier study, and it was entirely composition.
+    if (openerPos) c.openers.set(openerPos, (c.openers.get(openerPos) ?? 0) + 1);
     let p = c.players.get(pid);
     if (!p) { p = { k: 0, n: 0 }; c.players.set(pid, p); }
     p.n++; c.n++; if (folded) { p.k++; c.k++; }
@@ -124,6 +187,7 @@ export const measureFoldToOpenCurve = async ({
     // non-standard blind structure must fall out of the unopened test rather than sneak through it.
     const blindTotalBB = (Number(sbSize ?? 0) + Number(bbSize)) / Number(bbSize);
 
+    const liveBySeat = liveOpponentsAtFirstAction(hand);
     for (const seat of Object.keys(hand.seatPlayers || {})) {
       const pid = hand.seatPlayers[seat];
       if (pid == null) continue;
@@ -151,9 +215,12 @@ export const measureFoldToOpenCurve = async ({
         if (raiseToBB == null || !Number.isFinite(raiseToBB)) { excluded.noAggressorSize++; continue; }
         const bucket = openSizeBucket(raiseToBB);
         if (bucket == null) { excluded.unbucketable++; continue; }
+        const live = liveBySeat.get(String(seat));
+        if (live == null) { excluded.noLiveOpponentCount++; continue; }
 
         seatsSeen.add(d.position); stakesSeen.add(stakeLabel); players.add(String(pid));
-        bump(d.position, bucket, stakeLabel, String(pid), d.action === 'fold', raiseToBB);
+        bump(d.position, bucket, stakeLabel, live, String(pid),
+          d.action === 'fold', raiseToBB, d.aggressorPosition ?? null);
         counted++;
       }
     }
@@ -184,8 +251,9 @@ export const measureFoldToOpenCurve = async ({
     const enough = kept.length >= minPlayersPerCell;
     const range = openSizeRange(c.bucket);
 
-    (out[c.seat] ||= {})[`${c.bucket}|${c.stake}`] = {
-      seat: c.seat, bucket: c.bucket, stake: c.stake,
+    (out[c.seat] ||= {})[`${c.bucket}|${c.stake}|vs${c.live}`] = {
+      seat: c.seat, bucket: c.bucket, stake: c.stake, liveOpponents: c.live,
+      openerComposition: Object.fromEntries([...c.openers].sort((x, y) => y[1] - x[1])),
       raiseToBBRange: range,
       observedRaiseToBB: {
         median: quantile(sizes, 0.5),
@@ -253,9 +321,11 @@ export const measureFoldToOpenCurve = async ({
     },
     conditioning: {
       street: 'preflop', facing: 'a raise', raisesThisStreet: 1,
+      liveOpponents: 'opponents still live at the moment this seat first acts preflop, derived from '
+        + 'the action sequence (dealt-in minus one minus already-folded); 1 = heads-up vs the opener',
       unopened: 'potBeforeBetBB === (sb + bb) / bb, computed per hand',
       sizeField: 'aggressorToBB (the cumulative raise-to amount), read directly',
-      statement: 'P(fold | preflop, facing exactly one raise, unopened pot, seat, open-size bucket, stake)',
+      statement: 'P(fold | preflop, facing exactly one raise, unopened pot, seat, open-size bucket, stake, live-opponent count)',
       excluded,
       // Surfaced, not just counted: a run that threw on thousands of rows produced a number
       // over a population nobody chose, and the count alone does not say what went wrong.
@@ -340,5 +410,5 @@ export const loadFoldToOpenCurve = (path, {
 };
 
 /** Look one cell up. Returns the cell (which may itself be a refusal), or null if never measured. */
-export const curveCell = (curve, { seat, bucket, stake }) =>
-  curve?.cells?.[seat]?.[`${bucket}|${stake}`] ?? null;
+export const curveCell = (curve, { seat, bucket, stake, liveOpponents }) =>
+  curve?.cells?.[seat]?.[`${bucket}|${stake}|vs${liveOpponents}`] ?? null;

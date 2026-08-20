@@ -1,0 +1,38 @@
+{
+  "id": "PREREG-WS-526-F1",
+  "declaredAt": "2026-08-17",
+  "ticket": "WS-526",
+  "falsifier": "F1",
+  "claimUnderTest": "A villain policy pi(a | street, handClass) is IDENTIFIABLE from action sequences alone, INCLUDING its fold branch, even though holdings are revealed only at showdown and folding hides the holding permanently.",
+  "statedAsCorrection": "The default expectation is that the fold branch is NOT identifiable, because a folded hand never reveals and therefore contributes no information about which holding folded. This pre-registration exists to give that default a fair chance to win.",
+
+  "primaryMetric": "maxFoldBranchAbsError",
+  "primaryMetricDefinition": "max over the 9 (street x handClass) cells of |theta_hat[street][class]['fold'] - theta_true[street][class]['fold']|",
+  "tolerance": 0.02,
+  "toleranceRationale": "2 percentage points. Chosen so the verdict is about IDENTIFIABILITY, not sampling noise: the headline arm runs at N large enough that Monte Carlo error on any cell is well under this.",
+
+  "headlineN": 2000000,
+  "nSweep": [20000, 200000, 2000000],
+  "sweepRequirement": "maxFoldBranchAbsError must DECAY across the sweep. A plateau above tolerance is the signature of non-identification and is reported as such, not as 'needs more data'.",
+
+  "arms": {
+    "hidden": "Holdings revealed ONLY on hands that reach showdown. This is the arm under test.",
+    "oracle": "Holdings revealed on EVERY hand including folds. MUST recover to near zero. If oracle fails, the defect is in the EM or the scorer, not in identifiability, and the hidden arm's result is uninterpretable.",
+    "mismatch": "Negative control. Score the hidden arm's recovered policy against a DIFFERENT true policy. MUST exceed tolerance. If a wrong answer passes, the metric cannot detect failure."
+  },
+
+  "verdicts": {
+    "PASS": "oracle under 0.005 AND mismatch over tolerance AND hidden maxFoldBranchAbsError <= 0.02 at headlineN AND decaying across the sweep",
+    "FAIL": "hidden maxFoldBranchAbsError > 0.02 at headlineN, or it plateaus. Recorded UNHEDGED as F1 FAILED. The finding is then that fold composition needs a showdown-independent channel (sizing, timing), and WS-527 is redesigned around that rather than the claim being quietly narrowed to the branches that did recover.",
+    "VOID": "oracle arm fails or mismatch control passes. Instrument defect; no claim either way."
+  },
+
+  "reportedRegardlessOfVerdict": [
+    "per-cell signed error for all 27 (street x class x action) cells, fold cells called out separately",
+    "continue-branch (call/raise) max abs error, so fold-branch difficulty is read against a same-run control",
+    "showdown rate and revealed fraction per street",
+    "EM iterations to convergence and final log-likelihood"
+  ],
+
+  "knownAssumption": "The estimator is GIVEN the class prior p(h0) and the class transition matrix T as exact. This mirrors the real claim, where P(h) at the root is exact combinatorics and the board is observed. If T were also unknown this would be a strictly harder problem than the one being tested, and the artifact says so rather than implying otherwise."
+}

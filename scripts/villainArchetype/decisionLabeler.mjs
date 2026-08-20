@@ -880,8 +880,13 @@ export const labelDecisions = (hand, seat) => {
          * under names that say what they are, and the ambiguous one is gone rather than
          * re-documented.
          */
+        // `bbUnit`, not `geo.bb`. `decisionGeometryFull` returns null for a decision it cannot
+        // place (decisionGeometry.mjs:248), and every other reference here guards with `geo?.`
+        // — this one did not, so labelDecisions THREW on any raise/bet row with no geometry.
+        // The caller's try/catch then dropped that seat's entire row set, silently: an error
+        // and a not-applicable are indistinguishable to a bare `catch { continue }`.
         myRaiseToBB: (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet')
-          && Number.isFinite(e.amount) ? +(e.amount / geo.bb).toFixed(2) : null,
+          && Number.isFinite(e.amount) ? +(e.amount / bbUnit).toFixed(2) : null,
         /**
          * MY BET AS A FRACTION OF THE POT IT WENT INTO.
          *

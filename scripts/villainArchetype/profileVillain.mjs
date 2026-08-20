@@ -26,6 +26,13 @@
  *   4. INDUCE    the ruleset, every leaf carrying a confidence interval
  *   5. WRINKLES  the leaves that are NOT resolved, and what would resolve each
  *   6. EMIT      a profile file, so two villains can be laid side by side
+ *   7. SCORE     held out against named baselines, so two CARDS can be laid side by side
+ *
+ * STEP 7 EXISTS BECAUSE EVERY ACCURACY FIGURE ABOVE IT IS RESUBSTITUTION. `induce` reports
+ * `right / covered` over the very decisions the tree was grown on, and that number cannot fall:
+ * adding rules can only improve it. So the card published a quality figure nothing could falsify
+ * while `scoreHeldOut.mjs` — the instrument that answers the question — sat in this directory
+ * imported by nothing. See WS-551.
  *
  * "Expand the surface, rerun, expand again, until there aren't any wrinkles, just
  * confidence intervals" (founder). Step 5 is that loop's instrument: a wrinkle is a leaf
@@ -35,6 +42,11 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+// The record form's validator, run again AFTER the held-out score is stamped on: `buildConductCard`
+// validated a card that did not yet carry one, and a check that only runs on the earlier object is
+// the check that is not there when the field it governs arrives.
+import { conductCardProblems } from '../../src/utils/standardOfRecord/conductCard.js';
 import { loadVillain } from './loadVillain.mjs';
 import { labelDecisions } from './decisionLabeler.mjs';
 import { enrichDecisions } from './enrichDecisions.mjs';
@@ -596,7 +608,7 @@ if (postFailed) {
  * is therefore the only one of the villain objects that makes no comparative claim, which is
  * why it gets a form of its own while an Appraisal or a Read is a Result Card variant.
  */
-const { emitConductCard } = await import('./emitConductCard.mjs');
+const { emitConductCard, canonical } = await import('./emitConductCard.mjs');
 const conductCard = await emitConductCard({
   subjectId: pid,
   rules, decisions, files, gates: [...gates, ...postGates],
@@ -607,12 +619,171 @@ const conductCard = await emitConductCard({
   sourcePaths: [...new Set(handsOfVillain.map(({ h }) => fileOfHand.get(h)).filter(Boolean))],
   population: 'online-50NL-2009 (HandHQ). NOT the founder\'s live 9-handed 1/2-1/3 game.',
 });
-writeFileSync(`${OUT}/${safe}.conduct-card.json`, JSON.stringify(conductCard, null, 1));
+// ─── 6b. THE HELD-OUT SCORE, STAMPED ON THE CARD BEFORE IT IS WRITTEN ────────
+/**
+ * WS-551 — the number two cards compete on, and the four baselines that give it meaning.
+ *
+ * WHAT IS SCORED, STATED BEFORE THE CODE BECAUSE IT IS THE PART THAT MISLEADS.
+ * The card emitted above is induced on ALL of his decisions, which is correct for a description
+ * and makes it unscoreable: there is no held-out data it has not seen. What runs here is the SAME
+ * INDUCER at the SAME n, refit on each fit block and scored on the block after it. The number is
+ * an estimate of what a card built this way, from this much of this player, is worth out of
+ * sample. It is NOT a measurement of this particular ruleset, and `score.seam` says so on the
+ * card's face with a different digest so the two identities cannot be confused.
+ *
+ * WHY IT RUNS HERE AND NOT AFTER THE WRITE. The score is stamped ONTO the card (schema v4), so it
+ * has to exist before the bytes do — `contentHash` is minted over the canonical body and a hash
+ * that did not cover the score would let the same hash name a scored and an unscored card. The
+ * sidecar file this used to write is GONE: nothing in the repo read it, and a figure that RANKS a
+ * card is the last thing that should live in a separate object that can be copied, quoted or aged
+ * apart from the card it ranks.
+ *
+ * TWO ARMS, AND THE DELTA IS THE RESULT (`.claude/rules/unmeasured-constants.md`).
+ *
+ *   production   the features exactly as the card was induced on them.
+ *   leak-free    the same induction with every `str_*` / `str_d_*` / `draw_completed` column
+ *                withheld.
+ *
+ * Those columns are the ONE class of situation feature in this schema derived from a statistic
+ * pooled over the subject's whole decision set: `entryWidthOf(decisions)` in
+ * enrichDecisions.mjs:56-76 measures his entry widths over EVERY hand — held-out ones included —
+ * and `strengthAt` fills the `assumed` arm of hand strength from it. They are `group: 'situation'`
+ * (decisionSchema.mjs), so the induction is free to split on them, which makes a fold-blind
+ * statistic an input to a fold-scored model. Stripping `d.strength` makes every one of those
+ * columns read `-`, so `buildFeatures` returns null for them and the induction can never test
+ * one — the arm is leak-free by construction rather than by a filter someone has to maintain.
+ *
+ * The delta between the arms is the price of that leak, measured. It is not the fix; the fix is
+ * fold-aware enrichment (estimate entry widths on the fit block only) and it needs a `fitRows`
+ * parameter on `enrichDecisions`, which is named in the WS-551 report rather than done here.
+ */
+const {
+  orderHands, scoreWalkForward, scoreRecordOf, BOOTSTRAP, FOLD_CUTS,
+} = await import('./scoreHeldOut.mjs');
+
+const { order: handOrder, basis: orderBasis, days: corpusDays } = orderHands(handsOfVillain);
+
+/**
+ * The leak-free arm's rows. Shallow clones with the pooled-statistic fields removed — every
+ * `str_*` getter in the schema uses optional chaining, so they collapse to `-` rather than
+ * throwing, and a `-` column is one `buildFeatures` refuses to offer as a condition.
+ */
+const decisionsNoStrength = decisions.map((d) => ({ ...d, strength: undefined, strengthDelta: undefined }));
+
+/**
+ * `induce(fit)` with no options, deliberately — the card above is emitted from `induce(decisions)`
+ * with no options too. Passing the constants explicitly here would let the two desync silently the
+ * day a default moves, and the whole point of the number is that it describes THIS inducer.
+ *
+ * (`rankCards` in the same module is the seam for putting two inducers on this order and these
+ * cuts and ranking them with a paired interval. It is not called here because a ranking of one
+ * entrant is just the score, and running it would double the induction cost for nothing.)
+ */
+const production = scoreWalkForward({
+  decisions, order: handOrder, basis: orderBasis, induceFn: (fit) => induce(fit),
+  label: 'production (all situation features)',
+});
+const leakFree = scoreWalkForward({
+  decisions: decisionsNoStrength, order: handOrder, basis: orderBasis, induceFn: (fit) => induce(fit),
+  label: 'leak-free (str_* withheld)',
+});
+
+const heldOutScore = {
+  ...scoreRecordOf(production, {
+    subjectId: pid,
+    order: { basis: orderBasis, hands: handOrder.length, corpusDays },
+    /**
+     * THE IN-SAMPLE FIGURE, BESIDE THE HELD-OUT ONE AND LABELLED. It is resubstitution — the same
+     * decisions the tree was grown on — so it cannot fall and is not comparable to anything else
+     * in this block. Carried rather than dropped, because a reader who finds it elsewhere on the
+     * card and does not find it here will compare the two anyway.
+     */
+    inSample: {
+      accuracy,
+      inducedOn: 'all decisions — in-sample by construction',
+      note: 'resubstitution: adding rules can only improve it, so it can never falsify the card',
+    },
+  }),
+  /**
+   * THE SECOND ARM AND THE DELTA. A delta of zero is a finding: it says the strength columns are
+   * not load-bearing on this path, which is worth knowing and is often surprising.
+   */
+  leakage: {
+    arm: 'leak-free (str_*/str_d_*/draw_completed withheld)',
+    why: 'those columns derive from entryWidthOf(ALL decisions) — enrichDecisions.mjs:56 — so a '
+      + 'statistic that saw the held-out hands feeds a feature the induction may split on',
+    refused: leakFree.refused,
+    bits: leakFree.refused ? null : leakFree.bits.complete,
+    coverage: leakFree.refused ? null : leakFree.coverage.share,
+    deltaBits: (production.refused || leakFree.refused) ? null
+      : leakFree.bits.complete.card - production.bits.complete.card,
+    deltaNote: 'positive means the production arm scored BETTER than the leak-free arm — the '
+      + 'gap is an upper bound on what the pooled-statistic leak is worth, not a proof it is real',
+    fix: 'give enrichDecisions a `fitRows` parameter so entry widths are estimated on the fit '
+      + 'block only, then re-run both arms; the delta should collapse to sampling noise',
+  },
+};
+
+/**
+ * ADR-009's REPLICATION CLAUSE, and `conductCardProblems` rejects the card without it.
+ *
+ * The bootstrap draws randomness and the fold cuts decide which rows were fit and which were
+ * scored, so both are part of what a replication needs and neither may live only on the figure it
+ * produced. `emitConductCard` mints `seeds: {}` as a positive claim that the INDUCTION draws none
+ * — true, and now incomplete, because the score does.
+ */
+conductCard.manifest = {
+  ...conductCard.manifest,
+  seeds: { ...conductCard.manifest.seeds, heldOutBootstrap: BOOTSTRAP.seed },
+  constants: { ...conductCard.manifest.constants, heldOutFoldCuts: [...FOLD_CUTS] },
+};
+conductCard.score = heldOutScore;
+
+/**
+ * RE-MINTED OVER THE STAMPED BODY, with `contentHash` back to null first so the hash covers the
+ * same projection it always did. `canonical` is imported from the emitter rather than reproduced
+ * here: a hash computed by a copy of the canonicaliser is two representations that never have to
+ * agree, and this exact function was already found hashing 639 of 70,195 bytes once.
+ */
+conductCard.contentHash = null;
+conductCard.contentHash = `sha256:${createHash('sha256').update(canonical(conductCard)).digest('hex')}`;
+
+const stampedProblems = conductCardProblems(conductCard);
+if (stampedProblems.length) {
+  console.error('\nCONDUCT CARD INVALID AFTER STAMPING THE HELD-OUT SCORE:');
+  for (const p of stampedProblems) console.error(`  - ${p}`);
+  process.exit(1);
+}
+
+/**
+ * WS-599 — THE CARD AND ITS POINTER ARE ONE WRITE.
+ *
+ * This line was `writeFileSync(`${OUT}/${safe}.conduct-card.json`, ...)` into a bare directory,
+ * and `${OUT}` defaults to `.tmp-arch/profiles`, which is gitignored (.gitignore:84). The card's
+ * whole identity — contentHash, rulesetHash, engineCommit, dealBookHash,
+ * disclaimerRegisterVersion — was minted by `emitConductCard` and then discarded at write time.
+ * Seven schema-valid cards accumulated with nothing in the repo citing any of them, four of them
+ * claiming the same `cardId`.
+ *
+ * `writeCardWithPointer` is the only writer, deliberately: it mints the pointer from the exact
+ * bytes BEFORE they reach disk and removes the card again if the pointer write fails. There is
+ * no path through this file that can leave a card no pointer names. That is the accept criterion
+ * — "make it unrepresentable rather than validated" — and it is why this is not a
+ * `writeFileSync` followed by a check.
+ */
+const { writeCardWithPointer } = await import('./conductCardPointer.mjs');
+const { cardPath, pointerPath, pointer } = writeCardWithPointer({
+  card: conductCard,
+  outPath: `${OUT}/${safe}.conduct-card.json`,
+  registeredBy: 'profileVillain.mjs',
+});
 console.log(`\nCONDUCT CARD ${conductCard.cardId}`);
 console.log(`  ${conductCard.rules.length} mixes · ${conductCard.unresolved.length} unresolved · `
   + `separator search arity ${conductCard.separatorSearch.arity}`);
 console.log(`  ${conductCard.contentHash}`);
 console.log(`  ${conductCard.dealBook.dealBookHash}`);
+console.log(`  artifact ${cardPath} (${pointer.location.role} on ${pointer.location.node})`);
+console.log(`  pointer  ${pointerPath} [${pointer.standing}]`);
 
 writeFileSync(`${OUT}/${safe}.json`, JSON.stringify({
   pid, schema: SCHEMA_VERSION, hands: handsOfVillain.length, decisions: decisions.length,
@@ -712,3 +883,45 @@ writeFileSync(`${OUT}/${safe}.json`, JSON.stringify({
   unresolved: unresolved.length,
 }, null, 1));
 console.log(`\nwrote ${OUT}/${safe}.json and .tsv`);
+
+// ─── 7. THE HELD-OUT SCORE, AS REPORTED ──────────────────────────────────────
+/**
+ * COMPUTED IN SECTION 6b, because it is stamped ONTO the card and the card is written before
+ * this point. What is left here is the reporting — and the SIDECAR FILE IS GONE. It existed only
+ * because the Conduct Card schema had nowhere to put a score; schema v4 does, nothing in the repo
+ * ever read the sidecar, and a figure that RANKS a card must not be separable from the card.
+ */
+console.log(`\nHELD-OUT SCORE — ${orderBasis === 'day+arrival'
+  ? `walk-forward by corpus day (${corpusDays} days)`
+  : 'NO temporal axis on these hands — split is corpus ARRIVAL order, not time'}`);
+if (production.refused) {
+  console.log(`  REFUSED: ${production.refused.reason} — ${production.refused.detail}`);
+} else {
+  console.log(`  held out ${production.n.evalDecisions} decisions over ${production.n.evalHands} `
+    + `hands in ${production.n.folds} disjoint blocks · coverage ${(100 * production.coverage.share).toFixed(1)}%`);
+  console.log(`  model                          bits/dec     lift   95% CI (paired, by hand)`);
+  /**
+   * THREE VERDICTS, NOT TWO. An interval wholly BELOW zero does not "straddle zero" — it says
+   * the baseline BEAT the card, which is the most important thing this instrument can report and
+   * the one a two-state label would have hidden.
+   */
+  for (const [k, v] of Object.entries(production.bits.complete)) {
+    if (k === 'card') continue;
+    const ci = production.liftInterval[k];
+    const verdict = ci.lo > 0 ? '' : (ci.hi < 0 ? '   <- THE CARD IS WORSE' : '   <- straddles zero');
+    console.log(`  ${k.padEnd(28)} ${v.toFixed(4).padStart(8)}  ${ci.diff.toFixed(4).padStart(7)}   `
+      + `[${ci.lo.toFixed(4)}, ${ci.hi.toFixed(4)}]${verdict}`);
+  }
+  console.log(`  ${'THE CARD'.padEnd(28)} ${production.bits.complete.card.toFixed(4).padStart(8)}`);
+  console.log(`  in-sample accuracy was ${(100 * accuracy).toFixed(1)}% — that figure is `
+    + `resubstitution and is NOT comparable to anything above.`);
+  if (heldOutScore.leakage.deltaBits != null) {
+    console.log(`  leak-free arm ${leakFree.bits.complete.card.toFixed(4)} bits `
+      + `(delta ${heldOutScore.leakage.deltaBits.toFixed(4)} — the str_* columns' contribution, `
+      + `contaminated by enrichDecisions.mjs:56)`);
+  } else {
+    console.log(`  leak-free arm REFUSED: ${leakFree.refused?.reason}`);
+  }
+}
+console.log(`  stamped onto ${conductCard.cardId} as .score (Conduct Card schema v4) — ${cardPath}`);
+console.log(`  ${conductCard.contentHash}  (re-minted over the stamped body)`);

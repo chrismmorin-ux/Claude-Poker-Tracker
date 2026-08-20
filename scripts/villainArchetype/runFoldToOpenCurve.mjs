@@ -69,15 +69,25 @@ for (const stake of curve.corpus.stakes) {
     .flatMap((s) => Object.values(s))
     .filter((c) => c.stake === stake && c.bucket)
     .map((c) => c.bucket))].sort((a, b) => (Number(a.replace('to', '')) || 0) - (Number(b.replace('to', '')) || 0));
-  console.log('seat  ' + buckets.map((b) => b.padStart(16)).join(''));
-  for (const seat of ['SB', 'BB', 'BTN', 'CO', 'HJ', 'UTG']) {
-    const row = buckets.map((b) => {
-      const c = curve.cells[seat]?.[`${b}|${stake}`];
-      if (!c) return '-'.padStart(16);
-      const mark = c.status === 'hit' ? '' : '*';
-      return `${(100 * c.pooled.rate).toFixed(1)}%${mark} (${c.pooled.n})`.padStart(16);
-    }).join('');
-    if (row.trim().replace(/-/g, '')) console.log(`${seat.padEnd(5)} ${row}`);
+  // One block per live-opponent count. They are DIFFERENT CELLS and printing them pooled would
+  // reproduce, on the console, exactly the conflation the key change was made to remove.
+  const lives = [...new Set(Object.values(curve.cells)
+    .flatMap((s) => Object.values(s))
+    .filter((c) => c.stake === stake && c.liveOpponents != null)
+    .map((c) => c.liveOpponents))].sort((a, b) => a - b);
+
+  for (const live of lives) {
+    console.log(`\n  ${live} live opponent(s) when the seat acts` + (live === 1 ? '  — heads-up vs the opener' : ''));
+    console.log('  seat  ' + buckets.map((b) => b.padStart(16)).join(''));
+    for (const seat of ['SB', 'BB', 'BTN', 'CO', 'HJ', 'UTG']) {
+      const row = buckets.map((b) => {
+        const c = curve.cells[seat]?.[`${b}|${stake}|vs${live}`];
+        if (!c) return '-'.padStart(16);
+        const mark = c.status === 'hit' ? '' : '*';
+        return `${(100 * c.pooled.rate).toFixed(1)}%${mark} (${c.pooled.n})`.padStart(16);
+      }).join('');
+      if (row.replace(/[-\s]/g, '')) console.log(`  ${seat.padEnd(5)} ${row}`);
+    }
   }
   console.log('  * cell has too few qualifying players to serve a rate — it REFUSES rather than');
   console.log('    falling back to the pooled number. The pooled value is shown for inspection only.');
