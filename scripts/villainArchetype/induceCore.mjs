@@ -38,6 +38,19 @@ const BANDS = {
   callers_ahead: (v) => v === '-' ? null : (v > 0 ? `${v} caller(s) already in` : 'nobody has called yet'),
   barrels: (v) => v === '-' ? null : `${v} street(s) of betting behind it`,
   broadways: (v) => v === '-' ? null : `${v} broadway card(s) out`,
+  /**
+   * ONE LABELLING FOR `can_raise`, used by the structural split AND by the feature map.
+   *
+   * The structural split below builds its branches straight off `d.canRaise` with the labels
+   * "raising is available" / "raising is not available to me", while `buildFeatures` produced
+   * "can raise = yes". Two representations of one fact, and they never had to agree — until the
+   * predicate had to be evaluated, at which point EVERY decision failed to match its own rule
+   * (1,937 of 1,937), because the card said one string and the evaluator computed the other.
+   *
+   * Putting the labelling here means both paths read it from one place.
+   */
+  can_raise: (v) => (v === 'yes' ? 'raising is available'
+    : v === 'no' ? 'raising is not available to me' : null),
   to_call_bb: () => null,     // subsumed by price and bet size
   pot_bb: () => null,         // subsumed by SPR
   high_card: () => null,      // too granular to stand as a rule
@@ -74,6 +87,13 @@ const entropy = (pool) => {
   return h;
 };
 
+/**
+ * The feature map, exported so a consumer can EVALUATE a card's predicates against decisions
+ * the induction never saw. Without it the predicate is uninterpretable: `"a steep price
+ * (36-45%)"` is produced by `BANDS.price_pct`, and only this map knows that.
+ */
+export const featureMap = () => buildFeatures();
+
 export const induce = (decisions, {
   minRule = MIN_RULE_DEFAULT, rangeMax = RANGE_MAX_DEFAULT, maxDepth = MAX_DEPTH_DEFAULT,
   alpha = 0.05, requireSignificance = true,
@@ -104,7 +124,8 @@ export const induce = (decisions, {
       let complete = true;
       for (const d of pool) {
         if (d.canRaise == null) { complete = false; break; }
-        const key = d.canRaise ? 'raising is available' : 'raising is not available to me';
+        // Read from BANDS, never re-typed here — see the note on BANDS.can_raise.
+        const key = BANDS.can_raise(d.canRaise ? 'yes' : 'no');
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(d);
       }
@@ -230,13 +251,41 @@ export const induce = (decisions, {
         }
         return { feature: c.feature, value: c.value, values: [...vals].sort(), constant: vals.size === 1 };
       });
-      leaves.push({ conds: path, condValues, pool: node.pool, ...p, verdict: mix.verdict, mix,
+      /**
+       * THE PREDICATE — the same conditions as `conds`, in a form a machine can evaluate.
+       *
+       * `conds` carries only the branch LABEL ("a steep price (36-45%)", "not 4 opponent(s)
+       * live", "everything else"). A label is enough to render a sentence and not enough to
+       * decide whether an unseen decision falls in this leaf, so the card built from it can be
+       * read and cannot be RUN: no held-out score, no replay, no simulation, no diff between
+       * two runs. Every downstream use is a composition with the state->rule map, and that map
+       * was being discarded at the last step while the data to build it sat on the node.
+       *
+       * Three operators, because the tree makes three kinds of branch:
+       *   eq    the decision's value for this feature equals `value`
+       *   not   it is anything except `value`      (the one-vs-rest split)
+       *   else  it is none of `siblings`           (the pooled small groups)
+       *
+       * `siblings` is the full branch set at that node, carried because `else` and `not` are
+       * meaningless without it — which is precisely why a label-only card cannot be evaluated.
+       */
+      const predicate = path.map((c) => ({
+        feature: c.feature,
+        op: c.value === 'everything else' ? 'else' : (c.value.startsWith('not ') ? 'not' : 'eq'),
+        value: c.value.startsWith('not ') ? c.value.slice(4) : c.value,
+        siblings: c.siblings,
+      }));
+      leaves.push({ conds: path, condValues, predicate, pool: node.pool, ...p, verdict: mix.verdict, mix,
         // kind is kept so older consumers still parse; verdict is the one that carries meaning.
         kind: p.pure ? 'always' : ((1 - p.k / p.n) <= rangeMax ? 'range' : 'unresolved') });
       return;
     }
+    // The sibling branch values travel with each condition: `everything else` and `not X` are
+    // defined only relative to the other branches at that node, so a condition that does not
+    // carry them cannot be evaluated against a decision the tree never saw.
+    const siblings = node.children.map((c) => c.value);
     for (const c of node.children) {
-      walk(c.node, [...path, { feature: node.feature, value: c.value }],
+      walk(c.node, [...path, { feature: node.feature, value: c.value, siblings }],
         new Set([...used, node.feature]));
     }
   };

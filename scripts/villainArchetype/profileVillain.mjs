@@ -458,6 +458,8 @@ for (const c of blindnessCost.slice(0, 3)) console.log('  ' + String(c.behaviour
  * Every rule reports every action he took in that spot, each with its own interval.
  */
 const { induce, wilson } = await import('./induceCore.mjs');
+const { featureMap } = await import('./induceCore.mjs');
+const { assign } = await import('./ruleMatch.mjs');
 const { rules, coverage, accuracy } = induce(decisions);
 
 const VERDICTS = {
@@ -544,6 +546,34 @@ postGates.push({ name: 'the mix verdict discriminates',
   ok: impure.length === 0 || impure.some(r => r.verdict !== 'mix'),
   detail: `${impure.filter(r => r.verdict === 'mix').length} of ${impure.length} impure leaves came back "mix"`
     + (impure.every(r => r.verdict === 'mix') ? ' — ALL of them, which means the test is not separating anything' : '') });
+/**
+ * THE CARD MUST REPRODUCE ITSELF from its own emitted predicates. Until those existed there
+ * was no way to state this, let alone check it: the rules carried an English sentence and the
+ * map from a decision to its rule was discarded at emit. See `ruleMatch.mjs`.
+ */
+{
+  const FEATURES = featureMap();
+  const { index, overlaps, offSupport } = assign(decisions, rules, FEATURES);
+  postGates.push({ name: 'every decision matches exactly one rule',
+    ok: overlaps === 0 && offSupport === 0,
+    detail: `${overlaps} matched more than one, ${offSupport} matched none, of ${decisions.length}` });
+
+  // FAITHFUL: the matched set must be the leaf set, action by action.
+  let wrongN = 0; let wrongK = 0;
+  rules.forEach((r, ri) => {
+    const matched = decisions.filter((_, i) => index[i] === ri);
+    if (matched.length !== r.n) { wrongN++; return; }
+    const tally = new Map();
+    for (const d of matched) tally.set(d.action, (tally.get(d.action) || 0) + 1);
+    for (const [act, k] of r.mix.dist) {
+      if ((tally.get(act) || 0) !== k) { wrongK++; return; }
+    }
+  });
+  postGates.push({ name: 'each rule re-derives its own decisions',
+    ok: wrongN === 0 && wrongK === 0,
+    detail: `${wrongN} rules disagreed on n, ${wrongK} on an action count, over ${rules.length} rules` });
+}
+
 postGates.push({ name: 'every verdict is on the closed list',
   ok: rules.every(r => Object.prototype.hasOwnProperty.call(VERDICTS, r.verdict)),
   detail: Object.keys(byVerdict).join(', ') });
