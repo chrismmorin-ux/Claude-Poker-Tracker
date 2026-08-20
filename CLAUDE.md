@@ -271,7 +271,9 @@ When working autonomously: active sprint → resume | no sprint → `/next` → 
 
 ## Purpose
 
-Live poker hand tracker and exploit engine for 9-handed games. Records actions, builds Bayesian player models, and surfaces maximally exploitative plays — compensating for human limitations in memory and pattern recognition at the table. Every installed component (program, engine, surface) must earn its place by advancing this goal — proportional value over governance ceremony.
+Live poker hand tracker and decision engine for 9-handed games — compensating for human limits in memory and pattern recognition at the table. Records the hands that actually happened, builds measured policies (Conduct Cards) of the players in them, prices hero's decisions in bb, and locates a strategy between its pier posts against a measured Field. Every comparative claim about strategy, model quality or EV resolves to a replicable Result Card (ADR-009) — the edge it reports is checkable, not asserted. Now becoming reflexive: hero is measured by the same machinery as the villains, and the off-table work it prescribes (Lessons) is scored like any other claim. Every installed component (program, engine, surface) must earn its place by advancing this goal — proportional value over governance ceremony.
+
+*This sentence was frozen at its March 2026 wording for five and a half months while the substance moved seven eras; see [docs/standard-of-record/NAMING-HISTORY.md](docs/standard-of-record/NAMING-HISTORY.md). Re-read it when the model changes shape.*
 
 React + Vite + Tailwind, mobile-optimized (1600×720 design canvas; target device Galaxy S22 — see Responsive Design).
 
@@ -355,6 +357,7 @@ Supporting references (unique detail not in System Model):
 - `INVARIANTS.md` — standalone invariant catalog with verification dates
 - `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
 - `docs/standard-of-record/VOCABULARY.md` — **the vocabulary for every strategy/EV claim** (ADR-009). Surface kinds, Strategy Card, Deal Book, Result Card, Decision Atom, warrants. Read before naming anything in this space; the terms already exist.
+- `docs/standard-of-record/NAMING-HISTORY.md` — **the eight states this model has passed through, what each name could not hold, and the argument lattice that says which object comes next.** Read before coining a term or claiming something is unbuilt.
 - `docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md` — **what the numbers can honestly claim, and the ranked list of where the fault most likely is** (WS-330). §1 is one page in plain language. Read before quoting any figure.
 
 ## Standard of Record (ADR-009)
