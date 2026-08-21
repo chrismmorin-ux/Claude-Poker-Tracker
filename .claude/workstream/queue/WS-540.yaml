@@ -2,11 +2,12 @@ id: "WS-540"
 title: "Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
+completed_at: "2026-08-21T17:33:18.818Z"
+completion_commit: c74536df
 priority_score: 90
 priority_label: "P1"
 category: "infrastructure"
@@ -203,3 +204,4 @@ compute_job:
   artifacts:
     - "out/ws540-ladder-100k.json"
     - "out/ws540-replay-100k.json"
+closed_by_event: ev-1787333598851-2971616dea4c

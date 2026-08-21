@@ -1,0 +1,216 @@
+id: "WS-612"
+title: "Resolve the absolute rung edges — the deltas resolved at n=77k, the edges did not"
+legacy_id: ""
+type: measurement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 90
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  WS-540's 100k run (job ws-540-d96c71d5f2f3, commit 41390314, 2026-08-21) did what its
+  ticket asked and exposed the next question precisely.
+
+  WHAT RESOLVED. All four paired rung deltas, at n=77,450 over 9,335 players:
+      r1 vs r0   +0.3852  [+0.2684, +0.4974]  MDE 0.1142
+      r2 vs r1   +0.0685  [+0.0488, +0.0877]  MDE 0.0195
+      r3 vs r2   +0.1014  [+0.0586, +0.1415]  MDE 0.0415
+      r4 vs r3   +0.0212  [+0.0049, +0.0368]  MDE 0.0159
+  Every one excludes zero. The replay gate gave edges/deltas/coverage BIT-IDENTICAL.
+
+  WHAT DID NOT. Four of the five ABSOLUTE edges still straddle zero:
+      r1 +0.0290  [-0.1992, +0.2521]  MDEdetect 0.2264  MDEpower80 0.3237
+      r2 +0.0975  [-0.1272, +0.3202]  MDEdetect 0.2264  MDEpower80 0.3236
+      r3 +0.1989  [-0.0368, +0.4236]  MDEdetect 0.2297  MDEpower80 0.3284
+      r4 +0.2201  [-0.0199, +0.4452]  MDEdetect 0.2310  MDEpower80 0.3302
+  Only r0 excludes zero, and NEGATIVELY: -0.3562 [-0.6242, -0.0930]. Entry-only is
+  measurably WORSE than the field.
+
+  So we can say which rung beats which, but not yet whether the best rung beats the pool.
+  That gap is the pairing effect working as designed -- delta MDEs are 0.016-0.11 against
+  edge MDEs of 0.23, because both arms score the SAME decision set and shared noise cancels.
+
+  WHY MORE CORPUS IS THE ANSWER AND NOT A DIFFERENT ONE. The run used --max-files 600.
+  FTP 50NLH holds 525 files and PS 50NLH holds 1,231 -- 1,756 available, so 600 was 34% of
+  the stratum. Raising the cap to the whole stratum changes NOTHING about the conditioning:
+  same two sites, same stake, same --max-decisions-per-player 4. It is strictly more of the
+  identical population, which is the only kind of "more n" that leaves the comparison clean.
+  Pooling other stakes is REFUSED here -- the stake gradient is real (3-bet +57% across the
+  ladder), so a pooled-stake edge would answer a different question.
+
+  PROJECTION, from this run's own measurements and stated as a projection:
+      files      600 -> 1,756          (2.93x)
+      rows    85,685 -> ~250,700
+      scored  77,464 -> ~226,900
+      sqrt(2.93) = 1.712, so MDEpower80 0.3302 -> ~0.1929  (< r4 edge 0.2201)  RESOLVES
+                             r3 0.3284 -> ~0.1918  (< r3 edge 0.1989)          RESOLVES, narrowly
+                             r2 0.3236 -> ~0.1890  (> r2 edge 0.0975)          DOES NOT
+      runtime   11.2 min -> ~33 min produce, ~12 min replay  (4 workers, node1)
+      disk     417 MB   -> ~1.28 GB at the measured 5,103 B/row (node1 had 347 GB free)
+
+  THE CEILING, NAMED RATHER THAN DISCOVERED LATER. r2's edge would need
+  n = 77,450 x (0.3236/0.0975)^2 = ~853,000 scored decisions. This stratum tops out near
+  227,000. So r1 and r2 absolute edges are NOT reachable from FTP+PS 50NLH at 80% power,
+  and this run will not resolve them. Their DELTAS are already resolved and remain the
+  load-bearing result. Do not read a still-straddling r1/r2 edge as a failed run.
+
+  PRE-REGISTERED FALSIFIER (recorded before the run): if r4's edge CI still straddles zero
+  at n ~= 227,000, the 1/sqrt(n) scaling used above is WRONG -- most likely because effective
+  sample size stops tracking n once per-player clustering saturates (essShare was already only
+  0.40 here). That outcome refutes the projection in this ticket and makes ESS scaling, not
+  corpus volume, the thing to fix. Record it unhedged if it happens.
+
+  SECOND PRE-REGISTERED FALSIFIER, added 2026-08-21 after the first attempt OOMed. The heap
+  ceiling was raised to 8192 MB on the projection above. If the run OOMs AGAIN at 8 GB, the
+  projection in this ticket is wrong and the ceiling is STRUCTURAL, not a cap: the ladder holds
+  every eval player resident and has no sharding (unlike run-range-calibration, which solved
+  exactly this with --shards 12). In that case WS-614 is a hard prerequisite and this run
+  cannot complete without it. Record it unhedged if it fires.
+
+  TRANSFER STATUS. HandHQ online cash, July 2009, 50NL. Any claim about the founder's live
+  9-handed 1/2-1/3 game is TRANSFERRED, not measured. Every rung number here carries that.
+  ── OUTCOME, 2026-08-21 (job ws-612-ba535db7d606, commit 86bdb60e) ──────────────────────
+
+  RESOLVED. n=235,217 scored (235,271 incl. skips) from 30,072 eval players over 1,070,493
+  hands; ESS 93,340; site composition FTP 9,008 / PS 11,849 (proportional). Produce 2,523.6s,
+  replay 749.8s. Replay gate: edges/deltas/coverage ALL IDENTICAL.
+
+      r0-entry-only          edge -0.1700  [-0.3230, -0.0204]  MDE 0.1500   resolved NEGATIVE
+      r1-flat-continue       edge +0.1179  [-0.0090, +0.2453]  MDE 0.1277   UNRESOLVED
+      r2-price-the-continue  edge +0.1696  [+0.0448, +0.2977]  MDE 0.1272   resolved
+      r3-respect-aggression  edge +0.2291  [+0.1024, +0.3592]  MDE 0.1274   resolved
+      r4-spr-gate            edge +0.2465  [+0.1189, +0.3790]  MDE 0.1289   resolved
+
+  All four paired deltas resolved again, with tighter intervals than at 77k
+  (r4 vs r3: +0.0175 [+0.0073, +0.0273], MDE 0.0100).
+
+  NEITHER PRE-REGISTERED FALSIFIER FIRED. The 8 GB heap held -- no second OOM -- so at this
+  corpus size the ceiling was a cap, not structural. WS-614 (sharding) is NOT retired by this:
+  it binds at any larger n, and r1 still needs one.
+
+  A PREDICTION IN THIS TICKET THAT THE MEASUREMENT REFUTED. KEPT ON PURPOSE.
+  The projection above states r2's edge "DOES NOT" resolve and needs ~853,000 decisions.
+  IT RESOLVED AT 235,217. The method was wrong in a way worth not repeating: I held the 77k
+  POINT ESTIMATE of r2's edge fixed (+0.0975) and shrank only the MDE around it. But that
+  estimate came from a run where r2's CI straddled zero -- it was noise-dominated, so using it
+  as the effect size to beat had no warrant. At full n the edge itself moved to +0.1696. The
+  same error applied to r3. Note what did NOT fail: the VOLUME projections were good (30,072
+  players vs ~30-31k predicted; 1,070,493 hands vs ~1,077,000; 235k scored vs ~227k). The
+  defect is specific -- projecting an EFFECT SIZE from a low-power point estimate, rather than
+  treating it as unknown within its interval.
+
+  STILL OPEN AND NOT CLAIMED AS DONE:
+    - r1's edge remains unresolved: +0.1179 [-0.0090, +0.2453]. Do not size the run that
+      resolves it from this point estimate -- that is the exact error recorded above.
+    - essShare 0.397, still under the 0.50 threshold, so lowSupport flags on every rung.
+    - NO RESULT CARD (WS-613). Per ADR-009 none of these numbers is citable until one exists.
+    - Corpus is HandHQ online cash July 2009 50NL. Any live 9-handed 1/2-1/3 reading is
+      TRANSFERRED, not measured.
+
+accept_criteria: |
+  - The run scores >= 174,300 decisions, the n this ticket derives for 80% power on r4.
+  - r4's absolute edge CI excludes zero, OR the run reports that it did not and the
+    pre-registered falsifier above is recorded as fired.
+  - The replay gate passes bit-identical, as it did at 77k. A set that cannot be replayed
+    is not a measurement.
+  - The r1/r2 edges are reported as still-unresolved WITH the ~853,000 figure on their face,
+    so a reader cannot mistake the named ceiling for a silent failure.
+  - Site composition (FTP vs PS share) is reported, since the stratum is pooled across two
+    sites and the mix moved when the file cap was raised.
+effort: "S"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/rescore-rungs.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement-derived"
+  detail: "2026-08-21 — WS-540 job ws-540-d96c71d5f2f3 resolved all four deltas; edges still straddle zero"
+created_at: "2026-08-21T00:00:00.000Z"
+
+compute_job:
+  maxJobHours: 8
+  inputs:
+    - from: 'C:\Users\chris\fleet\compute-inputs\behavior-policy-ws503.json'
+      to: "out/behavior-policy.json"
+      sha256: "57c69e8346d30b0e20d56515720fe21aee405c43df7eabb28747b71dfb2f73da"
+  steps:
+    - name: ladder-full50-produce
+      cmd: node
+      args:
+        - "scripts/backtest/run-rule-ladder.mjs"
+        - "--behavior-policy"
+        - "out/behavior-policy.json"
+        # IDENTICAL conditioning to the 77k run. Only --max-files and --max-decisions move.
+        - "--sites"
+        - "FTP,PS"
+        - "--stakes"
+        - "50NLH"
+        - "--max-files"
+        - "1756"
+        - "--file-selection"
+        - "proportional"
+        - "--max-decisions"
+        - "300000"
+        - "--max-decisions-per-player"
+        - "4"
+        - "--wave-size"
+        - "16"
+        - "--workers"
+        - "4"
+        - "--target-bb"
+        - "0.10"
+        - "--context-set"
+        - 'C:\Users\chris\data\ws540-sets\ladder-full50.jsonl'
+        - "--out"
+        - "out/ws612-ladder-full50.json"
+      env:
+        # MEASURED OOM, 2026-08-21, job ws-612-02b5ae6601a1 attempt 0. The first submission of
+        # this exact spec died with "Ineffective mark-compacts near heap limit" at 4,086 MB --
+        # node's DEFAULT ~4 GB cap -- after reading 900,000 hands and indexing 27,074 eval
+        # players, and it was still reading. Nothing was wrong with the n projection; the
+        # corpus READ phase ran out of heap before scoring ever began.
+        #
+        # THE SIZING, from the two runs rather than from taste:
+        #   600 files   ->   368,036 hands, 15,276 eval players -- fit in the 4 GB default
+        #   1,756 files -> ~1,077,000 hands (2.927x), ~30-31k eval players (the curve is
+        #                  SUBLINEAR: the same pseudonyms recur, so players do not scale with
+        #                  hands -- 27,074 at 900k, not the 44,700 a linear read would give)
+        #   death point implies ~0.144 MB per resident eval player above a ~0.2 GB baseline
+        #   projected peak ~4.7 GB -- inside this ceiling with margin
+        #
+        # WHY 8192 AND NOT MORE: WS-293 already measured that cm-node1 cannot supply 12288
+        # (15.8 GB total, ~9-10 GB free). A ceiling above available memory is not a ceiling.
+        # Workers inherit NODE_OPTIONS but score per-wave and do not hold the eval index.
+        NODE_OPTIONS: "--max-old-space-size=8192"
+      expectFiles:
+        - "out/ws612-ladder-full50.json"
+      maxAttempts: 2
+    - name: ladder-full50-replay-gate
+      cmd: node
+      args:
+        - "scripts/backtest/rescore-rungs.mjs"
+        - "--context-set"
+        - 'C:\Users\chris\data\ws540-sets\ladder-full50.jsonl'
+        - "--gate"
+        - "out/ws612-ladder-full50.json"
+        - "--target-bb"
+        - "0.10"
+        - "--out"
+        - "out/ws612-replay-full50.json"
+      expectFiles:
+        - "out/ws612-replay-full50.json"
+      maxAttempts: 2
+  artifacts:
+    - "out/ws612-ladder-full50.json"
+    - "out/ws612-replay-full50.json"

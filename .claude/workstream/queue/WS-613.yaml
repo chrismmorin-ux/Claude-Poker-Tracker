@@ -1,0 +1,113 @@
+id: "WS-613"
+title: "The ladder's resolved deltas are comparative claims with no Result Card — ADR-009 is unmet"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 88
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUND 2026-08-21 while reporting the WS-540 run (job ws-540-d96c71d5f2f3).
+
+  THE GAP. run-rule-ladder.mjs:358 and rescore-rungs.mjs:310 both print, unconditionally:
+
+      NO RESULT CARD. Prototype slice; per ADR-009 this makes no comparative claim.
+
+  and the runner writes `prototype: true` into its output. But the run produced FOUR RESOLVED
+  PAIRED DELTAS, every one excluding zero, and they are exactly the kind of thing ADR-009
+  binds -- "a number someone could act on or cite". The claim "r1-flat-continue beats
+  r0-entry-only by +0.3852 bb [+0.2684, +0.4974]" is a comparative claim about strategy
+  quality however the footer labels it. Saying it makes no claim does not stop it being one.
+
+  THE REASON GIVEN DOES NOT COVER THE DELTAS, AND THE FILE SAYS SO. Two lines above, at
+  run-rule-ladder.mjs:356-357:
+
+      PBR ceiling and exploitationEfficiency: UNAVAILABLE -- no engine arm supplies
+      perCombo. Named, not zeroed. Rung-to-rung deltas do not depend on it.
+
+  So the missing quantity is real, correctly named rather than zeroed, and IRRELEVANT to the
+  deltas by the file's own statement. The blanket refusal is broader than its justification.
+  PBR/exploitationEfficiency being unavailable is a reason those two metrics are absent from
+  a card; it is not a reason there is no card.
+
+  WHY THIS IS THE WS-291 MECHANISM. WS-291 survived the life of the project because nothing
+  forced two numbers onto the same axis, so a wrong number never had to meet a right one. A
+  run that stamps itself "no comparative claim" while emitting resolved deltas is that shape
+  exactly: the numbers get quoted (they were quoted to the founder in this session, by me)
+  and never have to meet the standard. The label is doing the opposite of what it looks like
+  it is doing -- it reads as caution and functions as an exemption.
+
+  EVERYTHING A MANIFEST NEEDS IS ALREADY IN THE RUN. Read out of the 77k artifacts:
+    engine commit                41390314c01e10626fc309f60fce95ad5eecfe3f
+    context set contentHash      sha256:5de2727f8d5621de082587cd170e3edb3b945e934f8c979ed6f79bd9ccbd7110
+    context set rows             85,685  (77,464 scored, 14 non-finite skipped)
+    per-rung card hashes         r0 b57f367686  r1 0a76b4ce51  r2 7a99364d3b
+                                 r3 3f77102484  r4 60c3daa921
+    partition                    sites FTP,PS · stakes 50NLH · max-files 600 · proportional
+                                 · config.plannedHash · config.playerStrataDiscovered
+    seeds                        config.equitySeed, config.seedScheme
+    load-bearing constants       targetBB 0.10 · maxDecisionsPerPlayer 4 · weightCap 20
+                                 · ciResamples 2000 · essShareThreshold 0.5
+    clustering                   clusterBy player · 9,335 clusters · essShare 0.36-0.40
+
+  MACHINERY THAT ALREADY EXISTS -- this is wiring, not invention:
+    src/utils/standardOfRecord/resultCard.js
+    src/utils/standardOfRecord/manifest.js       (manifestProblems rejects a card with no
+                                                  disclaimerRegisterVersion)
+    src/utils/standardOfRecord/faultRegister.js:2048  registerVersion()
+  Three working precedents to copy the shape from:
+    scripts/backtest/emit-ws436-result-card.mjs
+    scripts/backtest/emit-ws481-result-card.mjs
+    scripts/backtest/emit-ws482-result-card.mjs
+
+  WHAT THE CARD MUST CARRY ON ITS FACE, not in a footnote:
+    - lowSupport: true on all five rungs (essShare 0.36-0.40 vs the 0.50 threshold).
+    - The support-matched conditional AND the unconditional value, both, with the
+      conditioning set named. They diverge a lot: r4 is +0.2201 unconditional and +0.5556
+      support-matched ("the decisions where our policy could have produced the observed
+      action"). A card carrying one of those without the other is a WS-291 in miniature.
+    - Transfer status: HandHQ online cash July 2009 50NL; any live 9-handed 1/2-1/3 claim is
+      TRANSFERRED, not measured. This is the top-ranked Suspected-Fault Register entry.
+    - PBR / exploitationEfficiency as UNAVAILABLE-by-construction, named and not zeroed --
+      preserving the existing correct behaviour rather than papering over it.
+    - Which edges are UNRESOLVED and the n that would resolve each, so the card cannot be
+      read as claiming more than it measured.
+
+  DO NOT resolve this by deleting the deltas or by softening how they are reported. The
+  deltas are the first resolved rung result the project has produced. The fix is to make
+  them meet the standard.
+accept_criteria: |
+  - run-rule-ladder.mjs and rescore-rungs.mjs emit a registered Result Card whenever the run
+    produces at least one resolved delta, instead of the unconditional refusal.
+  - The card's manifest passes `manifestProblems` with no findings, including a
+    `disclaimerRegisterVersion` stamped via `registerVersion()`.
+  - The card carries both the unconditional and support-matched values with the conditioning
+    set named, the lowSupport flag, and the transfer status.
+  - PBR/exploitationEfficiency remain reported as UNAVAILABLE-by-construction, not zeroed.
+  - A run that produces NO resolved delta still declines to emit a card, and says why. The
+    refusal becomes conditional on the result, not hard-coded.
+  - The WS-540 77k run (job ws-540-d96c71d5f2f3) is re-carded retroactively from its
+    persisted artifacts, so the first resolved result is not the one left uncovered.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/rescore-rungs.mjs"
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "src/utils/standardOfRecord/manifest.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "found-in-session"
+  detail: "2026-08-21 — surfaced while reporting WS-540's resolved deltas; I quoted them as claims and they have no card"
+created_at: "2026-08-21T00:00:00.000Z"

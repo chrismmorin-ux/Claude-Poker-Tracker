@@ -1,0 +1,51 @@
+id: "WS-617"
+title: "Review the WS-612 run — Resolve the absolute rung edges — the deltas resolved at n=7"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 90
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  A compute run finished on cm-node1 and its artifacts are back on this machine.
+  Nothing else will surface this: finishing a job does not close a queue item, and
+  the better the compute node is utilised the less likely these are to be noticed.
+
+  SOURCE ITEM : WS-612 — Resolve the absolute rung edges — the deltas resolved at n=77k, the edges did not
+  JOB         : ws-612-ba535db7d606
+  RAN ON      : CM-NODE1 @ 86bdb60e4085
+  COLLECTED   : 2026-08-21T20:25:03.181Z
+  ARTIFACTS   : C:\Users\chris\fleet\inbox\ws-612-ba535db7d606
+     - out/ws612-ladder-full50.json  (19403 bytes, sha256 e33fa4f9bd0f…)
+     - out/ws612-replay-full50.json  (14915 bytes, sha256 f78a29edf7bf…)
+
+  No Result Card or verdict block was found in the returned artifacts, so the
+  headline could not be extracted automatically. Open the files above.
+
+accept_criteria: |
+  - The artifacts above are read and the finding is recorded where it belongs
+    (docs/research/ addendum, a decision, or a follow-up item) — not left in the inbox.
+  - WS-612 is either closed, or its remaining work is stated explicitly.
+  - Any warning on the Result Card is answered or explicitly accepted, in writing.
+  - If the run needs re-running with different parameters, the compute_job block is
+    edited (which re-keys the job hash and lets the feeder pick it up again).
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest from job ws-612-ba535db7d606"
+created_at: "2026-08-21T20:26:02.246Z"

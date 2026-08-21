@@ -1,0 +1,51 @@
+id: "WS-611"
+title: "Review the WS-540 run — Strategy arms cannot run in workers — the ladder is single-t"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 90
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  A compute run finished on cm-node1 and its artifacts are back on this machine.
+  Nothing else will surface this: finishing a job does not close a queue item, and
+  the better the compute node is utilised the less likely these are to be noticed.
+
+  SOURCE ITEM : WS-540 — Strategy arms cannot run in workers — the ladder is single-threaded on a 20-core box
+  JOB         : ws-540-d96c71d5f2f3
+  RAN ON      : CM-NODE1 @ 41390314c01e
+  COLLECTED   : 2026-08-21T17:25:04.423Z
+  ARTIFACTS   : C:\Users\chris\fleet\inbox\ws-540-d96c71d5f2f3
+     - out/ws540-ladder-100k.json  (19356 bytes, sha256 b30d8abfda6a…)
+     - out/ws540-replay-100k.json  (14877 bytes, sha256 9f7b88b48b0d…)
+
+  No Result Card or verdict block was found in the returned artifacts, so the
+  headline could not be extracted automatically. Open the files above.
+
+accept_criteria: |
+  - The artifacts above are read and the finding is recorded where it belongs
+    (docs/research/ addendum, a decision, or a follow-up item) — not left in the inbox.
+  - WS-540 is either closed, or its remaining work is stated explicitly.
+  - Any warning on the Result Card is answered or explicitly accepted, in writing.
+  - If the run needs re-running with different parameters, the compute_job block is
+    edited (which re-keys the job hash and lets the feeder pick it up again).
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest from job ws-540-d96c71d5f2f3"
+created_at: "2026-08-21T17:27:22.280Z"

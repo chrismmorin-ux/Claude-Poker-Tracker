@@ -1,0 +1,87 @@
+id: "WS-614"
+title: "The ladder holds every eval player resident — no sharding, so corpus size has a hard memory ceiling"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 86
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  MEASURED 2026-08-21, job ws-612-02b5ae6601a1 attempt 0.
+
+  THE FAILURE. run-rule-ladder.mjs over the full FTP+PS 50NLH stratum (1,756 files) died with
+
+      FATAL ERROR: Ineffective mark-compacts near heap limit
+      Allocation failed - JavaScript heap out of memory
+
+  at 4,086 MB, after "read 900000 hands, 27074 eval players" -- and it had not finished
+  reading. The corpus READ phase exhausted the heap before any decision was scored.
+
+  THE CEILING IS STRUCTURAL, NOT A CAP. `indexEvalPlayers` builds the whole eval-player index
+  in memory and holds it resident for the entire run, so peak memory is O(eval players) in the
+  slice. Raising --max-old-space-size moves the wall; it does not remove it. Two runs bracket
+  the cost:
+      600 files    ->   368,036 hands,  15,276 eval players  -- fits the 4 GB default
+      1,756 files  -> ~1,077,000 hands, ~30-31k eval players -- OOM at 4 GB
+  implying ~0.144 MB per resident eval player above a ~0.2 GB baseline. cm-node1 has 15.8 GB
+  total and WS-293 already established it cannot supply a 12288 MB ceiling. So the ladder tops
+  out somewhere near 55-60k eval players on this box NO MATTER WHAT, and G16 buys only a
+  constant factor.
+
+  WHY THAT BINDS SOON, WITH A NUMBER. WS-612 derives that r2's ABSOLUTE edge needs ~853,000
+  scored decisions. The full FTP+PS 50NLH stratum yields ~227,000. Reaching r2 therefore needs
+  roughly 4x this corpus -- which is ~120k+ eval players, far past the ceiling above. The
+  memory ceiling is not a nuisance encountered once; it is the thing that stops the edge
+  programme at r3/r4 and prevents r1/r2 from ever resolving.
+
+  THE FIX ALREADY EXISTS IN THIS REPO, ON A SIBLING RUNNER. run-range-calibration takes
+  `--shards N` and processes a subset of players per pass, and WS-293 records that sharded and
+  unsharded runs are BYTE-IDENTICAL in both the report and the Result Card, verified at 1, 5
+  and 7 shards on 2026-08-19. It also records the two fixes that identity required, and they
+  are the traps to expect here:
+    - compensated summation, so the low bits do not track accumulation order
+    - sorted keys on lazily-created buckets, so key order does not track accumulation order
+  run-rule-ladder.mjs and heroEvRunner.mjs have NO shard support -- grep returns nothing for
+  `shard` in either file.
+
+  WHY SHARDING IS THE RIGHT SHAPE HERE SPECIFICALLY. The ladder's whole design already pairs
+  every arm against ONE persisted decision set (the context set). Decision PRODUCTION is
+  already decoupled from arm SCORING (WS-540). So a sharded producer only needs to append to
+  the same context set across passes, and the existing replay gate proves the merged set is
+  the same measurement. The bit-identity gate that WS-540 shipped is exactly the instrument
+  that makes sharding safe to adopt.
+accept_criteria: |
+  - run-rule-ladder.mjs accepts `--shards N` and processes eval players in N passes, holding
+    only one shard's players resident.
+  - Sharded and unsharded runs are BYTE-IDENTICAL in edges, deltas and coverage, verified at
+    N=1 and at least two other N, mirroring WS-293's verification.
+  - Compensated summation and sorted bucket keys are in place, so neither the low bits nor the
+    key order tracks accumulation order.
+  - The merged context set replays through rescore-rungs.mjs --gate bit-identical, so a sharded
+    production run is provably the same measurement as an unsharded one.
+  - Peak RSS is reported per shard, so the ceiling is a measured number in the output rather
+    than something rediscovered by an OOM.
+  - A run whose projected eval-player count would exceed the heap REFUSES up front with the
+    shard count that would fit, instead of dying 15 minutes in.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/rescore-rungs.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-612", "WS-536"]
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement"
+  detail: "2026-08-21 — job ws-612-02b5ae6601a1 OOM at 4,086 MB / 27,074 eval players mid-read"
+created_at: "2026-08-21T00:00:00.000Z"

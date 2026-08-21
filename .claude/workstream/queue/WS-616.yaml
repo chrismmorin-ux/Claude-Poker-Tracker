@@ -1,0 +1,49 @@
+id: "WS-616"
+title: "WS-612 FAILED on cm-node1 — JavaScript heap out of memory"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 90
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  A compute job on cm-node1 reached a terminal state WITHOUT succeeding. It produced no
+  artifacts, so it landed in no inbox — nothing else would ever have surfaced it, and the
+  machine went idle having achieved nothing.
+
+  JOB       : ws-612-02b5ae6601a1
+  SOURCE    : WS-612 — Resolve the absolute rung edges — the deltas resolved at n=77k, the edges did not
+  OUTCOME   : failed
+  DETAIL    : JavaScript heap out of memory
+    runner: step 0 (ladder-full50-produce): missing artifact: out/ws612-ladder-full50.json
+    FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of
+    memory
+    FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of
+
+  Retries are already exhausted at the runner level (maxAttempts), so re-submitting the
+  identical spec will fail identically. The spec or the code has to change first — which
+  also re-keys the job hash and lets the feeder pick it up again.
+accept_criteria: |
+  - The cause is identified and fixed in the code or the compute_job block, not worked
+    around by shrinking the run until it fits.
+  - WS-612 either runs to completion or its blocker is stated explicitly.
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest — failed job ws-612-02b5ae6601a1"
+created_at: "2026-08-21T20:26:02.246Z"
