@@ -26,6 +26,9 @@ export const createHeroEvPool = async ({
   poolPct,
   workers,
   onRecord = null,  // (row) => void — decision-record sidecar rows, main thread owns files
+  // WS-540 Phase 1 — arm-independent context rows. Same ownership rule: the worker produces,
+  // the main thread owns the file. A `Float64Array` range crosses structuredClone intact.
+  onContext = null,
   log = () => {},
 }) => {
   if (!Number.isInteger(workers) || workers < 1) {
@@ -116,6 +119,8 @@ export const createHeroEvPool = async ({
           dispatch(entry);
         } else if (msg.type === 'record') {
           if (onRecord) onRecord(msg.row);
+        } else if (msg.type === 'context') {
+          if (onContext) onContext(msg.row);
         }
         // 'progress' messages are heartbeat only; the orchestrator logs at its own cadence.
       };

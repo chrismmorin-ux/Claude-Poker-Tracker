@@ -80,6 +80,9 @@ parentPort.on('message', (msg) => {
         onDecisionRecord: taskConfig.captureRecord
           ? (row) => parentPort.postMessage({ type: 'record', playerIndex, row })
           : null,
+        onDecisionContext: taskConfig.captureContext
+          ? (row) => parentPort.postMessage({ type: 'context', playerIndex, row })
+          : null,
         onProgress: ({ decisionsScored }) => parentPort.postMessage({
           type: 'progress', playerIndex, decisionsScored,
         }),

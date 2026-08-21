@@ -152,6 +152,9 @@ const main = async () => {
     const { fromStrategyCard } = await loader.load('/scripts/backtest/strategyArm.mjs');
     const { loadStrategyCard } = await loader.load('/src/utils/standardOfRecord/strategyCard.js');
     const { LADDER } = await loader.load('/scripts/backtest/ladder/rungs.card.js');
+    // WS-540 Phase 1 — optional. Producing a set costs the same walk the run already pays;
+    // what it buys is that the NEXT rung never pays it again.
+    const { openContextSetWriter } = await loader.load('/scripts/backtest/decisionContextSet.mjs');
 
     // Through the REAL loader: a rung that bypassed validation would be scoring an object the
     // Standard of Record would have rejected, and its content hash is what names the version.
@@ -186,6 +189,31 @@ const main = async () => {
     ({ files } = applyFileCap(files, { maxFiles: int(args['max-files'], Infinity) }));
 
     const weightCap = num(args['weight-cap'], 20);
+
+    // WS-540 Phase 1 — `--context-set <path>` writes the arm-independent decision set.
+    // The writes are queued and awaited at close: `runHeroEv`'s emit callbacks are
+    // synchronous, and an un-awaited async write would let the run finish before the file
+    // did — producing a manifest whose row count is right and whose file is short.
+    const contextSetPath = typeof args['context-set'] === 'string' ? args['context-set'] : null;
+    const contextWriter = contextSetPath
+      ? await openContextSetWriter(contextSetPath, {
+        meta: {
+          producer: 'run-rule-ladder.mjs',
+          stakes: list(args.stakes),
+          rungs: rungs.map((r) => ({ id: r.id, contentHash: r.contentHash })),
+        },
+      })
+      : null;
+    let contextChain = Promise.resolve();
+    let contextWriteError = null;
+    const onDecisionContext = contextWriter
+      ? (row) => {
+        contextChain = contextChain
+          .then(() => contextWriter.write(row))
+          .catch((e) => { contextWriteError = contextWriteError ?? e; });
+      }
+      : null;
+
     const started = Date.now();
 
     const run = await runHeroEv({
@@ -207,8 +235,21 @@ const main = async () => {
       // WS-540. Strategy arms cross the boundary as descriptors and are rebuilt in-worker
       // under a content-hash assertion. `--workers 0` remains the bit-identity baseline.
       workers: int(args.workers, 0),
+      onDecisionContext,
       log: (m) => console.log(`  ${m}`),
     });
+
+    let contextManifest = null;
+    if (contextWriter) {
+      await contextChain;
+      // A partial set is worse than none: it scores fewer decisions and reports a smaller
+      // edge without erroring. Fail the run rather than leave one on disk.
+      if (contextWriteError) throw contextWriteError;
+      contextManifest = await contextWriter.close();
+      console.log(`
+  CONTEXT SET  ${contextSetPath}`);
+      console.log(`    rows ${contextManifest.rows}   ${contextManifest.contentHash}`);
+    }
 
     const runtimeMs = Date.now() - started;
     const d = run.decisions;
@@ -304,6 +345,12 @@ const main = async () => {
       // WS-540 Phase 0 — persisted, not just printed. The falsifier is pre-registered
       // against `cost.decoupleableShare` and has to be checkable after the fact.
       cost: run.cost ?? null,
+      // WS-540 Phase 1 — the POINTER, per .claude/rules/artifact-location.md: the run
+      // records which set it produced; the set itself is a heavy artifact and lives outside
+      // the repo. A missing set must fail loudly rather than resolve to a different one.
+      contextSet: contextManifest
+        ? { path: contextSetPath, rows: contextManifest.rows, contentHash: contextManifest.contentHash }
+        : null,
       config: run.config,
       rungs: rungs.map((r) => ({
         id: r.id, cardId: r.cardId, title: r.title, ruleCount: r.ruleCount, contentHash: r.contentHash,

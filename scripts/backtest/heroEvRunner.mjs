@@ -180,6 +180,10 @@ export const runHeroEv = async ({
   onPartial = () => {},
   // WS-393 — the full decision-level record. See heroEvTask.mjs.
   onDecisionRecord = null,
+  // WS-540 Phase 1 — the ARM-INDEPENDENT decision context sink. Deliberately a separate
+  // channel from onDecisionRecord: that record is keyed by arm (`piOursByArm`) and a rung
+  // authored later has no entry in it, which is the whole reason this one exists.
+  onDecisionContext = null,
   allowSetChange = false,
   // ── WS-433 ────────────────────────────────────────────────────────────────────────
   // Run-level equity seed. null = legacy unseeded Math.random path, bit-identical to
@@ -227,6 +231,7 @@ export const runHeroEv = async ({
   // All guards run at construction, before any work: a run that could leak must not
   // be able to start, let alone produce a number someone might quote.
   const captureRecord = typeof onDecisionRecord === 'function';
+  const captureContext = typeof onDecisionContext === 'function';
   const arms = normalizeDepthArms(depthArms, { allowSetChange });
   const engineArms = arms.filter((a) => !a.strategy);
   const strategyArms = arms.filter((a) => a.strategy);
@@ -357,6 +362,7 @@ export const runHeroEv = async ({
     arms,
     primaryId,
     captureRecord,
+    captureContext,
     equitySeed,
     maxDecisionsForPlayer: perPlayerCap,
     // WS-436 B2. Plain JSON, so it crosses the worker boundary by value.
@@ -512,6 +518,15 @@ export const runHeroEv = async ({
           try { onDecisionRecord(r); } catch { /* a sidecar write never kills the run */ }
         }
       }
+      // WS-540 Phase 1 — same replay, same reason. A resumed wave that skipped this would
+      // write a SHORT set, and a short set scores fewer decisions and reports a smaller
+      // edge without ever erroring.
+      if (captureContext && Array.isArray(f.contexts)) {
+        for (const c of f.contexts) {
+          try { onDecisionContext(c); } catch { /* a sidecar write never kills the run */ }
+        }
+      }
+      delete f.contexts;
       delete f.records; // replayed (or capture off) — do not retain a wave of ~15KB rows
       // WS-540 Phase 0. A seeded wave did not execute here; its original run's timings must
       // not be attributed to this one. `resumedWaves` in the cost block says how much of the
@@ -563,6 +578,7 @@ export const runHeroEv = async ({
           guard,
           emit: {
             onDecisionRecord,
+            onDecisionContext,
             onProgress: ({ decisionsScored }) => {
               if ((rawDecisionCount + decisionsScored) % 50 === 0) {
                 log(`scored ~${rawDecisionCount + decisionsScored} decisions`);
@@ -606,6 +622,7 @@ export const runHeroEv = async ({
       // coordinates so a reader can canonicalize. The sidecar is capture, never a
       // comparison artifact (ADR-009).
       onRecord: onDecisionRecord,
+      onContext: onDecisionContext,
       log,
     });
     try {

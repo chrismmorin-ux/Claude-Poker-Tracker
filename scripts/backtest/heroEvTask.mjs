@@ -41,6 +41,7 @@ import {
   poolBestResponseAt, poolBestResponseSweep,
 } from './poolBestResponse.mjs';
 import { strategyPolicyAt, newCoverage } from './strategyArm.mjs';
+import { buildDecisionContext } from './decisionContextSet.mjs';
 import { seedForDecision, seedForCombo } from './heroEvEnumeration.mjs';
 
 const USER_ID = 'backtest';
@@ -58,6 +59,7 @@ export const newTaskCounters = () => ({
   engineErrors: 0,
   heroSeatNotInOutcome: 0,
   decisionRecordErrors: 0,
+  decisionContextErrors: 0,
 });
 
 /**
@@ -171,7 +173,7 @@ export const mergeTaskCounters = (acc, frag) => {
  *   arm ordinals seed the equity streams.
  * @param {Object} args.policy      - validated behavior policy (validateBehaviorPolicy output)
  * @param {Object} args.guard       - LeakageGuard (per worker, or the run's own in-process)
- * @param {Object} [args.emit]      - { onDecisionRecord, onProgress } — both optional
+ * @param {Object} [args.emit]      - { onDecisionRecord, onDecisionContext, onProgress } — all optional
  * @returns {Promise<Object>} fragment: { playerIndex, playerKey, decisions, counters,
  *   ledger, coverageByArm, contributed }
  */
@@ -180,12 +182,15 @@ export const scoreHeroEvPlayer = async ({
 }) => {
   const {
     minTrainHands, checkpointInterval, comboSamples, trials, rakeConfig,
-    arms, primaryId, captureRecord, equitySeed = null,
+    arms, primaryId, captureRecord, captureContext = false, equitySeed = null,
     maxDecisionsForPlayer = Infinity,
     // WS-436 B2 — styled-villain feed, threaded verbatim to heroPolicyAt.
     villainFeed = null, villainSource = 'null',
   } = config;
   const onDecisionRecord = emit.onDecisionRecord ?? null;
+  // WS-540 Phase 1 — the arm-INDEPENDENT context sink. Separate from onDecisionRecord
+  // because the record is per-arm by construction and a later rung has no entry in it.
+  const onDecisionContext = emit.onDecisionContext ?? null;
   const onProgress = emit.onProgress ?? null;
 
   const engineArms = arms.filter((a) => !a.strategy);
@@ -200,6 +205,9 @@ export const scoreHeroEvPlayer = async ({
   // (resume replays them). `persistWave` strips this after the chunk write, so a long run
   // holds at most one wave of full records in memory.
   const records = [];
+  // WS-540 Phase 1 — arm-independent context rows, retained per fragment for the same
+  // reason `records` is: a chunked/resumed wave must replay them or the set comes up short.
+  const contexts = [];
   const counters = newTaskCounters();
   const ledger = newHandLedger();
 
@@ -480,46 +488,69 @@ export const scoreHeroEvPlayer = async ({
       // This is exactly the payload Phase 1 would write: everything the scoring half reads
       // and nothing an arm produced. `ctx.hand` is the bulk and is measured separately, so
       // a decision about column pruning can be made against a number rather than a guess.
-      if (decisions.length % CONTEXT_BYTES_SAMPLE_EVERY === 1) {
+      // WS-540 Phase 1 — the row is now built by `buildDecisionContext`, the SAME function
+      // the writer uses. It used to be an object literal here, which meant the size this
+      // probe measured and the payload Phase 1 would eventually write were free to diverge
+      // silently — and the 730 MB sizing decision was taken against this measurement.
+      const contextRow = (captureContext || decisions.length % CONTEXT_BYTES_SAMPLE_EVERY === 1)
+        ? buildDecisionContext({
+          stable: { p: playerIndex, k: checkpointIndex, d: decisionOrdinal },
+          playerId: playerKey,
+          handId: ctx.handId,
+          order: ctx.order,
+          hand: ctx.hand,
+          holding: ctx.holding ?? null,
+          board: ctx.board ?? null,
+          handIdx: ctx.handIdx ?? null,
+          street: ctx.street,
+          heroSeat: ctx.playerSeat,
+          buttonSeat: ctx.buttonSeat ?? null,
+          opponentSeat: ctx.opponentSeat ?? null,
+          facingAction: ctx.facingAction,
+          isAgg: ctx.isAgg,
+          isIP: ctx.isIP,
+          texture: ctx.texture,
+          posCategory: ctx.posCategory,
+          situationKey: ctx.situationKey ?? null,
+          contextAction: ctx.contextAction ?? null,
+          rangeEquityPct: ctx.rangeEquityPct ?? null,
+          segmentation: ctx.segmentation ?? null,
+          observedAction: ctx.action,
+          observedAmount: ctx.amount ?? null,
+          geometry,
+          sizeBucket,
+          netBB,
+          netBBUnraked,
+          wentToShowdown: raked.wentToShowdown,
+          pool: { actions: pool.actions, evidenceN: pool.evidenceN },
+          decisionSeed,
+          playersInPot: liveOpponentCount(ctx.hand, ctx.order, ctx.playerSeat) + 1,
+        })
+        : null;
+
+      if (contextRow && decisions.length % CONTEXT_BYTES_SAMPLE_EVERY === 1) {
         try {
           const handBytes = Buffer.byteLength(JSON.stringify(ctx.hand ?? null), 'utf8');
-          const prospective = {
-            stable: { p: playerIndex, k: checkpointIndex, d: decisionOrdinal },
-            playerId: playerKey,
-            handId: ctx.handId,
-            order: ctx.order,
-            hand: ctx.hand,
-            holding: ctx.holding ?? null,
-            board: ctx.board ?? null,
-            handIdx: ctx.handIdx ?? null,
-            street: ctx.street,
-            heroSeat: ctx.playerSeat,
-            buttonSeat: ctx.buttonSeat ?? null,
-            opponentSeat: ctx.opponentSeat ?? null,
-            facingAction: ctx.facingAction,
-            isAgg: ctx.isAgg,
-            isIP: ctx.isIP,
-            texture: ctx.texture,
-            posCategory: ctx.posCategory,
-            situationKey: ctx.situationKey ?? null,
-            contextAction: ctx.contextAction ?? null,
-            rangeEquityPct: ctx.rangeEquityPct ?? null,
-            segmentation: ctx.segmentation ?? null,
-            observedAction: ctx.action,
-            observedAmount: ctx.amount ?? null,
-            geometry,
-            sizeBucket,
-            netBB,
-            netBBUnraked,
-            wentToShowdown: raked.wentToShowdown,
-            pool: { actions: pool.actions, evidenceN: pool.evidenceN },
-            decisionSeed,
-            playersInPot: liveOpponentCount(ctx.hand, ctx.order, ctx.playerSeat) + 1,
-          };
           timings.bytes.samples += 1;
-          timings.bytes.contextTotal += Buffer.byteLength(JSON.stringify(prospective), 'utf8');
+          timings.bytes.contextTotal += Buffer.byteLength(JSON.stringify(contextRow), 'utf8');
           timings.bytes.handTotal += handBytes;
         } catch { /* a size probe must never be able to kill a scoring pass */ }
+      }
+
+      // WS-540 Phase 1 — retained on the fragment for the same reason `records` is
+      // (heroEvTask's `--resume` note): a wave seeded from a chunk must be able to replay
+      // its context rows into the sink, or a resumed run silently writes a SHORT set — and
+      // a short set scores fewer decisions and reports a smaller edge without erroring.
+      if (contextRow) {
+        contexts.push(contextRow);
+        if (onDecisionContext) {
+          try {
+            onDecisionContext(contextRow);
+          } catch (err) {
+            counters.decisionContextErrors = (counters.decisionContextErrors ?? 0) + 1;
+            counters.decisionContextLastError = err?.message || String(err);
+          }
+        }
       }
 
       // WS-393 — the full record, emitted as it completes; WS-431 — ALSO retained on the
@@ -584,6 +615,7 @@ export const scoreHeroEvPlayer = async ({
     playerId,
     decisions,
     ...(captureRecord ? { records } : {}),
+    ...(captureContext ? { contexts } : {}),
     counters,
     ledger,
     coverageByArm,
