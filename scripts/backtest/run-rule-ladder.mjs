@@ -122,6 +122,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
+import { nToResolve } from './rescore-rungs.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
 
 const parseArgs = (argv) => {
@@ -285,12 +286,22 @@ const main = async () => {
         + `  ESS=${e?.ess ?? '?'}  MDE=${bb(e?.mdeDetectBB)}`
         + `${unresolved ? '  <-- UNRESOLVED: |edge| < MDE' : ''}`);
     }
-    console.log('\n  WHAT ONE RULE BOUGHT — paired delta vs the rung below');
+    // WS-540 accept criterion: a run that does not resolve a rung STATES THE n THAT WOULD.
+    // `deltaMdeDetectBB` is `Z_DETECT * sd` and sd falls as 1/sqrt(n), so the n for a target
+    // MDE scales with the SQUARE of the ratio. An interval that straddles zero printed
+    // without it invites "the rule bought nothing" -- a statement about the INSTRUMENT read
+    // as a statement about the EFFECT, which is the misread `mdeDetectBB` exists to stop.
+    const targetBB = num(args['target-bb'], 0.25);
+    console.log(`
+  WHAT ONE RULE BOUGHT — paired delta vs the rung below (target ±${targetBB} bb)`);
     for (let i = 1; i < rungs.length; i++) {
       const dl = deltas[rungs[i].id];
       console.log(`    ${rungs[i].id.padEnd(24)} vs ${String(dl.vs).padEnd(22)} delta ${bb(dl?.deltaBB ?? dl?.delta)}`
         + `  [${bb(dl?.ciLowBB ?? dl?.deltaCiLowBB)}, ${bb(dl?.ciHighBB ?? dl?.deltaCiHighBB)}]`
-        + `  discordant=${dl?.discordantN ?? '?'}`);
+        + `  discordant=${dl?.discordantN ?? '?'}  MDE=${bb(dl?.deltaMdeDetectBB)}`);
+      console.log(dl?.excludesZero === true
+        ? '      RESOLVED (interval excludes zero)'
+        : `      UNRESOLVED — needs ~${nToResolve(dl?.discordantN, dl?.deltaMdeDetectBB, targetBB) ?? '?'} discordant decisions for ±${targetBB} bb`);
     }
     console.log('\n  COVERAGE');
     for (const [id, c] of Object.entries(run.strategyCoverage ?? {})) {

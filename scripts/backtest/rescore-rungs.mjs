@@ -54,6 +54,7 @@
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { openLoader } from './loader.mjs';
 
 const parseArgs = (argv) => {
@@ -332,4 +333,7 @@ const main = async () => {
   }
 };
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// Run only as a CLI. `nToResolve` is imported by run-rule-ladder.mjs, and an unguarded
+// `main()` would fire the whole replay (and exit 2) on import.
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) main().catch((e) => { console.error(e); process.exit(1); });

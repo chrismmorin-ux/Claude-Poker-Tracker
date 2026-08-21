@@ -107,7 +107,7 @@ accept_criteria: |
   - The refuted prediction stays recorded in run-rule-ladder.mjs's header. Do not delete it
     once the real cause is fixed -- a future reader would otherwise re-derive it.
 effort: "M"
-runs_on: "any"
+runs_on: "node1"
 files_involved:
   - "scripts/backtest/run-rule-ladder.mjs"
   - "scripts/backtest/heroEvRunner.mjs"
@@ -122,3 +122,84 @@ source:
   kind: "measurement-refuted-prediction"
   detail: "2026-08-17 — engine-free runner built on a cost model the measurement disproved"
 created_at: "2026-08-17T00:00:00.000Z"
+
+# ── WS-540 Phase 4 — the run that resolves a rung delta ────────────────────────────────
+# Authored 2026-08-21, after Phases 1-3 shipped and the bit-identity gate passed.
+#
+# WHY node1 AND NOT G16: this is the production half, and it is the expensive half by
+# ~200x. `.claude/rules/artifact-location.md` puts heavy artifacts on cm-node1 as their
+# canonical home; the repo keeps the manifest and the pointer. The decision set is written
+# OUTSIDE the worktree deliberately -- a worktree is a disposable build artifact the runner
+# deletes, and the set is the thing worth keeping.
+#
+# THE SIZE IS MEASURED, NOT ESTIMATED. 5,072 B/row on disk over a real 1,498-row set
+# (base64 range; the JSON form of the same row measured 7,295 B). 100,000 decisions is
+# therefore ~507 MB. node1 had 347 GB free on 2026-08-21.
+#
+# THE TIME IS MEASURED TOO. G16 ran 1,498 decisions in 29.8 s serial (~20 ms/decision).
+# node1 is a Surface Pro 8 -- 8 logical cores against G16's 20 -- so 4 workers and roughly
+# 3-4x slower per player. 100,000 decisions projects to ~2-3 h. The cap sits above a
+# pessimistic multiple of that rather than at the number it "should" take.
+#
+# STEP 2 IS THE POINT OF THE WHOLE TICKET. It re-scores the same rungs from the persisted
+# set and gates them bit-identical against step 1. If it passes, the set is provably the
+# same measurement and every FUTURE rung costs step 2, not step 1.
+compute_job:
+  maxJobHours: 8
+  inputs:
+    - from: 'C:\Users\chris\fleet\compute-inputs\behavior-policy-ws503.json'
+      to: "out/behavior-policy.json"
+      sha256: "57c69e8346d30b0e20d56515720fe21aee405c43df7eabb28747b71dfb2f73da"
+  steps:
+    - name: ladder-100k-produce
+      cmd: node
+      args:
+        - "scripts/backtest/run-rule-ladder.mjs"
+        - "--behavior-policy"
+        - "out/behavior-policy.json"
+        - "--sites"
+        - "FTP,PS"
+        - "--stakes"
+        - "50NLH"
+        - "--max-files"
+        - "600"
+        - "--file-selection"
+        - "proportional"
+        - "--max-decisions"
+        - "100000"
+        - "--max-decisions-per-player"
+        - "4"
+        - "--wave-size"
+        - "16"
+        - "--workers"
+        - "4"
+        - "--target-bb"
+        - "0.10"
+        # Outside the worktree ON PURPOSE -- see the note above.
+        - "--context-set"
+        - 'C:\Users\chris\data\ws540-sets\ladder-100k.jsonl'
+        - "--out"
+        - "out/ws540-ladder-100k.json"
+      expectFiles:
+        - "out/ws540-ladder-100k.json"
+      maxAttempts: 2
+    - name: ladder-100k-replay-gate
+      cmd: node
+      args:
+        - "scripts/backtest/rescore-rungs.mjs"
+        - "--context-set"
+        - 'C:\Users\chris\data\ws540-sets\ladder-100k.jsonl'
+        # Exits non-zero on ANY divergence. A replay that is not the same measurement must
+        # fail the job rather than return a plausible number.
+        - "--gate"
+        - "out/ws540-ladder-100k.json"
+        - "--target-bb"
+        - "0.10"
+        - "--out"
+        - "out/ws540-replay-100k.json"
+      expectFiles:
+        - "out/ws540-replay-100k.json"
+      maxAttempts: 2
+  artifacts:
+    - "out/ws540-ladder-100k.json"
+    - "out/ws540-replay-100k.json"
