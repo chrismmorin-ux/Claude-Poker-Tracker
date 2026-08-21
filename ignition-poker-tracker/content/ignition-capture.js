@@ -15,10 +15,11 @@ import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.
 import { BUILD_GUARD, SESSION_KEYS } from '../shared/constants.js';
 import { TableManager } from '../shared/table-manager.js';
 import { validateMessage } from '../shared/message-schemas.js';
-import { clearLiveContextTimer } from '../shared/storage-writer.js';
+import { clearLiveContextTimer, recordCaptureGap } from '../shared/storage-writer.js';
 import { validateHandForRelay } from '../shared/wire-schemas.js';
 import { isGameWsUrl } from '../shared/protocol.js';
 import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../shared/frame-capture.js';
+import { evaluateSilence, isRecordableGap } from '../shared/silence-detector.js';
 
 (() => {
   'use strict';
@@ -504,72 +505,108 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
   // Escalating thresholds detect probe failures and pre-existing connections
   // =========================================================================
 
-  const SILENCE_THRESHOLDS = [
-    { afterMs: 5000,   level: 'info',    message: 'Probe active but no WS messages yet' },
-    { afterMs: 15000,  level: 'warning', message: 'No WS traffic after 15s — is a table open?' },
-    { afterMs: 60000,  level: 'stale',   message: 'No game traffic for 60s — connection may be pre-existing' },
-    { afterMs: 300000, level: 'dead',    message: 'No game traffic for 5min — page reload recommended' },
-  ];
+  /**
+   * Stable identity of the seated table, for stamping a capture gap. Uses
+   * tableKey (survives socket reconnects), never connId. Null when no table is
+   * seated — a gap with no table is still a real gap and still gets recorded.
+   */
+  const firstTableKey = () => {
+    try {
+      const states = tableManager?.getTableStates?.() || {};
+      const first = Object.values(states)[0];
+      return first?.tableKey || null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  // WS-516. The decision lives in `shared/silence-detector.js` — see the header
+  // there for the defect this replaces. This block owns only the side effects.
 
   let silenceLevel = null;
+  // Start of the interval currently treated as dead. Set when a threshold is
+  // first crossed, cleared when traffic resumes — and written to the durable
+  // gap ledger on the way out, so a banner the founder dismissed is not the only
+  // record that hands went missing.
+  let silenceGapFrom = null;
+
+  const closeSilenceGap = (resumedAt) => {
+    if (silenceGapFrom === null) return;
+    const from = silenceGapFrom;
+    silenceGapFrom = null;
+    if (!isRecordableGap(from, resumedAt)) return;
+    recordCaptureGap({
+      from,
+      to: resumedAt,
+      reason: 'silence_timeout',
+      resumed: true,
+      tableKey: firstTableKey(),
+    });
+  };
 
   const silenceCheckInterval = isGameFrame ? setInterval(() => {
-    // Probe not ready — warn once
-    if (!probeReady) {
-      if (Date.now() - captureStartedAt > 5000 && silenceLevel !== 'no_probe') {
-        silenceLevel = 'no_probe';
-        handleProbeMessage({ type: 'ws_probe_health_warning', probeReady: false, timestamp: Date.now() });
-      }
+    const now = Date.now();
+    const verdict = evaluateSilence({
+      now,
+      probeReady,
+      captureStartedAt,
+      probeReadyAt,
+      lastWsMessageAt,
+      // Lifetime flag ONLY. Feeding this into the liveness decision is the
+      // original defect; it is passed solely to word the message.
+      captureEverStarted: gameWsMessageCount > 0,
+      prevLevel: silenceLevel,
+    });
+
+    if (verdict.probeStalled) {
+      silenceLevel = verdict.level;
+      handleProbeMessage({ type: 'ws_probe_health_warning', probeReady: false, timestamp: now });
       return;
     }
+    if (!probeReady) return;
 
-    // If we have game WS messages, traffic is flowing — reset
-    if (gameWsMessageCount > 0) {
-      if (silenceLevel !== null) {
-        silenceLevel = null;
-        // Clear any recovery banner
-        conn.send({ type: 'recovery_cleared' });
-      }
+    if (verdict.cleared) {
+      silenceLevel = null;
+      closeSilenceGap(now);
+      conn.send({ type: 'recovery_cleared' });
       return;
     }
+    if (verdict.level === null) return;
 
-    // Determine silence duration since probe became ready
-    const lastActivity = lastWsMessageAt || probeReadyAt || captureStartedAt;
-    const silenceMs = Date.now() - lastActivity;
+    if (silenceGapFrom === null && verdict.gapFrom !== null) silenceGapFrom = verdict.gapFrom;
+    if (!verdict.escalated) return;
 
-    // Find highest threshold crossed
-    let newLevel = null;
-    let newMessage = null;
-    for (const t of SILENCE_THRESHOLDS) {
-      if (silenceMs >= t.afterMs) {
-        newLevel = t.level;
-        newMessage = t.message;
-      }
-    }
+    silenceLevel = verdict.level;
+    conn.send({
+      type: 'silence_alert',
+      level: verdict.level,
+      silenceMs: verdict.silenceMs,
+      message: verdict.message,
+      // Lets every consumer tell "never started" from "stopped mid-session"
+      // without re-deriving it from a counter.
+      captureEverStarted: gameWsMessageCount > 0,
+      gameWsMessageCount,
+      wsMessageCount,
+    });
 
-    // Only send if level escalated
-    if (newLevel && newLevel !== silenceLevel) {
-      silenceLevel = newLevel;
+    if (verdict.recoveryNeeded) {
       conn.send({
-        type: 'silence_alert',
-        level: newLevel,
-        silenceMs,
-        message: newMessage,
-        gameWsMessageCount,
-        wsMessageCount,
+        type: 'recovery_needed',
+        reason: 'silence_timeout',
+        message: verdict.message,
       });
-
-      // At stale/dead: trigger recovery banner
-      if (newLevel === 'stale' || newLevel === 'dead') {
-        conn.send({
-          type: 'recovery_needed',
-          reason: 'silence_timeout',
-          message: newMessage,
-        });
-      }
-
-      writeDiagnosticsNow();
+      // Commit the marker now rather than waiting for a resume that may never
+      // come — the browser closing is the most likely way this session ends.
+      recordCaptureGap({
+        from: verdict.gapFrom,
+        to: now,
+        reason: 'silence_timeout',
+        resumed: false,
+        tableKey: firstTableKey(),
+      });
     }
+
+    writeDiagnosticsNow();
   }, 5000) : null;
 
   window.__POKER_CAPTURE_CLEANUP = () => {

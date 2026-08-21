@@ -277,6 +277,11 @@ chrome.runtime.onConnect.addListener((port) => {
             level: msg.level,
             silenceMs: msg.silenceMs,
             message: msg.message,
+            // WS-516: "capture never started" and "capture stopped mid-session"
+            // are different problems with different actions. This relay rebuilds
+            // the message field-by-field, so a field omitted here is dropped
+            // silently — which is how the panel ends up unable to tell them apart.
+            captureEverStarted: !!msg.captureEverStarted,
           });
           break;
       }

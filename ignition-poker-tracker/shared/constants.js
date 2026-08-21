@@ -61,6 +61,15 @@ export const STORAGE_KEYS = {
   // Monotonic count of journal entries evicted by the cap without ever being
   // ACKed by the app — i.e. actual, permanent hand loss. Surfaced, not silent.
   HAND_JOURNAL_DROPPED: 'ignition_hand_journal_dropped',
+  // Durable record of intervals during which capture was DEAD (chrome.storage.local).
+  //
+  // A capture that dies mid-session does not leave a visible gap — it leaves a
+  // session that looks complete and shorter. Hands played after the death are
+  // absent with no marker, so every downstream k/n over that session is silently
+  // conditioned on "the part of the session where capture happened to be alive",
+  // which is not a population anyone chose. A banner the founder dismissed leaves
+  // no trace; this does.
+  CAPTURE_GAPS: 'ignition_capture_gaps',
 };
 
 // Default values for settings keys. Single source of truth — options page

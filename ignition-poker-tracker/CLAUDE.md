@@ -84,6 +84,7 @@ shared/
   stats-engine.js               — STYLE_COLORS, stat computation
   protocol.js                   — WebSocket protocol parsing
   hand-state-machine.js         — Per-table FSM
+  silence-detector.js           — Is capture still alive? (pure; recency-based)
   ...
 ```
 
@@ -145,6 +146,17 @@ A close does **not** destroy the table. It starts a `RECONNECT_GRACE_MS` (15s) w
   (`currentTableState`/`currentLiveContext`). Both were gated on stored-hand state, so the panel
   showed "No active table detected" — then an empty seat area — over a live hand for the whole
   first hand at every table. Stats are decoration on top of these, never their precondition.
+- **Never gate liveness on a cumulative counter.** "How many messages have we seen" is a
+  lifetime flag; "is capture alive" is a recency question (`now - lastWsMessageAt`). The silence
+  detector conflated them and early-returned on `gameWsMessageCount > 0` — a counter never reset
+  anywhere — so it could only fire for a capture that never started, and was blind to one that
+  died mid-session. An alarm that arms only before the thing it watches begins is not an alarm.
+- **A detected gap must be RECORDED, not just displayed.** A banner the founder dismissed leaves
+  no trace, and a session with an unrecorded hole is indistinguishable from a short one — so any
+  k/n over it is silently conditioned on the interval where capture happened to be alive. Gaps go
+  to the durable ledger (`recordCaptureGap`, `STORAGE_KEYS.CAPTURE_GAPS`).
+- **The service worker rebuilds relayed messages field-by-field.** A field you add upstream and
+  forget to add to the relay is dropped silently. This broke HUD updates for months once.
 - **Never let the harness re-implement a gate it is verifying.** `harness/harness.js` had a third,
   disagreeing copy of the shell gate (keyed on `cachedSeatStats`), so the primary visual
   verification tool structurally could not display the shipped defect. Mirrors of production

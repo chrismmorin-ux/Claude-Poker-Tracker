@@ -443,3 +443,107 @@ export const readConnectionState = async () => {
     return null;
   }
 };
+
+// ===========================================================================
+// CAPTURE GAP LEDGER — durable record of intervals when capture was DEAD
+// ===========================================================================
+//
+// WS-516. The silence detector raises a banner when capture stops. A banner is a
+// display, and a display the founder dismissed leaves no trace. What poisons the
+// corpus is not the missing hands themselves — it is that a session with an
+// unrecorded hole is INDISTINGUISHABLE from a genuinely short session. Any k/n
+// taken over it is silently conditioned on the interval where capture happened
+// to be alive, which is not a population anyone chose and cannot be reconstructed
+// after the fact.
+//
+// This ledger makes the hole a fact in the data rather than a moment in the UI.
+// It lives in chrome.storage.local for the same reason the hand journal does: it
+// has to survive browser close, which is exactly when a session ends.
+
+const CAPTURE_GAPS_KEY = STORAGE_KEYS.CAPTURE_GAPS;
+const CAPTURE_GAPS_LOCK = 'poker_capture_gaps_lock';
+export const MAX_CAPTURE_GAPS = 500;
+
+/**
+ * Record an interval during which capture was dead.
+ *
+ * @param {Object} gap
+ * @param {number} gap.from       - epoch ms of the last observed activity
+ * @param {number} gap.to         - epoch ms at which capture resumed, or was observed still dead
+ * @param {string} gap.reason     - why capture was considered dead ('silence_timeout', ...)
+ * @param {boolean} gap.resumed   - true if traffic came back, false if still dead when recorded
+ * @param {string} [gap.tableKey] - stable table identity, when one was seated
+ * @returns {Promise<void>} never rejects — a ledger failure must not break capture
+ */
+export const recordCaptureGap = (gap) => {
+  if (!_checkLocal()) return Promise.resolve();
+  if (!gap || typeof gap.from !== 'number' || typeof gap.to !== 'number') return Promise.resolve();
+  // A zero or negative interval is not a gap. Recording one would put noise into
+  // a ledger whose entire value is that every entry means something.
+  if (gap.to <= gap.from) return Promise.resolve();
+
+  return navigator.locks.request(CAPTURE_GAPS_LOCK, async () => {
+    try {
+      const result = await chrome.storage.local.get(CAPTURE_GAPS_KEY);
+      const gaps = result[CAPTURE_GAPS_KEY] || [];
+
+      const entry = {
+        from: gap.from,
+        to: gap.to,
+        ms: gap.to - gap.from,
+        reason: gap.reason || 'unknown',
+        resumed: !!gap.resumed,
+        tableKey: gap.tableKey || null,
+        recordedAt: Date.now(),
+      };
+
+      // Idempotence: the detector observes the same ongoing gap on consecutive
+      // ticks. Two entries sharing a start are one hole seen twice, so keep the
+      // one that knows most — the later `to`.
+      const existing = gaps.findIndex(g => g.from === entry.from);
+      if (existing !== -1) {
+        if (gaps[existing].to >= entry.to) return;
+        gaps[existing] = entry;
+      } else {
+        gaps.push(entry);
+      }
+
+      // Unlike the hand journal, eviction here loses a MARKER rather than data.
+      // Still reported: a ledger that silently forgets holes has precisely the
+      // defect it exists to fix.
+      if (gaps.length > MAX_CAPTURE_GAPS) {
+        const overflow = gaps.length - MAX_CAPTURE_GAPS;
+        gaps.splice(0, overflow);
+        errors.report('storage', new Error('Capture-gap ledger cap exceeded — oldest gap markers dropped'), {
+          op: 'captureGapEvict', overflow,
+        });
+      }
+
+      await chrome.storage.local.set({ [CAPTURE_GAPS_KEY]: gaps });
+    } catch (e) {
+      errors.report('storage', e, { op: 'recordCaptureGap' });
+    }
+  });
+};
+
+/**
+ * Read the capture-gap ledger.
+ * @returns {Promise<Array<Object>>} oldest first; [] when unavailable
+ */
+export const getCaptureGaps = async () => {
+  if (!_checkLocal()) return [];
+  try {
+    const result = await chrome.storage.local.get(CAPTURE_GAPS_KEY);
+    return result[CAPTURE_GAPS_KEY] || [];
+  } catch (_) {
+    return [];
+  }
+};
+
+/** Clear the ledger. Test/maintenance only — never called on the live path. */
+export const clearCaptureGaps = async () => {
+  if (!_checkLocal()) return;
+  try {
+    await chrome.storage.local.remove(CAPTURE_GAPS_KEY);
+  } catch (_) { /* best-effort */ }
+};
