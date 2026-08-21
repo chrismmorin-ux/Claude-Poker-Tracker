@@ -386,9 +386,14 @@ injectTokens();
     if (tableEntries.length > 0) {
       // Table present — cancel any pending grace timer (RT-60)
       coordinator.clearTimer('tableGrace');
-      const [connId] = tableEntries[0];
-      coordinator.set('currentActiveTableId', `table_${connId}`);
-      coordinator.set('currentTableState', tableEntries[0][1]);
+      const [connId, tableState] = tableEntries[0];
+      // Identity MUST come from tableKey, which TableManager holds stable across
+      // socket reconnects. connId is a per-socket counter, so keying on it made
+      // every routine Ignition reconnect look like a table switch — which ran
+      // clearForTableSwitch() and wiped advice, live context, seat stats and
+      // villain reads mid-hand. Fallback keeps older payloads working.
+      coordinator.set('currentActiveTableId', tableState?.tableKey || `table_${connId}`);
+      coordinator.set('currentTableState', tableState);
     } else if (prevTableId && !coordinator.hasTimer('tableGrace')) {
       // Tables went empty — start 5s grace period before clearing (RT-60).
       coordinator.scheduleTimer('tableGrace', () => {
@@ -1855,10 +1860,18 @@ injectTokens();
     const street = snap.street;
 
     // SR-6.17: single shell. Zones z1-z4 + zx live inside #hud-content; z0
-    // lives at body top-level (always visible). hasTableHands gates the
-    // content shell only; Z0 chrome (status + pipeline-health) stays
-    // reachable when no table is seated.
-    if (!snap.hasTableHands) {
+    // lives at body top-level (always visible). Z0 chrome (status +
+    // pipeline-health) stays reachable when no table is seated.
+    //
+    // The shell gate asks "is a table present?" and the ONLY signal that
+    // answers that is currentActiveTableId. It used to ask `hasTableHands`,
+    // which means "has a hand finished and been written to session storage" —
+    // a different question with a different answer for the whole of the first
+    // hand at any table, and after every table switch (clearForTableSwitch
+    // resets it). The panel rendered "No active table detected" over a live
+    // hand as a result. Hands gate the stats that need hands, nothing more.
+    const tablePresent = !!snap.currentActiveTableId;
+    if (!tablePresent) {
       showEl($('no-table'));
       showEl($('pipeline-health'));
       hideEl($('hud-content'));
@@ -1942,9 +1955,14 @@ injectTokens();
     }
 
     // --- Seat arc ---
-    if (snap.cachedSeatStats) {
-      renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap, snap);
-    }
+    // Rendered whenever a table is present, NOT only when seat stats exist.
+    // The arc displays the table roster — seats, hero, dealer, folded — all of
+    // which come from currentTableState / currentLiveContext and are known from
+    // the first hand. Stats are decoration layered on top of that roster, and
+    // buildSeatArcHTML already handles a null stats map. Gating the whole arc
+    // on stats left the founder looking at an empty seat area for the entire
+    // first hand at every table, and after every reconnect.
+    renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap, snap);
 
     // --- Zone 1: Action Bar + Zone 2: Context Strip + Cards Strip ---
     renderActionBar(advice, liveCtx, snap);

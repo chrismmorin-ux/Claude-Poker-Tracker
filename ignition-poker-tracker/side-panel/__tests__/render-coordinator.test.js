@@ -892,6 +892,10 @@ describe('RT-70 — pre-dispatch invariant gate', () => {
     const { coord, renders } = createCoordinator();
 
     // Arrange a persistent R3 violation (advice 2 streets behind context).
+    // currentActiveTableId is set so R1b (live context without an active table)
+    // does not also fire — this test counts R3 and needs an otherwise-coherent
+    // snapshot to do exact-count assertions.
+    coord.set('currentActiveTableId', 'table:wss://test/rgs');
     coord.set('currentLiveContext', liveCtx({ state: 'RIVER', currentStreet: 'river' }));
     coord.set('lastGoodAdvice', { currentStreet: 'preflop', recommendations: [] });
     coord.set('hasTableHands', true);

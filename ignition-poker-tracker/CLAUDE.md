@@ -29,7 +29,12 @@ npm run harness            # Build + serve harness on localhost:3333
 5. Click through ALL relevant scenarios — don't just check the one you changed
 6. Verify: correct elements visible, no stale data, no clipping, no "undefined"/"null" text
 
-### Scenarios to check (16 fixtures in `__tests__/fixtures.js`)
+> **Run it on a private port.** `npm run harness:verify` reuses whatever is already
+> serving on 3333 — including another worktree's build. It now refuses when the served
+> bundle doesn't match the local `dist/`, but in parallel sessions just set the port:
+> `HARNESS_PORT=3401 npm run harness:verify`.
+
+### Scenarios to check (17 fixtures in `__tests__/fixtures.js`)
 - `flopWithAdvice` — full happy path (action badge, villain, cards, fold%, blocker, range, hand plan)
 - `preflopNoAdvice` — "Analyzing..." header, hero cards only
 - `preflopWithAdvice` — hand plan tree, flop archetype breakdown
@@ -39,6 +44,9 @@ npm run harness            # Build + serve harness on localhost:3333
 - `betweenHandsTournament` — tournament bar with M-ratio, ICM, blinds
 - `heroFolded` — "Observing" label, dimmed cards
 - `noTable` — pipeline health strip, "No active table detected"
+- `firstHandAtTable` — **live hand, zero stored hands.** Seated, cards dealt, nothing in
+  session storage yet. Occurs at session start, after every table switch, and after every
+  socket reconnect. The HUD and the seat roster must render; only stats degrade.
 - `pinnedVillainOverride` — header shows pinned villain, "Advice computed vs S3" disambiguation
 - `fullNineHanded` — all 9 seats, varied styles, folded/vacant/active
 - `nullEdges` — all null/empty, no crashes
@@ -110,11 +118,37 @@ Service Worker (port messages)
 
 When pinned villain differs from advice villain, the street card shows a "Advice computed vs S{N}" disambiguation label.
 
+## Table Identity — `tableKey`, never `connId`
+
+`connId` is a **monotonic per-socket counter** (`content/capture-websocket-probe.js`). Ignition
+cycles the game WebSocket routinely, so the same table gets a new connId many times per session.
+
+**Table identity is `tableKey`**, carried on every entry of `getTableStates()` and held stable
+by `TableManager` across reconnects. The panel keys `currentActiveTableId` on it.
+
+A close does **not** destroy the table. It starts a `RECONNECT_GRACE_MS` (15s) window:
+- reconnect on the same URL inside the window → the machine is migrated intact, in-flight hand
+  included (Ignition resends `CO_TABLE_INFO` with dealer seat, street, hole cards and board, so
+  the live hand resynchronises onto it)
+- window expires with no reconnect → `reapDisconnected()` emits the mid-hand partial and removes
+  the table. `flushDisconnected()` does it immediately on teardown so nothing dies with the page.
+
 ## Anti-Patterns
 - **Never import from `side-panel.js`** — it's an IIFE. Put testable logic in `render-orchestrator.js` instead.
 - **Never duplicate STYLE_COLORS** — import from `shared/stats-engine.js` everywhere.
 - **Never set state without clearing stale** — table switches must clear: pinnedVillainSeat, lastGoodAdvice, lastGoodTournament, currentLiveContext.
 - **Never accept advice without validation** — `handleAdvicePush` rejects advice from earlier streets than live context.
+- **Never key table identity on `connId`** — see above. Doing so makes every socket reconnect
+  look like a table switch and wipes advice, live context, seat stats and villain reads mid-hand.
+- **Never gate a display on "do we have completed hands" when it asks a different question.**
+  The shell asks *is a table present* (`currentActiveTableId`); the seat arc shows the *roster*
+  (`currentTableState`/`currentLiveContext`). Both were gated on stored-hand state, so the panel
+  showed "No active table detected" — then an empty seat area — over a live hand for the whole
+  first hand at every table. Stats are decoration on top of these, never their precondition.
+- **Never let the harness re-implement a gate it is verifying.** `harness/harness.js` had a third,
+  disagreeing copy of the shell gate (keyed on `cachedSeatStats`), so the primary visual
+  verification tool structurally could not display the shipped defect. Mirrors of production
+  logic must be kept identical, or the thing they verify is themselves.
 
 ## Common Issues
 | Symptom | Likely cause | How to verify |
@@ -122,5 +156,7 @@ When pinned villain differs from advice villain, the street card shows a "Advice
 | Header shows wrong villain | Pinned villain ≠ advice villain | Check `pinnedVillainOverride` scenario |
 | Ghost/empty seat circles | `currentLiveContext` null, seats marked vacant | Check `betweenHands` scenario |
 | Stale data after table switch | State not cleared on table change | Check C3 fix in handlePipelineStatus |
+| "No active table detected" during a hand | Shell gated on stored hands, or table identity keyed on connId | Check `firstHandAtTable` scenario; `tablePresent` in renderAll |
+| Panel flaps to no-table / "Analyzing…" repeatedly | Socket reconnect treated as a table switch | Reconnect lifecycle tests in `shared/__tests__/table-manager.test.js` |
 | Seat clipped off panel edge | Arc positions too wide | Check `fullNineHanded` scenario |
 | "undefined" text visible | Null data threaded to renderer | Run `npm test` — null safety tests catch this |

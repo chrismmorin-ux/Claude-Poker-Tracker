@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TableManager } from '../table-manager.js';
+import { TableManager, RECONNECT_GRACE_MS } from '../table-manager.js';
 
 const GAME_URL = 'wss://pkscb.ignitioncasino.eu/poker-games/rgs';
 const LOBBY_URL = 'wss://pkscb.ignitioncasino.eu/ws-gateway/lobby';
@@ -114,26 +114,91 @@ describe('TableManager', () => {
       expect(tm.getHSM('1')).toBeUndefined();
     });
 
-    it('saves partial when reconnecting mid-hand', () => {
+    it('preserves the in-flight hand when reconnecting mid-hand', () => {
+      // Ignition re-sends CO_TABLE_INFO (dealerSeat, tableState, pcard*, bcard)
+      // on reconnect, so the live hand can be resynchronised onto the surviving
+      // machine. Destroying it and emitting a `reconnectInterrupted` partial —
+      // the previous behaviour — discarded the action sequence for the hand
+      // actually being played and made the panel treat the blip as a new table.
       tm.registerConnection('1', GAME_URL);
       tm.routeMessage('1', wire('PLAY_STAGE_INFO', { stageNo: '100' }), GAME_URL);
       tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
       tm.routeMessage('1', wire('CO_BLIND_INFO', { seat: 8, account: 9950, btn: 2, bet: 50 }), GAME_URL);
       tm.routeMessage('1', wire('CO_BLIND_INFO', { seat: 9, account: 9900, btn: 4, bet: 100 }), GAME_URL);
-      // Set hero so buildRecord succeeds
-      const hsm = tm.getHSM('1');
-      hsm.heroSeat = 5;
-      hsm.state = 'PREFLOP';
+      const before = tm.getHSM('1');
+      before.heroSeat = 5;
+      before.state = 'PREFLOP';
 
       // Reconnect mid-hand
       tm.registerConnection('2', GAME_URL);
       tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 3 }), GAME_URL);
 
-      // Should have called onComplete with partial
-      const partialCalls = onComplete.mock.calls.filter(
-        c => c[0]?.ignitionMeta?.partial === true
-      );
-      expect(partialCalls.length).toBeGreaterThanOrEqual(1);
+      const after = tm.getHSM('2');
+      expect(after).toBe(before);
+      expect(after.heroSeat).toBe(5);
+      expect(tm.getTableCount()).toBe(1);
+      expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it('keeps a stable tableKey across a reconnect', () => {
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      const keyBefore = tm.getTableStates()['1'].tableKey;
+
+      tm.handleConnectionClosed('1');
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+
+      const keyAfter = tm.getTableStates()['2'].tableKey;
+      expect(keyAfter).toBe(keyBefore);
+    });
+
+    it('gives genuinely different tables different tableKeys', () => {
+      tm.registerConnection('1', GAME_URL + '?table=1');
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 1 }), GAME_URL + '?table=1');
+      tm.registerConnection('2', GAME_URL + '?table=2');
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL + '?table=2');
+
+      const states = tm.getTableStates();
+      expect(states['1'].tableKey).not.toBe(states['2'].tableKey);
+    });
+
+    it('survives a close-then-reopen — the real socket lifecycle', () => {
+      // Regression: the reconnect stitch required the old table to still be in
+      // `tables`, but handleConnectionClosed had already deleted it, so the
+      // stitch was unreachable on every real reconnect. The pre-existing tests
+      // hid this by never firing a close event.
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('PLAY_STAGE_INFO', { stageNo: '100' }), GAME_URL);
+      const before = tm.getHSM('1');
+      before.state = 'IDLE';
+      before.completedHandCount = 7;
+
+      tm.handleConnectionClosed('1');
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 7 }), GAME_URL);
+
+      const after = tm.getHSM('2');
+      expect(after).toBe(before);
+      expect(after.completedHandCount).toBe(7);
+      expect(tm.getTableCount()).toBe(1);
+    });
+
+    it('never reports zero tables during a reconnect blip', () => {
+      // This is the founder-visible symptom: an empty table map makes the side
+      // panel render "No active table detected" in the middle of a hand.
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      expect(tm.getTableCount()).toBe(1);
+
+      tm.handleConnectionClosed('1');
+      expect(tm.getTableCount()).toBe(1);
+      expect(tm.getTableStates()['1'].disconnected).toBe(true);
+
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      expect(tm.getTableCount()).toBe(1);
+      expect(tm.getTableStates()['2'].disconnected).toBe(false);
     });
   });
 
@@ -141,18 +206,57 @@ describe('TableManager', () => {
   // CONNECTION CLOSED
   // =========================================================================
 
-  describe('handleConnectionClosed', () => {
-    it('removes IDLE table on close', () => {
+  describe('handleConnectionClosed + reapDisconnected', () => {
+    // A close is not proof the table is gone — Ignition cycles the game socket
+    // routinely. The table enters a grace window; only when it expires without
+    // a reconnect is the table closed out. Nothing is lost either way: the
+    // partial that used to be emitted inline is emitted at reap time.
+
+    it('holds an IDLE table through the grace window, then removes it', () => {
       tm.registerConnection('1', GAME_URL);
       tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
       const hsm = tm.getHSM('1');
       hsm.state = 'IDLE';
 
-      tm.handleConnectionClosed('1');
+      const t0 = 1_000_000;
+      tm.handleConnectionClosed('1', t0);
+      expect(tm.getTableCount()).toBe(1);
+
+      // Still inside the window — no reap.
+      expect(tm.reapDisconnected(RECONNECT_GRACE_MS, t0 + RECONNECT_GRACE_MS - 1)).toBe(0);
+      expect(tm.getTableCount()).toBe(1);
+
+      // Window expired.
+      expect(tm.reapDisconnected(RECONNECT_GRACE_MS, t0 + RECONNECT_GRACE_MS)).toBe(1);
       expect(tm.getTableCount()).toBe(0);
     });
 
-    it('emits partial record and removes table when closed mid-hand', () => {
+    it('emits the partial record when a mid-hand close is never reconnected', () => {
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('PLAY_STAGE_INFO', { stageNo: '100' }), GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      tm.routeMessage('1', wire('CO_BLIND_INFO', { seat: 8, account: 9950, btn: 2, bet: 50 }), GAME_URL);
+      tm.routeMessage('1', wire('CO_BLIND_INFO', { seat: 9, account: 9900, btn: 4, bet: 100 }), GAME_URL);
+      const hsm = tm.getHSM('1');
+      hsm.heroSeat = 5;
+      hsm.state = 'PREFLOP';
+
+      const t0 = 1_000_000;
+      tm.handleConnectionClosed('1', t0);
+      // Nothing emitted yet — the socket may still come back.
+      expect(onComplete).not.toHaveBeenCalled();
+
+      tm.reapDisconnected(RECONNECT_GRACE_MS, t0 + RECONNECT_GRACE_MS);
+
+      expect(tm.getTableCount()).toBe(0);
+      const partialCalls = onComplete.mock.calls.filter(
+        c => c[0]?.ignitionMeta?.partial === true
+      );
+      expect(partialCalls.length).toBe(1);
+      expect(partialCalls[0][0].ignitionMeta.reconnectInterrupted).toBe(true);
+    });
+
+    it('does NOT emit a partial when the socket reconnects inside the window', () => {
       tm.registerConnection('1', GAME_URL);
       tm.routeMessage('1', wire('PLAY_STAGE_INFO', { stageNo: '100' }), GAME_URL);
       tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
@@ -163,31 +267,53 @@ describe('TableManager', () => {
       hsm.state = 'PREFLOP';
 
       tm.handleConnectionClosed('1');
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
 
-      // Table should be removed (no orphan)
-      expect(tm.getTableCount()).toBe(0);
-
-      // Partial record should have been emitted
-      const partialCalls = onComplete.mock.calls.filter(
-        c => c[0]?.ignitionMeta?.partial === true
-      );
-      expect(partialCalls.length).toBe(1);
-      expect(partialCalls[0][0].ignitionMeta.reconnectInterrupted).toBe(true);
+      expect(onComplete).not.toHaveBeenCalled();
+      expect(tm.getHSM('2')).toBe(hsm);
     });
 
-    it('handles mid-hand close when buildRecord fails gracefully', () => {
+    it('reaps cleanly when buildRecord fails', () => {
       tm.registerConnection('1', GAME_URL);
       tm.routeMessage('1', wire('PLAY_STAGE_INFO', { stageNo: '100' }), GAME_URL);
       const hsm = tm.getHSM('1');
       hsm.state = 'PREFLOP';
       // heroSeat is null — buildRecord will return null
 
-      tm.handleConnectionClosed('1');
+      const t0 = 1_000_000;
+      tm.handleConnectionClosed('1', t0);
+      tm.reapDisconnected(RECONNECT_GRACE_MS, t0 + RECONNECT_GRACE_MS);
 
-      // Table should still be cleaned up even if partial emission fails
       expect(tm.getTableCount()).toBe(0);
-      // onComplete should not have been called (no valid record)
       expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it('flushDisconnected closes out immediately for teardown', () => {
+      // On page unload there will be no reconnect, and an un-emitted partial
+      // would die with the page.
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('PLAY_STAGE_INFO', { stageNo: '100' }), GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      tm.routeMessage('1', wire('CO_BLIND_INFO', { seat: 8, account: 9950, btn: 2, bet: 50 }), GAME_URL);
+      tm.routeMessage('1', wire('CO_BLIND_INFO', { seat: 9, account: 9900, btn: 4, bet: 100 }), GAME_URL);
+      const hsm = tm.getHSM('1');
+      hsm.heroSeat = 5;
+      hsm.state = 'PREFLOP';
+
+      tm.handleConnectionClosed('1');
+      expect(tm.flushDisconnected()).toBe(1);
+
+      const partialCalls = onComplete.mock.calls.filter(
+        c => c[0]?.ignitionMeta?.partial === true
+      );
+      expect(partialCalls.length).toBe(1);
+      expect(tm.getTableCount()).toBe(0);
+    });
+
+    it('closing an unknown connection is a no-op', () => {
+      expect(() => tm.handleConnectionClosed('999')).not.toThrow();
+      expect(tm.getTableCount()).toBe(0);
     });
   });
 
@@ -253,7 +379,16 @@ describe('TableManager', () => {
       const hsm2 = tm.getHSM('2');
       hsm2.heroSeat = 5;
       hsm2.state = 'PREFLOP';
-      tm.handleConnectionClosed('2');
+      const t0 = 1_000_000;
+      tm.handleConnectionClosed('2', t0);
+
+      // Table 2 is in its reconnect grace window, not gone.
+      expect(tm.getTableCount()).toBe(4);
+      expect(tm.getTableStates()['2'].disconnected).toBe(true);
+      expect(tm.getTableStates()['1'].disconnected).toBe(false);
+
+      // Grace expires with no reconnect — only table 2 is reaped.
+      tm.reapDisconnected(RECONNECT_GRACE_MS, t0 + RECONNECT_GRACE_MS);
 
       expect(tm.getTableCount()).toBe(3);
       expect(tm.getHSM('2')).toBeUndefined();

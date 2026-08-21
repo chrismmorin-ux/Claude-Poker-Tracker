@@ -8,6 +8,19 @@
 import * as protocol from './protocol.js';
 import { HandStateMachine } from './hand-state-machine.js';
 
+/**
+ * Grace window between a socket close and the table being treated as gone.
+ *
+ * Ignition's game socket closes and reopens routinely mid-session. Before this
+ * window existed, `handleConnectionClosed` deleted the table immediately, which
+ * (a) emitted a bogus `reconnectInterrupted` partial for a hand still in
+ * progress and (b) made the reconnect look like a brand-new table to every
+ * downstream consumer — the side panel wiped advice, live context, seat stats
+ * and villain reads on every blip. See the reconnect lifecycle tests in
+ * `shared/__tests__/table-manager.test.js`.
+ */
+export const RECONNECT_GRACE_MS = 15_000;
+
 export class TableManager {
   constructor(onHandComplete, onError) {
     this.onHandComplete = onHandComplete;
@@ -21,6 +34,25 @@ export class TableManager {
     this.totalParsedMessages = 0;
     this.pidCounts = {};
     this._lastRoutedPids = [];
+    // Count of machines currently in the post-close grace window. Guards the
+    // reap sweep so the hot message path costs one integer compare when no
+    // table is disconnected (the overwhelmingly common case).
+    this._disconnectedCount = 0;
+  }
+
+  /**
+   * Stable identity for a table, independent of which WebSocket connection is
+   * currently carrying it.
+   *
+   * connId is a monotonic counter assigned per socket
+   * (`content/capture-websocket-probe.js`), so it changes on every reconnect.
+   * The game WS URL does not — it is already the key `urlToConnId` uses to
+   * stitch a reconnect back to its machine, so the codebase already treats it
+   * as the table's identity. This exposes that identity to consumers instead
+   * of leaking the connection counter to them.
+   */
+  _tableKeyForUrl(url, connId) {
+    return url ? `table:${url}` : `table_${connId}`;
   }
 
   registerConnection(connId, url) {
@@ -90,31 +122,29 @@ export class TableManager {
     if (!machine && connUrl) {
       const oldConnId = this.urlToConnId.get(connUrl);
       if (oldConnId !== undefined && oldConnId !== connId && this.tables.has(oldConnId)) {
-        const oldMachine = this.tables.get(oldConnId);
-        if (oldMachine.state === 'IDLE' || oldMachine.state === 'COMPLETE') {
-          machine = oldMachine;
-          this.tables.delete(oldConnId);
-          machine.connId = connId;
-          this.tables.set(connId, machine);
-          this.connectionUrls.delete(oldConnId);
-        } else {
-          try {
-            const partial = oldMachine.buildRecord();
-            if (partial) {
-              partial.ignitionMeta.partial = true;
-              partial.ignitionMeta.reconnectInterrupted = true;
-              this.totalCompletedHands++;
-              this.onHandComplete(partial);
-              oldMachine.completedHandCount++;
-            }
-          } catch (e) {
-            this.onError(e, { connId: oldConnId, op: 'reconnect_partial' });
-          }
-          this.tables.delete(oldConnId);
-          this.connectionUrls.delete(oldConnId);
-          for (const [url, cid] of this.urlToConnId) {
-            if (cid === oldConnId) { this.urlToConnId.delete(url); break; }
-          }
+        // Same table URL, new connection: this is a reconnect, not a new table.
+        // Migrate the machine wholesale — including a hand still in progress.
+        //
+        // Preserving mid-hand state is safe because Ignition sends CO_TABLE_INFO
+        // on join/reconnect carrying a full snapshot of the live hand: dealerSeat,
+        // tableState (street), hero hole cards (pcard*) and board (bcard). See
+        // `spike-data/SPIKE_REPORT.md` and `adaptTableInfo` in protocol-adapter.js
+        // — the adapter decomposes it into the events that resynchronise the
+        // machine. The protocol supplies the rehydration; we only have to keep
+        // the machine alive long enough to receive it.
+        //
+        // The previous behaviour emitted a `reconnectInterrupted` partial and
+        // built a fresh machine, which discarded completedHandCount, tableConfig,
+        // seatDisplayMap, stack observations, and the action sequence for the
+        // hand actually being played.
+        machine = this.tables.get(oldConnId);
+        this.tables.delete(oldConnId);
+        machine.connId = connId;
+        this.tables.set(connId, machine);
+        this.connectionUrls.delete(oldConnId);
+        if (machine.disconnectedAt) {
+          machine.disconnectedAt = null;
+          this._disconnectedCount = Math.max(0, this._disconnectedCount - 1);
         }
       }
     }
@@ -132,19 +162,63 @@ export class TableManager {
           this.onError(error, { connId, ...context });
         }
       );
+      // Stable identity, assigned once and carried across every reconnect.
+      machine.tableKey = this._tableKeyForUrl(connUrl, connId);
+      machine.disconnectedAt = null;
       this.tables.set(connId, machine);
     }
+
+    // A live message proves the socket is up: cancel any pending grace window.
+    if (machine.disconnectedAt) {
+      machine.disconnectedAt = null;
+      this._disconnectedCount = Math.max(0, this._disconnectedCount - 1);
+    }
+    // Cheap guard — only sweeps when something is actually in grace.
+    if (this._disconnectedCount > 0) this.reapDisconnected();
 
     machine.processMessage(parsed.pid, parsed.payload);
   }
 
-  handleConnectionClosed(connId) {
+  /**
+   * A socket closed. This is NOT proof the table is gone — Ignition cycles the
+   * game socket routinely — so the table enters a grace window instead of being
+   * destroyed. If the same URL reconnects within RECONNECT_GRACE_MS, routeMessage
+   * migrates the machine intact. If it does not, `reapDisconnected` emits the
+   * partial and removes it, which is what this method used to do inline.
+   *
+   * `connectionUrls` is deliberately NOT cleared here: it is the map that lets
+   * the reconnect find its way home.
+   */
+  handleConnectionClosed(connId, now = Date.now()) {
     connId = String(connId);
     const machine = this.tables.get(connId);
-    if (machine) {
+    if (!machine) {
+      this.connectionUrls.delete(connId);
+      return;
+    }
+    if (!machine.disconnectedAt) {
+      machine.disconnectedAt = now;
+      this._disconnectedCount++;
+    }
+  }
+
+  /**
+   * Close out tables whose grace window expired without a reconnect. Emits the
+   * mid-hand partial that `handleConnectionClosed` used to emit immediately, so
+   * no captured hand is lost — it just waits to see whether the socket comes
+   * back first.
+   *
+   * @returns {number} tables reaped
+   */
+  reapDisconnected(graceMs = RECONNECT_GRACE_MS, now = Date.now()) {
+    if (this._disconnectedCount === 0) return 0;
+    let reaped = 0;
+    for (const [connId, machine] of [...this.tables]) {
+      if (!machine.disconnectedAt) continue;
+      if (now - machine.disconnectedAt < graceMs) continue;
+
       const state = machine.getState();
       if (state.state !== 'IDLE' && state.state !== 'COMPLETE') {
-        // Emit partial record before cleanup (same pattern as reconnection path)
         try {
           const partial = machine.buildRecord();
           if (partial) {
@@ -159,20 +233,38 @@ export class TableManager {
         }
       }
       this.tables.delete(connId);
+      this.connectionUrls.delete(connId);
       for (const [url, cid] of this.urlToConnId) {
         if (cid === connId) {
           this.urlToConnId.delete(url);
           break;
         }
       }
+      this._disconnectedCount = Math.max(0, this._disconnectedCount - 1);
+      reaped++;
     }
-    this.connectionUrls.delete(connId);
+    return reaped;
+  }
+
+  /**
+   * Flush every disconnected table immediately, ignoring the grace window.
+   * Called on teardown (page unload / capture stop) — there will be no
+   * reconnect, and an un-emitted partial would be lost with the page.
+   */
+  flushDisconnected() {
+    return this.reapDisconnected(0, Date.now());
   }
 
   getTableStates() {
     const states = {};
     for (const [connId, machine] of this.tables) {
-      states[connId] = machine.getState();
+      states[connId] = {
+        ...machine.getState(),
+        // Stable across reconnects — consumers must key table identity on this,
+        // never on connId, which is a per-socket counter.
+        tableKey: machine.tableKey || `table_${connId}`,
+        disconnected: !!machine.disconnectedAt,
+      };
     }
     return states;
   }
@@ -215,10 +307,15 @@ export class TableManager {
 
   pruneStale(maxIdleMs) {
     const now = Date.now();
-    let pruned = 0;
+    // Close out anything whose reconnect grace window has expired first, so a
+    // genuinely-gone table emits its partial rather than being silently pruned.
+    let pruned = this.reapDisconnected(RECONNECT_GRACE_MS, now);
     for (const [connId, hsm] of this.tables) {
       if (hsm.state === 'IDLE' &&
           (now - (hsm.lastMessageTimestamp || hsm.startTimestamp || 0)) > maxIdleMs) {
+        if (hsm.disconnectedAt) {
+          this._disconnectedCount = Math.max(0, this._disconnectedCount - 1);
+        }
         this.tables.delete(connId);
         this.connectionUrls.delete(connId);
         pruned++;

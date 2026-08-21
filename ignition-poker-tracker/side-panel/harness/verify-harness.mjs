@@ -17,14 +17,16 @@
  */
 
 import { chromium } from 'playwright';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync, spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCREENSHOT_DIR = resolve(__dirname, 'screenshots');
-const HARNESS_URL = 'http://localhost:3333';
+// Overridable so parallel worktrees / sessions do not verify each other's build.
+const PORT = process.env.HARNESS_PORT || '3333';
+const HARNESS_URL = `http://localhost:${PORT}`;
 const DIST_DIR = resolve(__dirname, 'dist');
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -52,15 +54,52 @@ if (!existsSync(resolve(DIST_DIR, 'index.html'))) {
 let server = null;
 let serverReady = false;
 
+/**
+ * Confirm the server answering on the port is serving THIS working tree's build.
+ *
+ * Port 3333 is shared: a harness left running from another worktree, another
+ * session, or the main checkout will answer, and verify-harness would then
+ * screenshot someone else's bundle and report a clean pass on changes it never
+ * loaded. That happened — a run reported "58 screenshots, no anomalies" against
+ * a build that did not contain the fixture under test, and the only tell was a
+ * fixture count that was one short.
+ *
+ * The served bundle must byte-match the local dist, or we refuse rather than
+ * verify the wrong thing.
+ */
+async function assertServingLocalBuild() {
+  const localBundle = readFileSync(resolve(DIST_DIR, 'harness.js'), 'utf8');
+  const res = await fetch(`${HARNESS_URL}/harness.js`);
+  if (!res.ok) {
+    throw new Error(`[verify] Server on ${HARNESS_URL} did not serve harness.js (${res.status}).`);
+  }
+  const servedBundle = await res.text();
+  if (servedBundle !== localBundle) {
+    throw new Error(
+      `[verify] A DIFFERENT harness build is already serving on ${HARNESS_URL}.\n` +
+      `         Served bundle does not match ${resolve(DIST_DIR, 'harness.js')}.\n` +
+      `         Verifying it would screenshot another tree's code and report a false pass.\n` +
+      `         Stop that server, or set HARNESS_PORT to an unused port.`
+    );
+  }
+}
+
 async function startServer() {
   // Check if already running
   try {
     const res = await fetch(HARNESS_URL);
-    if (res.ok) { serverReady = true; return; }
-  } catch (_) { /* not running */ }
+    if (res.ok) {
+      await assertServingLocalBuild();
+      serverReady = true;
+      return;
+    }
+  } catch (e) {
+    if (e?.message?.startsWith('[verify]')) throw e;
+    /* not running */
+  }
 
-  console.log('[verify] Starting local server on port 3333...');
-  server = spawn('npx', ['serve', DIST_DIR, '-l', '3333', '--no-clipboard'], {
+  console.log(`[verify] Starting local server on port ${PORT}...`);
+  server = spawn('npx', ['serve', DIST_DIR, '-l', PORT, '--no-clipboard'], {
     stdio: 'pipe',
     shell: true,
   });

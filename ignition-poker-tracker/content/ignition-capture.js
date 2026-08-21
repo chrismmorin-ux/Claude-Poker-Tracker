@@ -350,7 +350,11 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
         tableManager.registerConnection(data.connId, data.url);
       }
       if (data.event === 'closed') {
+        // Enters a reconnect grace window; the table is NOT removed here.
         tableManager.handleConnectionClosed(data.connId);
+        // Surface the `disconnected` flag to the panel right away so it can
+        // show "reconnecting" instead of pretending everything is fine.
+        pushPipelineStatus();
       }
     } else if (data.type === T_MSG && data.direction === 'incoming' && data.preview) {
       // Track game vs non-game message counts for filter-stage diagnostics
@@ -423,6 +427,9 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
       if (typeof silenceCheckInterval !== 'undefined') clearInterval(silenceCheckInterval);
       if (diagTimer) { clearTimeout(diagTimer); diagTimer = null; }
       clearLiveContextTimer();
+      // No reconnect is coming — emit any partial still held in its grace
+      // window rather than letting it die with the context.
+      try { tableManager.flushDisconnected(); } catch (_) { /* teardown is best-effort */ }
       frameRecorder.flushNow();
     },
 
@@ -573,6 +580,9 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
     if (silenceCheckInterval) clearInterval(silenceCheckInterval);
     clearLiveContextTimer();
     if (typeof _unobserveCapture === 'function') _unobserveCapture();
+    // Same as onContextDead: the page is going away, so close out any table
+    // still inside its reconnect grace window instead of losing its partial.
+    try { tableManager.flushDisconnected(); } catch (_) { /* teardown is best-effort */ }
     frameRecorder.flushNow();
     conn.destroy();
   };

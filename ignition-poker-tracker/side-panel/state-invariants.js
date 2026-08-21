@@ -58,12 +58,26 @@ export class StateInvariantChecker {
 
   // =========================================================================
   // RULE 1: HUD visibility consistency
-  // If we have table hands AND an active table, hasTableHands must be true
+  //
+  // R1a: hands exist for an active table, so hasTableHands must be true.
+  //
+  // R1b: an active table with a live hand in progress must show the HUD. This
+  // clause exists because R1a was structurally blind to the case that actually
+  // shipped: the shell gate keyed on hasTableHands, which is false for the
+  // whole of the first hand at a table (nothing has been written to session
+  // storage yet), so the panel rendered "No active table detected" over a live
+  // hand and R1a — gated on lastHandCount > 0 — could never fire. An invariant
+  // that only checks the state you already believed in is not a check.
   // =========================================================================
   _rule1_hudVisibility(snap, violations) {
     if (snap.lastHandCount > 0 && snap.currentActiveTableId && !snap.hasTableHands) {
       violations.push(
-        `R1: hasTableHands=false but lastHandCount=${snap.lastHandCount} and activeTable=${snap.currentActiveTableId}`
+        `R1a: hasTableHands=false but lastHandCount=${snap.lastHandCount} and activeTable=${snap.currentActiveTableId}`
+      );
+    }
+    if (snap.currentLiveContext && !snap.currentActiveTableId) {
+      violations.push(
+        'R1b: live hand context present but no active table — HUD shell would render "No active table detected" over a live hand'
       );
     }
   }
