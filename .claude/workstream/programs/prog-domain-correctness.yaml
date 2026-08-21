@@ -620,7 +620,15 @@ evidence:
       engine: eng-engine
       run_id: "run-domain-correctness-sweep-2026-08-13"
       findings: 15
-      work_items: 16
+      # 16 -> 14 on 2026-08-20. This was hand-counted from the prose range
+      # "WS-450..465", which prog-template.yaml names as the error mode: work_items is
+      # items CREATED FROM FINDINGS, derived via countWorkItemsForRun(), not a range.
+      # Two of the run's findings resolved ONTO pre-existing items (FIND-051->WS-389,
+      # created 2026-08-05; FIND-124->WS-448, created 2026-08-12) which carry their own
+      # source.run_id and were not created here. WS-464/465 were created that day but by
+      # no finding of this run. The sweep created 14. That gap fired a promotion_gap
+      # event every reconcile for 7 days.
+      work_items: 14
       result: "First spec-compliant eng-engine sweep (6 lenses + targeted 7th + cross-critique + facilitator). DRIFT-FOUND: 1 CRITICAL / 6 HIGH / 5 MEDIUM / 3 LOW (FIND-112..126, WS-450..465). Headline: bluffer's-breakeven formula at 4 gameTreeDepth2 sites contaminates the depth-ablation deltas — WS-378's passivity result reopens after the fix. Re-ruled FIND-051 resolved (WS-432 logical clock, verified at HEAD); WS-389 dismissed superseded. Also verified clean: INV-08 boundaries, WEAKNESS_EXPLOIT_MAP, WS-436 style removal on live paths, backtest isolation."
       health_score: 2
     - date: "2026-07-22"

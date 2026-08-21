@@ -31,4 +31,10 @@ accept_criteria: |
   - Test: a forced budget-exhaustion fixture demonstrates the discount changing the argmax.
 effort: "M"
 runs_on: "any"
+source:
+  type: engine-finding
+  created_by: ai
+  engine: eng-engine
+  finding_id: "FIND-116"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
 created_at: "2026-08-13"

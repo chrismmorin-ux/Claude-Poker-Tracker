@@ -28,4 +28,10 @@ accept_criteria: |
     this specific hand is worth, not one average number for all hands.
 effort: "S"
 runs_on: "any"
+source:
+  type: engine-finding
+  created_by: ai
+  engine: eng-engine
+  finding_id: "FIND-119"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
 created_at: "2026-08-13"
