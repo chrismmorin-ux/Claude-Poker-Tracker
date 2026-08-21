@@ -545,16 +545,47 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
       throw new Error(`Invalid online hand: ${validation.errors.join(', ')}`);
     }
 
-    // Dedup check: skip if hand with this captureId already exists
-    if (handRecord.captureId) {
-      const existingHands = await readTx(STORE_NAME, (store) => store.index('sessionId').getAll(sessionId));
-      if (existingHands.some(h => h.captureId === handRecord.captureId)) {
-        log(`Skipping duplicate online hand: ${handRecord.captureId}`);
-        return -1; // Already exists
-      }
+    // Dedup on captureId — the deterministic identity stamped by the extension's
+    // enqueueHand. Until 2026-08-21 this guard never ran even once: `captureId` was
+    // not on buildHandForRelay's whitelist (wire-schemas.js), so it never crossed
+    // the wire and `if (handRecord.captureId)` was always false. Measured effect —
+    // 5,992 rows in this store representing 362 distinct hands.
+    //
+    // Read-and-add in ONE transaction. Separate readTx/writeTx left a window where
+    // two deliveries could both pass the check before either wrote, which is not
+    // hypothetical: the service worker opens an app tab on its own
+    // (ensureAppTabOpen), so a second tab the founder opens by hand gives two live
+    // bridges delivering the same queue concurrently.
+    if (!handRecord.captureId) {
+      return await writeTx(STORE_NAME, (store) => store.add(handRecord));
     }
 
-    return await writeTx(STORE_NAME, (store) => store.add(handRecord));
+    return await atomicTx([STORE_NAME], (stores, tx, setResult) => {
+      const objectStore = stores[STORE_NAME];
+
+      const addRecord = () => {
+        const addRequest = objectStore.add(handRecord);
+        addRequest.onsuccess = (event) => setResult(event.target.result);
+      };
+
+      // Scope the scan by sessionId where we have one — a duplicate always carries
+      // the same sessionId as its original, since sessionId is resolved from the
+      // table before the record is built. Without one there is no index to narrow
+      // by and correctness requires looking at every candidate.
+      const scanRequest = sessionId != null
+        ? objectStore.index('sessionId').getAll(sessionId)
+        : objectStore.getAll();
+
+      scanRequest.onsuccess = (event) => {
+        const existing = event.target.result || [];
+        if (existing.some(h => h.captureId === handRecord.captureId)) {
+          log(`Skipping duplicate online hand: ${handRecord.captureId}`);
+          setResult(-1); // Already exists — tx completes without a write
+          return;
+        }
+        addRecord();
+      };
+    });
   } catch (error) {
     logError('Error in saveOnlineHand:', error);
     throw error;

@@ -164,10 +164,22 @@ describe('saveHand', () => {
     await expect(saveHand(bad)).rejects.toThrow('Invalid hand data');
   });
 
-  it('rejects when communityCards does not have exactly 5 elements', async () => {
+  it('accepts a board shorter than 5 — a hand that ended before the river', async () => {
+    // 70% of real captured hands end before the river (28 preflop, 24 flop, 22 turn
+    // out of 106). The old rule demanded exactly 5 cards and only ever passed because
+    // buildHandRecord pads the array with '' upstream, so it asserted something false
+    // about most hands while never firing on real data.
+    await initDB();
+    const flopOnly = createValidHandData({
+      cardState: { communityCards: ['Ah', 'Kd', '2c'], holeCards: ['As', 'Ks'] },
+    });
+    await expect(saveHand(flopOnly)).resolves.toBeDefined();
+  });
+
+  it('rejects when communityCards has MORE than 5 elements', async () => {
     await initDB();
     const bad = createValidHandData({
-      cardState: { communityCards: ['Ah', 'Kd'], holeCards: ['', ''] },
+      cardState: { communityCards: ['Ah', 'Kd', '2c', '5h', '7s', 'Qs'], holeCards: ['', ''] },
     });
     await expect(saveHand(bad)).rejects.toThrow('Invalid hand data');
   });
@@ -566,6 +578,37 @@ describe('saveOnlineHand', () => {
     expect(id1).toBeGreaterThan(0);
     expect(id2).toBeGreaterThan(0);
     expect(id1).not.toBe(id2);
+  });
+
+  it('rejects a replayed hand instead of adding a second row', async () => {
+    // The regression this file exists to hold. The extension re-delivers its whole
+    // undrained queue on every reconnect; with captureId absent from the wire the
+    // dedup guard never ran, so each replay `add()`ed a fresh row. Measured on the
+    // founder's live DB 2026-08-21: 5,992 rows representing 362 distinct hands.
+    await initDB();
+    const hand = { ...createValidHandData(), captureId: 'cap-replay-001' };
+
+    const first = await saveOnlineHand(hand, 91, 'guest');
+    const replay = await saveOnlineHand(hand, 91, 'guest');
+
+    expect(first).toBeGreaterThan(0);
+    expect(replay).toBe(-1);
+    const stored = await getHandsBySessionId(91);
+    expect(stored).toHaveLength(1);
+  });
+
+  it('dedups a replayed hand that has no sessionId', async () => {
+    // `index('sessionId').getAll(null)` returns every record that HAS a sessionId --
+    // never the sessionless ones -- so a sessionless replay could not match itself
+    // and deduped against the wrong set entirely.
+    await initDB();
+    const hand = { ...createValidHandData(), captureId: 'cap-nosession-001' };
+
+    const first = await saveOnlineHand(hand, null, 'guest');
+    const replay = await saveOnlineHand(hand, null, 'guest');
+
+    expect(first).toBeGreaterThan(0);
+    expect(replay).toBe(-1);
   });
 
   it('uses handData.timestamp when provided', async () => {

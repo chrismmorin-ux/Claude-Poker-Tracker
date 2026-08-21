@@ -208,11 +208,28 @@ export const buildRecordFromState = (state) => {
     finalSeatPlayers[heroSeat] = 'hero';
   }
 
-  // Refuse to emit if heroSeat is null — fallback to seat 1 corrupts analysis
-  if (!heroSeat) {
+  // A hand with no known hero seat is still a hand. Measured on the four real
+  // captures: 11 of 117 hands (9.4%) were discarded here, and EVERY ONE was the
+  // first hand on a table connection -- the hand already in progress when capture
+  // attached. Under the cold-read regime that is the scarcest data there is: the
+  // opening hand of observation on a villain we may never see again.
+  //
+  // What must never happen is a GUESSED seat -- falling back to seat 1 puts hero in
+  // a seat he was not in and corrupts every positional read downstream. So the seat
+  // stays explicitly null and the hand is marked `heroInvolved: false`. Hero-centric
+  // analysis skips it; villain observation (actions, showdown cards, stack deltas)
+  // is kept. Null is a fact here, not a missing value to be filled.
+  //
+  // The one thing still refused is an EMPTY observation: no hero AND no actions is
+  // noise, not a hand.
+  const heroInvolved = Boolean(heroSeat);
+  if (!heroInvolved && (!Array.isArray(actionSequence) || actionSequence.length === 0)) {
     return {
       record: null,
-      validation: { valid: false, errors: ['heroSeat is null — cannot determine hero position'] },
+      validation: {
+        valid: false,
+        errors: ['no hero seat and no observed actions — nothing to record'],
+      },
     };
   }
 
@@ -223,7 +240,7 @@ export const buildRecordFromState = (state) => {
   const record = handFormat.buildHandRecord({
     currentStreet: finalStreet,
     dealerButtonSeat: dealerSeat || 1,
-    mySeat: heroSeat,
+    mySeat: heroSeat ?? null,
     actionSequence: streetTotalled,
     absentSeats,
     communityCards,
@@ -246,7 +263,11 @@ export const buildRecordFromState = (state) => {
       pot,
       potDistribution,
       winners,
-      heroSeatConfidence: state.heroSeatConfidence || 'unknown',
+      // `heroInvolved: false` marks an OBSERVED hand -- captured for villain policy,
+      // with no hero decision in it. Consumers keyed on hero must skip on this flag
+      // rather than inferring from a null seat.
+      heroInvolved,
+      heroSeatConfidence: heroInvolved ? (state.heroSeatConfidence || 'unknown') : 'none',
       seatDisplayMap: seatDisplayMap && Object.keys(seatDisplayMap).length > 0
         ? { ...seatDisplayMap } : undefined,
     },

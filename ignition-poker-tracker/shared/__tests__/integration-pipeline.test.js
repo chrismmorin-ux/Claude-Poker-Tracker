@@ -573,7 +573,7 @@ describe('Integration: Edge case hand records', () => {
     expect(relayed.seatPlayers['5']).toBe('hero');
   });
 
-  it('record-builder rejects null heroSeat', () => {
+  it('record-builder rejects a null heroSeat with NO observed actions (empty noise)', () => {
     const noHeroState = {
       currentStreet: 'preflop',
       dealerSeat: 1,
@@ -599,6 +599,45 @@ describe('Integration: Edge case hand records', () => {
     const { record, validation } = buildRecordFromState(noHeroState);
     expect(record).toBeNull();
     expect(validation.valid).toBe(false);
-    expect(validation.errors[0]).toContain('heroSeat');
+    expect(validation.errors[0]).toContain('nothing to record');
+  });
+
+  it('record-builder KEEPS a null-heroSeat hand that has observed actions', () => {
+    // The table-join hand: capture attached mid-hand, hero's seat is unknown, but
+    // the villains are acting and that is the observation we came for.
+    const observedState = {
+      currentStreet: 'flop',
+      dealerSeat: 1,
+      heroSeat: null,
+      actionSequence: [
+        { seat: 3, action: 'raise', street: 'preflop', amount: 3 },
+        { seat: 5, action: 'call', street: 'preflop', amount: 3 },
+        { seat: 3, action: 'bet', street: 'flop', amount: 4 },
+      ],
+      communityCards: ['A♥', 'K♦', 'Q♣'],
+      holeCards: [],
+      allPlayerCards: {},
+      activeSeats: new Set([1, 3, 5]),
+      seatPlayers: {},
+      connId: 'conn_89',
+      handNumber: 'conn_89_seq_1',
+      blinds: { sb: 0.5, bb: 1 },
+      ante: 0,
+      gameType: null,
+      stacks: {},
+      pot: 10,
+      potDistribution: [],
+      winners: [],
+      seatDisplayMap: null,
+    };
+
+    const { record, validation } = buildRecordFromState(observedState);
+    expect(validation.valid).toBe(true);
+    expect(record).not.toBeNull();
+    expect(record.gameState.mySeat).toBeNull();
+    expect(record.ignitionMeta.heroInvolved).toBe(false);
+    expect(record.gameState.actionSequence).toHaveLength(3);
+    // never guessed into a seat
+    expect(record.seatPlayers).not.toHaveProperty('1', 'hero');
   });
 });

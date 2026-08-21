@@ -92,13 +92,37 @@ describe('buildRecordFromState', () => {
     expect(record.gameState.dealerButtonSeat).toBe(1);
   });
 
-  it('refuses to emit when heroSeat is null', () => {
+  it('emits an OBSERVED hand when heroSeat is null, rather than discarding it', () => {
+    // 11 of 117 real captured hands were discarded here, every one the first hand on
+    // a table connection -- the hand already in progress when capture attached. Those
+    // are villain observations under a one-session-per-villain regime, so they are
+    // kept. What is refused is a GUESSED seat: mySeat stays null.
     const state = baseState();
     state.heroSeat = null;
     const { record, validation } = buildRecordFromState(state);
+    expect(validation.valid).toBe(true);
+    expect(record).not.toBeNull();
+    expect(record.gameState.mySeat).toBeNull();
+    expect(record.ignitionMeta.heroInvolved).toBe(false);
+    expect(record.ignitionMeta.heroSeatConfidence).toBe('none');
+    // the villain data that was being thrown away is present
+    expect(record.gameState.actionSequence.length).toBeGreaterThan(0);
+  });
+
+  it('marks a normal hand heroInvolved: true', () => {
+    const { record } = buildRecordFromState(baseState());
+    expect(record.ignitionMeta.heroInvolved).toBe(true);
+    expect(typeof record.gameState.mySeat).toBe('number');
+  });
+
+  it('still refuses when there is no hero AND no observed action', () => {
+    const state = baseState();
+    state.heroSeat = null;
+    state.actionSequence = [];
+    const { record, validation } = buildRecordFromState(state);
     expect(record).toBeNull();
     expect(validation.valid).toBe(false);
-    expect(validation.errors[0]).toContain('heroSeat is null');
+    expect(validation.errors[0]).toContain('nothing to record');
   });
 
   it('includes ignitionMeta with all fields', () => {

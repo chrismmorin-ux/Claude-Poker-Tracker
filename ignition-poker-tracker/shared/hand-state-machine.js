@@ -508,8 +508,13 @@ export class HandStateMachine {
   }
 
   _applyHandEnd() {
-    if (this.state === STATES.IDLE &&
-        (this.actionSequence.length === 0 || !this.heroSeat)) return;
+    // Second drop point for the same case record-builder now keeps: a hand observed
+    // from an IDLE machine with no known hero seat. The rule here is content, not
+    // hero -- if villains acted, there is something to record, and record-builder
+    // makes the final call (it refuses only when there is no hero AND no action).
+    // Leaving `!this.heroSeat` here would have re-imposed, one layer up, exactly the
+    // discard that was just removed one layer down.
+    if (this.state === STATES.IDLE && this.actionSequence.length === 0) return;
 
     try {
       const record = this.buildRecord();

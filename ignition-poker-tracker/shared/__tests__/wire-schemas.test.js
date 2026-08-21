@@ -552,6 +552,50 @@ describe('buildHandForRelay', () => {
     expect(result.ignitionMeta._eventLog).toBeUndefined();
   });
 
+  it('preserves ignitionMeta.startStacks (the SPR numerator)', () => {
+    // record-builder derives startStacks onto EVERY hand, and it was dropped here by
+    // omission from IGNITION_META_FIELDS -- measured at 106/106 real captured hands
+    // losing it at the wire. finalStacks cannot substitute: it is the post-hand stack,
+    // so effective stack and SPR are not reconstructable from a relayed hand without it.
+    const result = buildHandForRelay({
+      ...validHand,
+      ignitionMeta: {
+        ...validHand.ignitionMeta,
+        startStacks: { 1: 26.35, 5: 24.75 },
+        finalStacks: { 1: 26.35, 5: 23.65 },
+      },
+    });
+    expect(result.ignitionMeta.startStacks).toEqual({ 1: 26.35, 5: 24.75 });
+    expect(result.ignitionMeta.finalStacks).toEqual({ 1: 26.35, 5: 23.65 });
+  });
+
+  it('preserves captureId (the dedup + ACK key)', () => {
+    // Dropping this one did not degrade a record, it broke delivery in two places:
+    // saveOnlineHand's dedup guard (`if (handRecord.captureId)`) never ran, and
+    // useSyncBridge's ACK list came out empty so DEQUEUE_HANDS never fired and the
+    // queue never drained. Measured 2026-08-21: 5,992 rows = 362 distinct hands.
+    const result = buildHandForRelay({ ...validHand, captureId: 'ign_t1_h12345_v2' });
+    expect(result.captureId).toBe('ign_t1_h12345_v2');
+    expect(validateHandForRelay(result).valid).toBe(true);
+  });
+
+  it('omits captureId entirely when the source hand has none', () => {
+    // A hand validated at capture time has not been through enqueueHand yet. It must
+    // not gain a `captureId: undefined` key — that is truthy-guard-false but
+    // `'captureId' in hand` true, which is the shape most likely to fool a later check.
+    const result = buildHandForRelay(validHand);
+    expect('captureId' in result).toBe(false);
+    expect(validateHandForRelay(result).valid).toBe(true);
+  });
+
+  it('rejects a present-but-unusable captureId rather than relaying it', () => {
+    for (const bad of ['', 42, null, {}]) {
+      const v = validateHandForRelay({ ...buildHandForRelay(validHand), captureId: bad });
+      expect(v.valid).toBe(false);
+      expect(v.errors.join(';')).toContain('captureId');
+    }
+  });
+
   it('returns null for falsy input', () => {
     expect(buildHandForRelay(null)).toBeNull();
   });

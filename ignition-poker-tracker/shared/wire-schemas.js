@@ -192,6 +192,17 @@ const CARD_STATE_FIELDS = ['communityCards', 'holeCards', 'holeCardsVisible', 'a
 const ACTION_ENTRY_FIELDS = ['seat', 'action', 'street', 'order', 'amount'];
 const IGNITION_META_FIELDS = [
   'capturedAt', 'handNumber', 'blinds', 'ante', 'gameType', 'finalStacks',
+  // `heroInvolved` is false on an OBSERVED hand -- one captured with no hero in it.
+  // It must cross the wire, or the app cannot tell "hero folded" from "hero was not
+  // in this hand", and hero-centric stats silently absorb hands hero never played.
+  'heroInvolved',
+  // `startStacks` is the SPR numerator (see record-builder.js, where it is derived).
+  // It was derived onto every record and then dropped HERE, by the same silent `pick()`
+  // omission this file already records twice — once for `flopBreakdown`, once for the
+  // two-phase advice flags. `finalStacks` cannot substitute: it is the stack AFTER the
+  // hand resolved, a different number on every hand that involved money. Without it the
+  // app cannot compute effective stack or SPR from a captured hand at all.
+  'startStacks',
   'pot', 'potDistribution', 'winners', 'seatDisplayMap', 'partial', 'reconnectInterrupted',
   'heroSeatConfidence',
 ];
@@ -217,6 +228,28 @@ export const buildHandForRelay = (hand) => {
     tableId: hand.tableId,
     seatPlayers: hand.seatPlayers,
   };
+
+  // `captureId` is the deterministic identity of a captured hand (stamped by
+  // enqueueHand, storage-writer.js). It is the THIRD field this whitelist has
+  // silently dropped -- and unlike `flopBreakdown` or `startStacks`, dropping this
+  // one does not degrade a record, it breaks the delivery protocol in two places
+  // at once, because BOTH ends key on it and neither end could see it was absent:
+  //
+  //   1. Dedup. saveOnlineHand (handsStorage.js) guards its duplicate check with
+  //      `if (handRecord.captureId)`. Always undefined here, so the guard never
+  //      ran and every delivery `add()`ed a fresh row.
+  //   2. ACK. useSyncBridge.js builds its ACK list as `if (hand.captureId)
+  //      handledIds.push(...)`. Always empty, so app-bridge's `ids.length > 0`
+  //      gate never fired, DEQUEUE_HANDS was never sent, and the session queue
+  //      and journal never drained -- so every reconnect re-delivered everything
+  //      still in them.
+  //
+  // Together those made replay both permanent and unbounded: measured 2026-08-21,
+  // 5,992 rows in `hands` represented 362 distinct hands (94% duplicates), arriving
+  // in ~300 and ~600-row bursts that match the 500-deep queue and journal caps.
+  // Set only when present: a hand validated at capture time (ignition-capture.js)
+  // has not been through enqueueHand yet and legitimately has no captureId.
+  if (hand.captureId !== undefined) wire.captureId = hand.captureId;
 
   // gameState — whitelist + sanitize action entries
   if (isObj(hand.gameState)) {
@@ -250,6 +283,14 @@ export const validateHandForRelay = (hand) => {
   if (!isObj(hand)) return { valid: false, errors: ['hand must be an object'] };
   if (!isNum(hand.timestamp)) errors.push('missing or invalid timestamp');
   if (!isStr(hand.tableId) && hand.tableId !== undefined) errors.push('tableId must be a string');
+  // Optional, not required: this validator also runs at capture time, BEFORE
+  // enqueueHand stamps the id. But an id that is present and not a usable string
+  // is worse than an absent one -- it would satisfy the `if (hand.captureId)`
+  // guards downstream while matching nothing, resurrecting the same silent
+  // duplicate-and-never-ACK behaviour with the field nominally in place.
+  if (hand.captureId !== undefined && (!isStr(hand.captureId) || hand.captureId === '')) {
+    errors.push('captureId must be a non-empty string when present');
+  }
 
   // gameState
   if (!isObj(hand.gameState)) {
@@ -259,8 +300,11 @@ export const validateHandForRelay = (hand) => {
     if (!isNum(hand.gameState.dealerButtonSeat) || hand.gameState.dealerButtonSeat < 1 || hand.gameState.dealerButtonSeat > 9) {
       errors.push('gameState.dealerButtonSeat must be 1-9');
     }
-    if (!isNum(hand.gameState.mySeat) || hand.gameState.mySeat < 1 || hand.gameState.mySeat > 9) {
-      errors.push('gameState.mySeat must be 1-9');
+    // null = OBSERVED hand (no hero seated / seat unknown at capture attach). See
+    // record-builder.js. A guessed seat is refused; an absent one is recorded as absent.
+    if (hand.gameState.mySeat !== null &&
+        (!isNum(hand.gameState.mySeat) || hand.gameState.mySeat < 1 || hand.gameState.mySeat > 9)) {
+      errors.push('gameState.mySeat must be 1-9 or null (observed hand)');
     }
     if (!isArr(hand.gameState.actionSequence)) {
       errors.push('gameState.actionSequence must be array');

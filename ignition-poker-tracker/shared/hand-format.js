@@ -94,9 +94,17 @@ export const buildHandRecord = ({
   const paddedCommunity = [...communityCards];
   while (paddedCommunity.length < 5) paddedCommunity.push('');
 
+  // Hole cards get the same treatment. They were padded only by the caller's default
+  // argument, so an explicit `holeCards: []` -- which is exactly what an OBSERVED hand
+  // has, hero holding nothing because hero is not in it -- produced a 0-length array
+  // and then failed the validator's `array of 2` rule. The padding belongs here, next
+  // to the board padding, not in a default the caller can override with a legal value.
+  const paddedHole = [...holeCards];
+  while (paddedHole.length < 2) paddedHole.push('');
+
   // Normalize all cards
   const normalizedCommunity = paddedCommunity.map(normalizeCard);
-  const normalizedHole = holeCards.map(normalizeCard);
+  const normalizedHole = paddedHole.map(normalizeCard);
   const normalizedPlayerCards = {};
   for (const [seat, cards] of Object.entries(allPlayerCards)) {
     if (Array.isArray(cards)) {
@@ -166,9 +174,12 @@ export const validateHandRecord = (record) => {
         record.gameState.dealerButtonSeat < 1) {
       errors.push('gameState.dealerButtonSeat must be a positive number');
     }
-    if (typeof record.gameState.mySeat !== 'number' ||
-        record.gameState.mySeat < 1) {
-      errors.push('gameState.mySeat must be a positive number');
+    // `mySeat: null` is legal and means OBSERVED -- a hand captured with no hero in
+    // it (see record-builder.js). Anything else must be a real seat: a guessed seat
+    // is worse than no seat, because it reads as a measurement.
+    if (record.gameState.mySeat !== null &&
+        (typeof record.gameState.mySeat !== 'number' || record.gameState.mySeat < 1)) {
+      errors.push('gameState.mySeat must be a positive number or null (observed hand)');
     }
     if (!Array.isArray(record.gameState.actionSequence)) {
       errors.push('gameState.actionSequence must be array');
@@ -179,9 +190,15 @@ export const validateHandRecord = (record) => {
   if (!record.cardState) {
     errors.push('Missing cardState');
   } else {
+    // A board is 0-5 cards. The 5-slot padded form (trailing '') is the shipped
+    // storage shape and stays valid; a truncated array is equally valid. The old
+    // `length !== 5` rule asserted that every hand has a full board, which is false
+    // for 70% of hands -- it passed only because buildHandRecord pads. Encoding a
+    // false contract in a gate is how a real short board gets rejected the day the
+    // padding changes.
     if (!Array.isArray(record.cardState.communityCards) ||
-        record.cardState.communityCards.length !== 5) {
-      errors.push('cardState.communityCards must be array of 5');
+        record.cardState.communityCards.length > 5) {
+      errors.push('cardState.communityCards must be an array of at most 5');
     }
     if (!Array.isArray(record.cardState.holeCards) ||
         record.cardState.holeCards.length !== 2) {

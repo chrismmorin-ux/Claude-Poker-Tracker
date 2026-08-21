@@ -49,8 +49,13 @@ export const validateHandRecord = (handRecord) => {
     if (typeof handRecord.gameState.dealerButtonSeat !== 'number') {
       errors.push('gameState.dealerButtonSeat must be number');
     }
-    if (typeof handRecord.gameState.mySeat !== 'number') {
-      errors.push('gameState.mySeat must be number');
+    // null = OBSERVED hand: captured with no hero in it (a hand already in progress
+    // when capture attached, or one hero was not dealt into). The villain actions,
+    // showdown cards and stack deltas are still real observations and are kept.
+    // Hero-centric consumers gate on `ignitionMeta.heroInvolved`, never on a guessed seat.
+    if (handRecord.gameState.mySeat !== null &&
+        typeof handRecord.gameState.mySeat !== 'number') {
+      errors.push('gameState.mySeat must be number or null (observed hand)');
     }
   }
 
@@ -60,10 +65,14 @@ export const validateHandRecord = (handRecord) => {
   } else if (typeof handRecord.cardState !== 'object') {
     errors.push('cardState must be an object');
   } else {
+    // 0-5 cards. The padded 5-slot form (trailing '') is the shipped shape and stays
+    // valid; a truncated board is equally valid. `length !== 5` asserted that every
+    // hand runs to the river -- false for 70% of real hands, and it passed only
+    // because buildHandRecord pads the array before it ever reaches here.
     if (!Array.isArray(handRecord.cardState.communityCards)) {
       errors.push('cardState.communityCards must be array');
-    } else if (handRecord.cardState.communityCards.length !== 5) {
-      errors.push('cardState.communityCards must have exactly 5 elements');
+    } else if (handRecord.cardState.communityCards.length > 5) {
+      errors.push('cardState.communityCards must have at most 5 elements');
     }
     if (!Array.isArray(handRecord.cardState.holeCards)) {
       errors.push('cardState.holeCards must be array');

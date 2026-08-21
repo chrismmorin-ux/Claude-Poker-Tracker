@@ -597,12 +597,28 @@ describe('validateHandRecord', () => {
       expect(result.errors.some(e => e.includes('cardState'))).toBe(true);
     });
 
-    it('fails when communityCards has fewer than 5 elements', () => {
+    it('ACCEPTS a truncated board — most hands never reach the river', () => {
+      // Measured on the real captures: of 106 hands, 28 ended preflop (0 cards),
+      // 24 on the flop, 22 on the turn. Only 32 saw five cards. The old rule here
+      // demanded exactly 5 and passed solely because buildHandRecord pads the array
+      // with '' before validation ever sees it -- so the gate asserted something
+      // false about 70% of hands while never firing. A flop-ending hand is valid.
       const record = buildValid();
       record.cardState.communityCards = ['A♥', 'K♦', 'Q♣'];
       const result = validateHandRecord(record);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('communityCards'))).toBe(true);
+      expect(result.valid).toBe(true);
+    });
+
+    it('ACCEPTS an empty board (hand folded out preflop)', () => {
+      const record = buildValid();
+      record.cardState.communityCards = [];
+      expect(validateHandRecord(record).valid).toBe(true);
+    });
+
+    it('still accepts the padded 5-slot form (the shipped storage shape)', () => {
+      const record = buildValid();
+      record.cardState.communityCards = ['A♥', 'K♦', 'Q♣', '', ''];
+      expect(validateHandRecord(record).valid).toBe(true);
     });
 
     it('fails when communityCards has more than 5 elements', () => {

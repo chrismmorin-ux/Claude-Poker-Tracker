@@ -168,12 +168,23 @@ describe('validateHandRecord', () => {
       expect(result.errors).toContain('gameState.dealerButtonSeat must be number');
     });
 
-    it('returns error when mySeat is not a number', () => {
+    it('returns error when mySeat is neither a number nor null', () => {
+      const hand = makeValidHand();
+      hand.gameState.mySeat = 'three';
+      const result = validateHandRecord(hand);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('gameState.mySeat must be number or null (observed hand)');
+    });
+
+    it('ACCEPTS mySeat null — an observed hand with no hero in it', () => {
+      // 11 of 117 real captured hands had no known hero seat, every one the hand
+      // already in progress when capture attached to the table. They carry villain
+      // actions, showdown cards and stack deltas, so they are stored rather than
+      // discarded. A guessed seat is still refused — null means absent, not unknown-so-fill-it.
       const hand = makeValidHand();
       hand.gameState.mySeat = null;
       const result = validateHandRecord(hand);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('gameState.mySeat must be number');
+      expect(result.valid).toBe(true);
     });
   });
 
@@ -201,12 +212,21 @@ describe('validateHandRecord', () => {
       expect(result.errors).toContain('cardState.communityCards must be array');
     });
 
-    it('returns error when communityCards has fewer than 5 elements', () => {
+    it('ACCEPTS a flop-length board — most hands never reach the river', () => {
+      // Measured on the real captures: 28 of 106 hands ended preflop, 24 on the flop,
+      // 22 on the turn; only 32 saw five cards. The old rule demanded exactly 5 and
+      // never fired only because buildHandRecord pads the array with '' upstream.
+      // A gate encoding a false contract rejects real data the day the padding moves.
       const hand = makeValidHand();
       hand.cardState.communityCards = ['Ah', 'Kd', '2c'];
       const result = validateHandRecord(hand);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('cardState.communityCards must have exactly 5 elements');
+      expect(result.valid).toBe(true);
+    });
+
+    it('ACCEPTS an empty board — hand folded out preflop', () => {
+      const hand = makeValidHand();
+      hand.cardState.communityCards = [];
+      expect(validateHandRecord(hand).valid).toBe(true);
     });
 
     it('returns error when communityCards has more than 5 elements', () => {
@@ -214,7 +234,7 @@ describe('validateHandRecord', () => {
       hand.cardState.communityCards = ['Ah', 'Kd', '2c', '5h', '7s', 'Qs'];
       const result = validateHandRecord(hand);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('cardState.communityCards must have exactly 5 elements');
+      expect(result.errors).toContain('cardState.communityCards must have at most 5 elements');
     });
 
     it('returns error when holeCards is not an array', () => {

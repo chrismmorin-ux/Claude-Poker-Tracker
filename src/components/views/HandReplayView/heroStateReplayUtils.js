@@ -66,13 +66,29 @@ export const reconstructGameStateAt = ({
   };
 };
 
+// Stored boards are padded to 5 slots with '' -- a turn-ending hand is [c,c,c,c,''] --
+// so slicing the raw array hands a '' downstream as though it were a card. This used
+// to slice without filtering.
+//
+// It cannot simply delegate to `getCardsForStreet`: that one is written for STRING
+// cards ('A♥') and calls .trim(), while this path also receives NUMERICALLY ENCODED
+// cards (e.g. [20, 13, 3]) from the replay reconstruction. The filter therefore has to
+// be representation-agnostic -- drop empty slots, keep any real card in either form.
+const isDealtCard = (c) => {
+  if (c === null || c === undefined) return false;
+  if (typeof c === 'number') return Number.isFinite(c);
+  if (typeof c === 'string') return c.trim().length >= 2;
+  return false;
+};
+
 const getBoardForStreet = (hand, street) => {
   const cc = hand?.cardState?.communityCards;
   if (!cc || !Array.isArray(cc)) return [];
   if (street === 'preflop') return [];
-  if (street === 'flop') return cc.slice(0, 3);
-  if (street === 'turn') return cc.slice(0, 4);
-  if (street === 'river') return cc.slice(0, 5);
+  const dealt = cc.filter(isDealtCard);
+  if (street === 'flop') return dealt.slice(0, 3);
+  if (street === 'turn') return dealt.slice(0, 4);
+  if (street === 'river') return dealt.slice(0, 5);
   return [];
 };
 
