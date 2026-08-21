@@ -486,19 +486,45 @@ export const emitConductCard = async ({
   const rulesetHash = createHash("sha256")
     .update(mixes.map((m) => m.ruleId).sort().join("|")).digest("hex");
 
+  const dealBookHash = dealBookHashOf(files);
+
+  /**
+   * ═════════════════════════════════════════════════════════════════════════════════════
+   * cardId IS CONTENT IDENTITY: (subject, ruleset, deal book). MEASURED COLLISION, TWICE.
+   * ═════════════════════════════════════════════════════════════════════════════════════
+   *
+   * Round one: `cardId` was a slug of the SUBJECT alone, so every re-derivation carried the
+   * same one — five cards in `.tmp-arch/` with 19, 25, 18, 18 and 25 rules from five engine
+   * commits, all claiming to be `CC-SO0OmHLLvkJp`. The ruleset hash was added to fix it.
+   *
+   * Round two, MEASURED 2026-08-21 across twelve real sessions: it was still colliding, and
+   * the ruleset hash could not have caught it because the ruleset was identical. The slug
+   * `subjectId.slice(0, 12)` truncated `hero-sess-20260615-013317-table_1781487173384001`
+   * down to `herosess2026` — cutting off precisely the segment that names the session. Two
+   * sessions, two different cards, one id:
+   *
+   *     CC-herosess2026-643d1dd2   <- June 15 AND June 19
+   *     CC-seat8s1-643d1dd2        <- seat 8 in two sessions, i.e. two different humans
+   *
+   * The lesson the first fix missed: a READABLE PREFIX IS NOT AN IDENTITY. Any fixed-width
+   * slug of an unbounded string collides, and it collides silently — a store keyed on this
+   * overwrites rather than errors.
+   *
+   * So the id now hashes the FULL subject, and the deal book joins the ruleset in the
+   * identity. Two cards share an id if and only if they describe the same subject, under the
+   * same rules, from the same hands — which is what "the same card" means. The readable
+   * prefix is kept in front for a human reading a filename, and carries no identity load.
+   */
+  const identityHash = createHash('sha256')
+    .update([subjectId, rulesetHash, dealBookHash].join(' '))
+    .digest('hex');
+
   const card = buildConductCard({
-    /**
-     * `cardId` was a slug of the SUBJECT, so every re-derivation carried the same one. Five
-     * cards for one subject sit in `.tmp-arch/` with 19, 25, 18, 18 and 25 rules from five
-     * engine commits, all four of them claiming to be `CC-SO0OmHLLvkJp`. An id that cannot
-     * tell two cards apart cannot be cited. The ruleset hash makes it identify the card;
-     * `subjectId` remains the join key for "all cards about this player".
-     */
-    cardId: `CC-${subjectId.replace(/[^A-Za-z0-9]/g, '').slice(0, 12)}-${rulesetHash.slice(0, 8)}`,
+    cardId: `CC-${subjectId.replace(/[^A-Za-z0-9]/g, '').slice(0, 12)}-${identityHash.slice(0, 16)}`,
     rulesetHash,
     subjectId,
     dealBook: {
-      dealBookHash: dealBookHashOf(files),
+      dealBookHash,
       files: files.length,
       hands: handIds.size,
       decisions: decisions.length,

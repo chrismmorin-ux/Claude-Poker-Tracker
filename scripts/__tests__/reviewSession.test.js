@@ -125,8 +125,37 @@ describe('claim 4 — the subject is a seat, and the artifact says so', () => {
     for (const s of review.opponents.subjects) {
       expect(s.identityBasis).toBe('seat-segment');
       expect(s.identity).toBeNull();
-      expect(s.subjectId).toMatch(/^seat\d+#s\d+$/);
+      /**
+       * SESSION-SCOPED, and the scoping is the assertion — not incidental formatting.
+       *
+       * This used to be `/^seat\d+#s\d+$/`. A seat-occupancy segment means "whoever sat in
+       * seat 8 during the first stretch", which across two sessions at two tables is TWO
+       * DIFFERENT PEOPLE. Unscoped, they were one subject, and MEASURED 2026-08-21 they
+       * produced two cards sharing one id — which a store keyed on that id would overwrite
+       * rather than reject.
+       */
+      expect(s.subjectId).toMatch(/^[^:]+:seat\d+#s\d+$/);
+      expect(s.subjectId.startsWith(`${review.session.id}:`)).toBe(true);
     }
+  });
+
+  it('gives two sessions DIFFERENT subject ids for the same seat number', () => {
+    // The property the id exists for, asserted directly rather than inferred from a format.
+    // Same seats, same stacks, same everything except which session it was — and seat 3 in
+    // one is not the same human as seat 3 in the other.
+    const mk = () => [{
+      hand: {
+        seatPlayers: { 3: 'seat_3' },
+        gameState: { mySeat: 9, actionSequence: [], dealerButtonSeat: 1, communityCards: [] },
+        handId: 'h1',
+      },
+      source: { ignitionMeta: { blinds: { sb: 1, bb: 2 }, startStacks: { 3: 200 } } },
+    }];
+    const a = resolveSubjects(mk(), 9, 'sess-AAA-table_x');
+    const b = resolveSubjects(mk(), 9, 'sess-BBB-table_y');
+    expect(a.subjects[0].subjectId).not.toBe(b.subjects[0].subjectId);
+    expect(a.subjects[0].subjectId).toBe('sess-AAA-table_x:seat3#s1');
+    expect(b.subjects[0].subjectId).toBe('sess-BBB-table_y:seat3#s1');
   });
 
   it('carries the caveat on the artifact, not just in a source comment', () => {

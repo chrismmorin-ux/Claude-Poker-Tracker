@@ -211,7 +211,20 @@ export const heroPolicyAt = async ({
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   const board = ctx.board;
   const range = ctx.rangeBefore;
-  if (!range || !board || board.length < 3) {
+  /**
+   * `range` IS ONLY EVER USED TO SAMPLE COMBOS, so requiring it when the caller already
+   * supplied them rejected a decision that was fully scoreable.
+   *
+   * That is the cards-known arm: a session the founder played carries hero's actual hole
+   * cards, so the combo set is the real holding at weight 1 and no range needs to be inferred
+   * at all. The guard was refusing exactly the case with MORE information than the one it
+   * admits.
+   *
+   * Every pre-existing caller is unchanged by construction: `heroEvTask` passes
+   * `combos: combosFor(k)`, which is itself null whenever the range or board is missing, so
+   * the old condition and the new one agree on every input any current caller can produce.
+   */
+  if ((!providedCombos && !range) || !board || board.length < 3) {
     return { ok: false, reason: POLICY_SKIP_REASONS.EMPTY_RANGE };
   }
 

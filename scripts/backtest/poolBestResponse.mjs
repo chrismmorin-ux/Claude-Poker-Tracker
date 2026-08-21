@@ -357,6 +357,43 @@ export const actionValues = ({
 };
 
 /**
+ * The field's fold rate at this node, for a candidate hero sizing.
+ *
+ * EXPORTED BECAUSE THERE ARE NOW TWO CONSUMERS AND THERE MUST STILL BE ONE DEFINITION.
+ * `poolBestResponseAt` uses it to pick the ceiling's action; `priceHeroDecisions` uses it to
+ * price hero's OWN action against that ceiling. Those two numbers are subtracted from each
+ * other, so a second copy of this lookup — even a faithful one — would put the difference at
+ * the mercy of the two copies staying in step. That is the WS-291 mechanism exactly: nothing
+ * would force the two numbers onto the same axis, and a drift between them would surface as
+ * an EV gap rather than as a bug.
+ *
+ * Memoized per node: `queryPolicy` walks the whole hierarchy, and the caller asks for the
+ * same handful of sizings repeatedly.
+ *
+ * @returns {(heroBetTotalBB: number, isRaise: boolean) => number|undefined}
+ */
+export const makeFoldRateFor = ({ ctx, hand, geo, policy, shrinkWeight }) => {
+  const B = geo.facingBetBB;
+  const P = Math.max(0, geo.potBB - B);
+  const foldCache = new Map();
+  return (heroBetTotalBB, isRaise) => {
+    const key = `${isRaise ? 'r' : 'b'}|${heroBetTotalBB.toFixed(4)}`;
+    if (foldCache.has(key)) return foldCache.get(key);
+    const potBeforeVillainBB = P + (isRaise ? B : 0) + heroBetTotalBB;
+    const rc = responseContext(ctx, hand, {
+      heroBetTotalBB,
+      potBeforeVillainBB,
+      // Villain faces a RAISE only when they already have money in this street.
+      facing: isRaise ? 'raise' : 'bet',
+    });
+    const { actions } = queryPolicy(policy, rc, { shrinkWeight });
+    const f = actions?.fold;
+    foldCache.set(key, f);
+    return f;
+  };
+};
+
+/**
  * pi_PBR(. | s) — the range-marginalized best response at one decision node.
  *
  * Takes the combos and equities the engine pass ALREADY computed. It deliberately does not
@@ -388,22 +425,7 @@ export const poolBestResponseAt = ({ ctx, hand, geo, perCombo, policy, shrinkWei
   // per node and reused across every combo. Memoized rather than recomputed inside the combo
   // loop: `queryPolicy` walks the whole hierarchy, and at 10 combos x 4 sizings that is 40
   // identical walks per decision for one distinct answer per sizing.
-  const foldCache = new Map();
-  const foldRateFor = (heroBetTotalBB, isRaise) => {
-    const key = `${isRaise ? 'r' : 'b'}|${heroBetTotalBB.toFixed(4)}`;
-    if (foldCache.has(key)) return foldCache.get(key);
-    const potBeforeVillainBB = P + (isRaise ? B : 0) + heroBetTotalBB;
-    const rc = responseContext(ctx, hand, {
-      heroBetTotalBB,
-      potBeforeVillainBB,
-      // Villain faces a RAISE only when they already have money in this street.
-      facing: isRaise ? 'raise' : 'bet',
-    });
-    const { actions } = queryPolicy(policy, rc, { shrinkWeight });
-    const f = actions?.fold;
-    foldCache.set(key, f);
-    return f;
-  };
+  const foldRateFor = makeFoldRateFor({ ctx, hand, geo, policy, shrinkWeight });
 
   const counts = {};
   for (const a of responses) counts[a] = 0;

@@ -1,0 +1,762 @@
+{
+  "cardId": "CC-sess20260619-b3e4f621952f8145",
+  "rulesetHash": "643d1dd2f858bcce7474cb6bcd0e61b71d28ec776d79248511403d476d40243d",
+  "schemaVersion": 4,
+  "subjectId": "sess-20260619-030104-table_1781837978724001:seat6#s1",
+  "surfaceKind": "Read",
+  "dealBook": {
+    "dealBookHash": "sha256:0f3d554963bde7764107816b76741dc25d0d66587c20be1344bed721f55f0889",
+    "files": 1,
+    "hands": 11,
+    "decisions": 30
+  },
+  "evidence": {
+    "decisions": 30,
+    "revealedDecisions": 0,
+    "revealedShare": 0,
+    "shownHands": 0,
+    "voluntarilyEnteredShown": 0
+  },
+  "rules": [
+    {
+      "ruleId": "r-e3b0c44298",
+      "when": "everything else",
+      "n": 30,
+      "actions": [
+        {
+          "action": "call",
+          "k": 16,
+          "rate": 0.5333333333333333,
+          "ci": [
+            0.354808679988615,
+            0.7118579866780517
+          ],
+          "sizing": null
+        },
+        {
+          "action": "fold",
+          "k": 8,
+          "rate": 0.26666666666666666,
+          "ci": [
+            0.10842147482583778,
+            0.4249118585074956
+          ],
+          "sizing": null
+        },
+        {
+          "action": "check",
+          "k": 5,
+          "rate": 0.16666666666666666,
+          "ci": [
+            0.03330555844847141,
+            0.3000277748848619
+          ],
+          "sizing": null
+        },
+        {
+          "action": "bet",
+          "k": 1,
+          "rate": 0.03333333333333333,
+          "ci": [
+            0,
+            0.09756854924301145
+          ],
+          "sizing": {
+            "regimes": [
+              "postflop-raise-to-over-pot"
+            ],
+            "scheme": "S2",
+            "schemeVersion": 2,
+            "altScheme": "S3",
+            "altSchemeVersion": 1,
+            "k": 1,
+            "sizedK": 1,
+            "unsizedK": 0,
+            "shrunk": true,
+            "thin": true,
+            "parent": "bet@card",
+            "parentN": 1,
+            "priorWeight": 25,
+            "classNote": "decision input — `p` is a posterior mean shrunk toward the parent, `pRaw` is the raw rate, `k`/`n` are counts. If a consumer SHOWS or CITES one of these it has become a comparative claim and must carry `shrunk` on its face or refuse (sparsity-refuse-or-shrink.md).",
+            "bands": [
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "<0.45",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "0.45-0.60",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "0.60-0.72",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "0.72-0.95",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": ">=0.95",
+                "k": 1,
+                "n": 1,
+                "pRaw": 1,
+                "p": 1,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  1,
+                  1
+                ],
+                "shape": {
+                  "distinctValues": 1,
+                  "modal": 1.025537634408602,
+                  "modalShare": 1,
+                  "mean": 1.025537634408602,
+                  "min": 1.025537634408602,
+                  "max": 1.025537634408602
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "unsized",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              }
+            ],
+            "altBands": [
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "small",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "medium",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "large",
+                "k": 1,
+                "n": 1,
+                "pRaw": 1,
+                "p": 1,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  1,
+                  1
+                ],
+                "shape": {
+                  "distinctValues": 1,
+                  "modal": 1.025537634408602,
+                  "modalShare": 1,
+                  "mean": 1.025537634408602,
+                  "min": 1.025537634408602,
+                  "max": 1.025537634408602
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "overbet",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              },
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "band": "unsized",
+                "k": 0,
+                "n": 1,
+                "pRaw": 0,
+                "p": 0,
+                "shrunk": true,
+                "shift": 0,
+                "thin": true,
+                "shrunkToward": "bet@card (n=1), itself shrunk toward all sized actions on this card (n=1)",
+                "priorWeight": 25,
+                "ci": [
+                  0,
+                  0
+                ],
+                "shape": {
+                  "distinctValues": 0,
+                  "modal": null,
+                  "modalShare": null,
+                  "mean": null,
+                  "min": null,
+                  "max": null
+                }
+              }
+            ],
+            "subRules": [
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "n": 1,
+                "unsizedExcluded": 0,
+                "bandsOccupied": 1,
+                "outcome": "single-band",
+                "split": null,
+                "rules": []
+              }
+            ],
+            "altSubRules": [
+              {
+                "regime": "postflop-raise-to-over-pot",
+                "n": 1,
+                "unsizedExcluded": 0,
+                "bandsOccupied": 1,
+                "outcome": "single-band",
+                "split": null,
+                "rules": []
+              }
+            ]
+          }
+        }
+      ],
+      "verdict": "hidden-cond",
+      "specAnalogue": "resolved-subrule",
+      "separators": [
+        {
+          "feature": "raises_in",
+          "p": 0.04547726136931535
+        }
+      ],
+      "shown": [],
+      "streets": {
+        "preflop": 14,
+        "flop": 9,
+        "turn": 5,
+        "river": 2
+      }
+    }
+  ],
+  "residual": {
+    "ruleId": "r-e3b0c44298",
+    "kind": "partition-is-total",
+    "note": "The induced leaves partition every decision this card was built from, so the ruleset is enclosed by the partition rather than by a named fallback. This is CHECKED, not assumed: the round-trip gates verify that every decision matches exactly one rule and that each rule re-derives its own action counts. Off-support is a property of decisions the card never saw and is reported separately."
+  },
+  "coverage": 1,
+  "unresolved": [
+    {
+      "ruleId": "r-e3b0c44298",
+      "verdict": "hidden-cond",
+      "resolvedBy": "sample: raises_in separates this leaf but every cut lands under the minimum-rule floor"
+    }
+  ],
+  "separatorSearch": {
+    "arity": 1,
+    "correction": "bonferroni, one family of m observable features plus the card test",
+    "familySize": {
+      "min": 13,
+      "max": 13,
+      "leaves": 1
+    },
+    "alpha": 0.05,
+    "combinationsSearched": false,
+    "note": "Single features only, each leaf corrected over its own family of testable features plus the card test. A disjunction of three conditions refuted one of these verdicts at corrected p=0.024 on 2026-08-18, so every mix here is provisional until the search covers combinations. Separately, on 2026-08-19 analysts given single leaves blind found observable separators in two spots this arity-1 search had labelled needs-cards."
+  },
+  "induction": {
+    "minRule": 25,
+    "maxDepth": 5,
+    "alpha": 0.05,
+    "requireSignificance": false
+  },
+  "gates": [
+    {
+      "name": "session sealed",
+      "ok": true,
+      "detail": "sha256:2debb6f084d838b1be28590be85000610641a2f667099268fc214098e89249a1"
+    },
+    {
+      "name": "no corrupt tail",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "cards-known on hero decisions",
+      "ok": true,
+      "detail": "100.0% of 37 rows"
+    }
+  ],
+  "occupancy": {
+    "unit": "decision",
+    "total": 30,
+    "byStreet": {
+      "preflop": 14,
+      "flop": 9,
+      "turn": 5,
+      "river": 2
+    },
+    "byFacing": {
+      "no raise": 6,
+      "a raise": 8,
+      "a bet": 10,
+      "no bet": 6
+    },
+    "note": "The card describes only these situations. A best-response computed outside this occupancy measures the card's holes, not the subject's weakness."
+  },
+  "manifest": {
+    "engineCommit": "c74536dfc1f2edaf8bdd5d5d055c7ab71deb7679",
+    "engineDirty": true,
+    "dealBookHash": "sha256:0f3d554963bde7764107816b76741dc25d0d66587c20be1344bed721f55f0889",
+    "schemaVersion": 13,
+    "seeds": {},
+    "unseededSources": [],
+    "constants": {
+      "minRule": 25,
+      "maxDepth": 5,
+      "alpha": 0.05,
+      "requireSignificance": false
+    },
+    "constantFloorNote": "The Result Card REQUIRED_CONSTANTS are engine-model constants and this induction consumes none of them; stamping them would assert a dependence that does not exist. These four fully determine the rule count."
+  },
+  "disclaimerRegisterVersion": "FR-1+1c1671079aa7",
+  "contentHash": "sha256:4647f67dbebb8ebf8fa611aec7b13fa3badb44653ecb89b146ad0637799ec348",
+  "population": "One Ignition session played by the founder at 0.1/0.25. 24 hands with hero seated, 0 observed. This is a single sitting against one table's players — not a sample of any pool, and no rate here describes a population. Ignition supplies no player identity — measured, not assumed: no name/nick/alias/uid field exists anywhere in a captured record. A subject here is A SEAT-OCCUPANCY SEGMENT, not a person. A same-seat replacement is invisible in the data and is inferred only from an upward stack discontinuity (a vacancy gap PLUS a >10bb stack move), which is a heuristic that can over-split but never merges two people into one subject.",
+  "provenance": null,
+  "sizingBanding": {
+    "primary": "S2",
+    "arms": [
+      {
+        "scheme": "S2",
+        "version": 2,
+        "kind": "data-derived",
+        "rationale": "Boundaries placed off the observed distribution of 1,676 aggressive actions, with the 3.5bb point mass (675/1,106 preflop raises) given its own band. WS-578 AC4: a fixed-width banding wastes its resolution on empty space and merges the one value that matters.",
+        "regimes": {
+          "preflop-raise-to-bb": [
+            {
+              "name": "<3.25",
+              "lo": 0,
+              "hi": 3.25
+            },
+            {
+              "name": "3.5",
+              "lo": 3.25,
+              "hi": 3.75
+            },
+            {
+              "name": "4-4.5",
+              "lo": 3.75,
+              "hi": 4.75
+            },
+            {
+              "name": "5-8",
+              "lo": 4.75,
+              "hi": 8
+            },
+            {
+              "name": "8-11.75",
+              "lo": 8,
+              "hi": 11.75
+            },
+            {
+              "name": "12",
+              "lo": 11.75,
+              "hi": 12.25
+            },
+            {
+              "name": "12.25-79",
+              "lo": 12.25,
+              "hi": 79
+            },
+            {
+              "name": ">=79",
+              "lo": 79,
+              "hi": null
+            }
+          ],
+          "postflop-raise-to-over-pot": [
+            {
+              "name": "<0.45",
+              "lo": 0,
+              "hi": 0.45
+            },
+            {
+              "name": "0.45-0.60",
+              "lo": 0.45,
+              "hi": 0.6
+            },
+            {
+              "name": "0.60-0.72",
+              "lo": 0.6,
+              "hi": 0.72
+            },
+            {
+              "name": "0.72-0.95",
+              "lo": 0.72,
+              "hi": 0.95
+            },
+            {
+              "name": ">=0.95",
+              "lo": 0.95,
+              "hi": null
+            }
+          ]
+        },
+        "unsizedBand": "unsized",
+        "resolution": {
+          "postflop-raise-to-over-pot": {
+            "n": 1,
+            "unsized": 0,
+            "bandsOccupied": 1,
+            "bandsDeclared": 5,
+            "rmse": 0,
+            "maxAbsErr": 0,
+            "bitsRetained": 0,
+            "unit": "fraction of pot including the live bet"
+          }
+        }
+      },
+      {
+        "scheme": "S3",
+        "version": 1,
+        "kind": "fixed-convention",
+        "rationale": "The conventional open-size bands preflop, and the repo's OWN existing bet_x_pot table postflop (induceCore.mjs:29-31). Chosen for independence from S2, not for fit — an arm fitted to the same histogram measures nothing when differenced.",
+        "regimes": {
+          "preflop-raise-to-bb": [
+            {
+              "name": "<3",
+              "lo": 0,
+              "hi": 3
+            },
+            {
+              "name": "3-4.5",
+              "lo": 3,
+              "hi": 4.5
+            },
+            {
+              "name": "4.5-8",
+              "lo": 4.5,
+              "hi": 8
+            },
+            {
+              "name": ">=8",
+              "lo": 8,
+              "hi": null
+            }
+          ],
+          "postflop-raise-to-over-pot": [
+            {
+              "name": "small",
+              "lo": 0,
+              "hi": 0.4
+            },
+            {
+              "name": "medium",
+              "lo": 0.4,
+              "hi": 0.7
+            },
+            {
+              "name": "large",
+              "lo": 0.7,
+              "hi": 1.05
+            },
+            {
+              "name": "overbet",
+              "lo": 1.05,
+              "hi": null
+            }
+          ]
+        },
+        "unsizedBand": "unsized",
+        "resolution": {
+          "postflop-raise-to-over-pot": {
+            "n": 1,
+            "unsized": 0,
+            "bandsOccupied": 1,
+            "bandsDeclared": 4,
+            "rmse": 0,
+            "maxAbsErr": 0,
+            "bitsRetained": 0,
+            "unit": "fraction of pot including the live bet"
+          }
+        }
+      }
+    ],
+    "delta": {
+      "metric": "band-mean reconstruction error: every observation replaced by its band's observed mean, which is what a simulator sampling the band and taking its centre would produce",
+      "sign": "positive = S3 reconstructs WORSE than S2",
+      "arms": {
+        "S2": {
+          "postflop-raise-to-over-pot": {
+            "n": 1,
+            "unsized": 0,
+            "bandsOccupied": 1,
+            "bandsDeclared": 5,
+            "rmse": 0,
+            "maxAbsErr": 0,
+            "bitsRetained": 0,
+            "unit": "fraction of pot including the live bet"
+          }
+        },
+        "S3": {
+          "postflop-raise-to-over-pot": {
+            "n": 1,
+            "unsized": 0,
+            "bandsOccupied": 1,
+            "bandsDeclared": 4,
+            "rmse": 0,
+            "maxAbsErr": 0,
+            "bitsRetained": 0,
+            "unit": "fraction of pot including the live bet"
+          }
+        }
+      },
+      "delta": {
+        "postflop-raise-to-over-pot": {
+          "rmse": 0,
+          "maxAbsErr": 0,
+          "bitsRetained": 0,
+          "unit": "fraction of pot including the live bet"
+        }
+      }
+    },
+    "induction": {
+      "arms": {
+        "S2": {
+          "strata": 1,
+          "eligible": 0,
+          "split": 0,
+          "sizingRules": 0,
+          "byOutcome": {
+            "single-band": 1
+          },
+          "features": {},
+          "search": {
+            "target": "the banded size of the action, within the action",
+            "objective": "information gain on the band label, G-tested — the same objective and the same statistic the action search uses, so the two are comparable",
+            "factorisation": "P(action, size | situation) = P(action | situation) . P(size | action, situation). This estimates the second factor ONLY, on strata where the action is constant, which is what makes it a factorisation rather than a double count.",
+            "stratification": "one search per (rule, action, regime). A leaf spans streets, and the preflop bb lattice and the postflop pot fraction have disjoint band alphabets, so a mixed search would report street as a near-total separator by tautology.",
+            "correction": "bonferroni over the features testable at each node, TIMES the number of eligible strata — more conservative than the action search, because this pass searches across strata it went looking for rather than nodes it was already visiting",
+            "strataFamily": 1,
+            "minRule": 25,
+            "maxDepth": 5,
+            "alpha": 0.05,
+            "requireSignificance": false,
+            "unsizedHeldOut": "rows with no derivable size are excluded from the search and counted on the stratum. A split separating derivable from underivable would be a rule about our pipeline, which is the str_basis defect decisionSchema already had to remove.",
+            "knownLimitation": "No structural pre-split for sizing LEGALITY. The action search exempts can_raise because a mix over rows where an action was unavailable is incoherent; the sizing analogue is the legal interval (min-raise floor, stack ceiling) and no field records it, so a leaf where he was near-capped may read as a sizing preference."
+          }
+        },
+        "S3": {
+          "strata": 1,
+          "eligible": 0,
+          "split": 0,
+          "sizingRules": 0,
+          "byOutcome": {
+            "single-band": 1
+          },
+          "features": {},
+          "search": {
+            "target": "the banded size of the action, within the action",
+            "objective": "information gain on the band label, G-tested — the same objective and the same statistic the action search uses, so the two are comparable",
+            "factorisation": "P(action, size | situation) = P(action | situation) . P(size | action, situation). This estimates the second factor ONLY, on strata where the action is constant, which is what makes it a factorisation rather than a double count.",
+            "stratification": "one search per (rule, action, regime). A leaf spans streets, and the preflop bb lattice and the postflop pot fraction have disjoint band alphabets, so a mixed search would report street as a near-total separator by tautology.",
+            "correction": "bonferroni over the features testable at each node, TIMES the number of eligible strata — more conservative than the action search, because this pass searches across strata it went looking for rather than nodes it was already visiting",
+            "strataFamily": 1,
+            "minRule": 25,
+            "maxDepth": 5,
+            "alpha": 0.05,
+            "requireSignificance": false,
+            "unsizedHeldOut": "rows with no derivable size are excluded from the search and counted on the stratum. A split separating derivable from underivable would be a rule about our pipeline, which is the str_basis defect decisionSchema already had to remove.",
+            "knownLimitation": "No structural pre-split for sizing LEGALITY. The action search exempts can_raise because a mix over rows where an action was unavailable is incoherent; the sizing analogue is the legal interval (min-raise floor, stack ceiling) and no field records it, so a leaf where he was near-capped may read as a sizing preference."
+          }
+        }
+      },
+      "primary": "S2",
+      "delta": {
+        "split": 0,
+        "sizingRules": 0,
+        "sign": "positive = S3 finds MORE than S2",
+        "armsAgree": true,
+        "note": "A delta of zero is a finding: it says the banding did not decide which sizing rules exist, only how their cells are counted. A non-zero delta promotes the banding from a recording convention to a load-bearing modelling choice."
+      }
+    },
+    "shrinkage": {
+      "operation": "shrink-toward-parent",
+      "why": "A sizing band is a DECISION INPUT feeding a simulator's transition function, never a displayed comparative claim, so `.claude/rules/sparsity-refuse-or-shrink.md` says shrink rather than refuse. Refusal is the right operation where a band reaches a human (a ranked spot list, a Guide); class is set by where the number ENDS UP, which is why every band carries `shrunk` and every block carries `classNote`.",
+      "estimator": "posterior mean (k + m*qParent) / (n + m), applied UNIFORMLY rather than only below the floor — a threshold-triggered shrink puts a discontinuity at n = m and makes a cell at n = 24 and a cell at n = 26 incomparable in a way nothing on the card shows",
+      "priorWeight": 25,
+      "priorWeightSource": "induceCore.mjs MIN_RULE_DEFAULT — the repo's own minimum leaf size, reused rather than re-chosen",
+      "chain": "cell (rule, action, regime, band) -> action across this card -> all sized actions on this card",
+      "thinAt": 25,
+      "note": "A zero band keeps a NON-ZERO estimate on purpose: a simulator must not assign probability zero to a size this player demonstrably uses elsewhere merely because one leaf never contained it."
+    },
+    "conventions": {
+      "preflop-raise-to-bb": "raise-TO, cumulative for the street, in big blinds (decisionLabeler myRaiseToBB)",
+      "postflop-raise-to-over-pot": "raise-TO over the pot INCLUDING the live bet (myRaiseToBB / potBB). Named rather than assumed: decisionLabeler deleted a field that conflated this with the INCREMENTAL cost under a legend saying only \"as a fraction of the pot\". Raise-to is the right numerator for a transition function — the environment needs where the chips go, not this player's share of getting them there. The two coincide except where he already had chips in on the street (12 of 570 postflop aggressive actions on villain 2).",
+      "excluded": "my_bet_x_pot as it stands in the ARCHIVED v2 TSVs — that column divided by potBB - myBet, subtracting his own bet from a pot that never contained it (median 350, max 15,900). Fixed in decisionLabeler on 2026-08-19; the archived cards predate the fix."
+    },
+    "knownLimitation": "S2 v2 split the v1 `>=8` tail after measurement showed it carried 8,325,235 of 8,327,391 preflop sum-of-squares — essentially ALL the reconstruction error — with 121 of its 191 observations at exactly 12bb. Preflop RMSE fell 8.68 -> 2.50 bb. STILL MERGED, and named rather than hidden: (a) `12.25-79` pools 4-bets (13-19bb, 32 obs) with large 3-bets and mid shoves (23-58bb, 20 obs) at RMSE 11.17 — the same different-actions argument applies again, and it is not split because no comparable gap exists there, so any edge would be fitted rather than found; (b) `>=79` is a SIZE PROXY for \"he is all-in\", not an all-in flag, and at a different stack depth the proxy is wrong with nothing here to notice. Per-band `shape` makes both inspectable.",
+    "declaredBy": "scripts/villainArchetype/sizingBands.mjs"
+  },
+  "score": null
+}

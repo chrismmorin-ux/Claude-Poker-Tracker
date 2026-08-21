@@ -64,6 +64,8 @@ import { buildDossier } from './handDossier.mjs';
 import { induce, MIN_RULE_DEFAULT } from './induceCore.mjs';
 import { loadLeakRules } from './loadLeakRules.mjs';
 import { renderSessionReview } from './renderSessionReview.mjs';
+import { priceSession } from './priceSession.mjs';
+import { heroContexts } from './runMoneyColumn.mjs';
 import { conductCardProblems } from '../../src/utils/standardOfRecord/conductCard.js';
 import { accumulateHeroDecisions } from '../../src/utils/skillAssessment/heroDecisionAccumulator.js';
 import { detectWithRules, stabilizeLeaks } from '../../src/utils/skillAssessment/detectWithRules.js';
@@ -275,7 +277,20 @@ const identityOf = (entry) => {
  */
 const SEAT_CHANGE_STACK_DELTA_BB = 10;
 
-export const resolveSubjects = (adapted, heroSeat) => {
+/**
+ * `sessionId` IS PART OF A SEAT-SEGMENT SUBJECT'S IDENTITY, not decoration on it.
+ *
+ * A seat-occupancy segment is `seat8#s1` — "whoever was sitting in seat 8 during the first
+ * stretch". Across two sessions at two different tables that names TWO DIFFERENT HUMANS, and
+ * without the session in the id they were one subject. MEASURED 2026-08-21: `seat8#s1` from
+ * the June 15 session and from the June 19 session produced cards with the same id.
+ *
+ * A real `player:<id>` subject does NOT get the session prefix — that identity is genuinely
+ * stable across sessions, and scoping it would prevent the one join that matters, "every card
+ * about this player". The two subject kinds have different identity semantics and the id has
+ * to say which it is.
+ */
+export const resolveSubjects = (adapted, heroSeat, sessionId = null) => {
   const bySubject = new Map();
   const identityBasisCounts = { playerId: 0, seatSegment: 0 };
   let segmentSplits = 0;
@@ -317,7 +332,7 @@ export const resolveSubjects = (adapted, heroSeat) => {
         st.lastStackBB = stackBB;
         st.lastHandIndex = handIndex;
         seatState.set(seat, st);
-        subjectId = `seat${seat}#s${st.segment}`;
+        subjectId = `${sessionId ? `${sessionId}:` : ''}seat${seat}#s${st.segment}`;
       }
 
       const cur = bySubject.get(subjectId)
@@ -487,17 +502,83 @@ const priceAgainstPoolBestResponse = ({ fieldPolicyPath, sessionId }) => {
     );
   }
 
-  // Hold-out verified. The per-decision PBR evaluation is the remaining stage; refusing loudly
-  // beats returning a number whose provenance nobody can state.
+  // Hold-out verified. The policy is admissible for THIS session, so the caller may price
+  // against it. The pricing itself happens in the main flow, which has the adapted hands.
   return {
-    ...refuse(
-      'unexamined:pbr-evaluation-not-wired',
-      `Field policy at ${fieldPolicyPath} is valid and holds this session out `
-      + `(${contributing.length} contributing session(s), ${policy?.provenance?.observations ?? '?'} decisions).`,
-      'Wire poolBestResponseAt() over the labelled hero decisions, taking perCombo from the '
-      + 'cards-known hand rather than a sampled range — which is the arm the corpus cannot run.',
-    ),
+    refused: false,
+    admissible: true,
+    policy,
+    fieldPolicyPath,
     holdOut: { verified: true, contributingSessions: contributing, excluded: sessionId },
+  };
+};
+
+/**
+ * The money column, run over hero's own decisions.
+ *
+ * SEPARATED FROM THE ADMISSIBILITY CHECK ABOVE, deliberately. That function answers "may this
+ * policy be used to score this session" and can refuse for four distinct reasons before any
+ * money is computed. This one answers "what did it cost", and it must never be reachable on a
+ * policy that failed the first question — which is why it takes the already-validated table
+ * rather than a path it would have to re-load and re-check.
+ */
+const runMoneyColumn = async ({ policyGate, adapted, heroSeat, heroRows }) => {
+  if (policyGate.refused || !policyGate.admissible) return policyGate;
+
+  const { ctxs, heroPid, byHandId, idAmbiguity } = heroContexts(adapted, heroSeat);
+  if (heroPid == null) {
+    return refuse(
+      'refused:hero-id-ambiguous',
+      `Hero's seat ${heroSeat} carries ${idAmbiguity.length} distinct id(s) across the hands he `
+      + `was seated for (${idAmbiguity.join(', ') || 'none'}).`,
+      'Scored against the wrong id this returns an empty column and a clean 0.00bb total, so it '
+      + 'refuses instead. Check seatPlayers on the hands where mySeat matches.',
+    );
+  }
+
+  const result = await priceSession({
+    ctxs,
+    handFor: (ctx) => byHandId.get(ctx.handId) ?? null,
+    holeCardsFor: (ctx) => {
+      const sc = byHandId.get(ctx.handId)?.gameState?.showdownCards ?? {};
+      const shown = sc[String(heroSeat)] ?? sc[heroSeat];
+      return Array.isArray(shown) && shown.length === 2 ? shown : null;
+    },
+    policy: policyGate.policy,
+  });
+
+  /**
+   * COVERAGE IS REPORTED AGAINST HERO'S WHOLE SESSION, not against what reached the pricer.
+   * `accumulateDecisions` drops preflop upstream, so those decisions never arrive to be
+   * counted as unpriced — and a coverage figure computed from arrivals flatters itself by
+   * exactly the size of the hole.
+   */
+  const byStreetTotal = {};
+  for (const r of heroRows) byStreetTotal[r.street] = (byStreetTotal[r.street] || 0) + 1;
+
+  return {
+    refused: false,
+    fieldPolicyPath: policyGate.fieldPolicyPath,
+    holdOut: policyGate.holdOut,
+    transferStatus: 'measured-on-this-field',
+    comparativeClaim: true,
+    totals: result.totals,
+    priced: result.priced,
+    unpriced: result.unpriced,
+    coverage: {
+      ...result.coverage,
+      heroDecisionsTotal: heroRows.length,
+      heroDecisionsByStreet: byStreetTotal,
+      pricedShareOfSession: heroRows.length ? result.coverage.decisionsPriced / heroRows.length : 0,
+    },
+    scope: result.scope,
+    pierPosts: {
+      upper: 'pool-best-response, against the field in this session',
+      // Not an oversight. `equilibriumPost.mjs` returns null BY DESIGN because SRC-013 does
+      // not exist, and it explicitly refuses to substitute the "GTO-approximate" charts.
+      lower: 'equilibrium — UNAVAILABLE, not faked (SRC-013 does not exist)',
+      note: 'The location this review reports is therefore one-sided, and says so.',
+    },
   };
 };
 
@@ -608,7 +689,7 @@ export const reviewSession = async ({ sessionDir, fieldPolicyPath = null, topHan
 
   // A card per OPPONENT SUBJECT — a seat-occupancy segment when the source carries no player
   // identity, which for Ignition is always. See resolveSubjects for what was measured.
-  const resolved = resolveSubjects(adapted, heroSeat);
+  const resolved = resolveSubjects(adapted, heroSeat, read.manifest?.setId ?? null);
   const subjectPopulation = `${population} ${resolved.caveat}`;
 
   const opponents = [];
@@ -634,7 +715,12 @@ export const reviewSession = async ({ sessionDir, fieldPolicyPath = null, topHan
   }
 
   const spots = await locateSpots(read.hands, heroSeat, stampedAt);
-  const money = priceAgainstPoolBestResponse({ fieldPolicyPath, sessionId: read.manifest?.setId ?? null });
+  const policyGate = priceAgainstPoolBestResponse({
+    fieldPolicyPath, sessionId: read.manifest?.setId ?? null,
+  });
+  const money = await runMoneyColumn({
+    policyGate, adapted, heroSeat, heroRows: hero.rows,
+  });
   const notable = rankHands(adapted, hero.rows, topHands);
 
   const review = {
@@ -727,7 +813,10 @@ const main = async () => {
   console.log(`opponents (${r.opponents.identityBasis}): ${subs.filter((v) => v.card).length} carded, `
     + `${subs.filter((v) => !v.card).length} refused, ${r.opponents.segmentSplitsInferred} seat-change split(s) inferred`);
   console.log(`spots shortlisted: ${r.spots.spots?.length ?? 0}`);
-  console.log(`money arm: ${r.money.refused ? `REFUSED (${r.money.reason})` : 'priced'}`);
+  console.log(`money arm: ${r.money.refused
+    ? `REFUSED (${r.money.reason})`
+    : `${r.money.totals.evLeftBB.toFixed(2)}bb left on the table over `
+      + `${r.money.coverage.decisionsPriced}/${r.money.coverage.heroDecisionsTotal} decision(s)`}`);
   console.log(`written to ${out}/review.json`);
 };
 
