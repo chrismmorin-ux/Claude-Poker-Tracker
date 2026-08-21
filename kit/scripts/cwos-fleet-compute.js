@@ -53,6 +53,12 @@ const TARGET_HOSTNAME = (process.env.CWOS_COMPUTE_HOSTNAME || 'CM-NODE1').toUppe
 const REMOTE_NODE = process.env.CWOS_COMPUTE_NODE || 'C:\\Users\\chris\\.local\\node\\node.exe';
 const REMOTE_RUNNER = process.env.CWOS_COMPUTE_RUNNER
   || 'C:\\Users\\chris\\repos\\ai-personal\\nodes\\scripts\\compute-runner.js';
+// The repo the RUNNER ITSELF lives in — a DIFFERENT repo from the one jobs are cut from,
+// which is the whole reason the SKEW line could not see it. See `runnerDrift`.
+const REMOTE_RUNNER_REPO = process.env.CWOS_COMPUTE_RUNNER_REPO
+  || 'C:\\Users\\chris\\repos\\ai-personal';
+const REMOTE_RUNNER_PATH = process.env.CWOS_COMPUTE_RUNNER_PATH
+  || 'nodes/scripts/compute-runner.js';
 const REMOTE_REPO = process.env.CWOS_COMPUTE_REPO || 'C:\\Users\\chris\\repos\\claude-poker-tracker';
 const REMOTE_INBOX = process.env.CWOS_COMPUTE_INBOX || 'C:\\Users\\chris\\fleet\\compute\\incoming';
 const REMOTE_DONE = process.env.CWOS_COMPUTE_DONE || 'C:\\Users\\chris\\fleet\\compute\\done';
@@ -763,6 +769,79 @@ function checkoutSkew(remoteHead) {
   return { behind: n, remoteHead: remoteHead.slice(0, 8), localHead: localHead.slice(0, 8), files };
 }
 
+/**
+ * Whether the RUNNER on the compute node is the runner this fleet thinks it is.
+ *
+ * ── WHY (2026-08-21) ──
+ * `checkoutSkew` above watches `claude-poker-tracker`, because that is the repo a job's
+ * worktree is cut from. But the PROCESS that cuts the worktree — `compute-runner.js` — lives
+ * in `ai-personal`, a repo this check had no concept of. So the panel could report a clean,
+ * fully-synced fleet while the runner executing every job was months old. It did exactly that.
+ *
+ * MEASURED: `ws-503-17172f8726ce` failed three times — twice before 2026-08-20 (recorded in
+ * `failureDetail` below) and once again on 2026-08-21 — with
+ * `existing worktree at C:\cj\ws-503-... is 6f4cf7db, expected <the commit of the day>`.
+ * A fix for precisely that (`abe788a`, "a stale worktree made every re-submitted job
+ * permanently unrunnable") had been committed on G16 on 2026-08-19. It never ran, for TWO
+ * independent reasons, either of which alone was sufficient:
+ *
+ *   1. It was committed to a BRANCH (`fix/compute-runner-stale-worktree`) that was never
+ *      merged to `main`, and node1 tracks `main`.
+ *   2. More seriously: `compute-runner.js` was UNTRACKED in node1's checkout — a hand-placed
+ *      copy, byte-identical to commit `9b10635` (the version before the fix). `git pull` can
+ *      never update a file git does not know about, so no amount of merging would have fixed
+ *      it either. Both were repaired on 2026-08-21; the file is tracked there now.
+ *
+ * The lesson this encodes: A SYNC CHECK THAT DOES NOT NAME THE RUNNER CANNOT SEE THE RUNNER.
+ * `job.commit` pins what the job READS. Nothing pinned what EXECUTES it, and an unpinned
+ * executor is the one component whose staleness every other check is blind to by construction.
+ *
+ * Three signals, all local to node1 so this costs one ssh round-trip and no network:
+ *   untracked — the failure above; git cannot ever update this file
+ *   dirty     — hand-edited on the node, so it is not any committed version
+ *   behind    — `origin/main` holds commits its HEAD does not
+ *
+ * Returns null when it cannot tell — an unreachable node is `NOW UNREACHABLE`'s job to say,
+ * and this line must never invent a problem out of a failed lookup.
+ */
+function runnerDrift() {
+  const q = (cmd) => {
+    const r = onTarget() ? run('powershell', ['-NoProfile', '-Command', cmd])
+      : run('ssh', [TARGET, `powershell -NoProfile -Command "${cmd}"`]);
+    return r;
+  };
+  const g = `git -C '${REMOTE_RUNNER_REPO}'`;
+  // QUOTE DISCIPLINE, and it is not decoration. This string crosses bash -> ssh -> cmd.exe ->
+  // powershell. The first draft used `$?` and `*> $null`; the redirection operator and the `$`
+  // did not survive the hop, powershell threw a ParserError, `run` reported not-ok, and the
+  // function returned null -- which reads as "the runner is fine". A check that fails SILENTLY
+  // CLOSED is worse than no check, and this one was caught only because its falsifier was
+  // written and run before it was believed. Hence: single quotes only, no `$`, no redirection,
+  // and `--not HEAD` rather than `^HEAD` because `^` is cmd.exe's escape character.
+  const cmd = [
+    `Write-Output ('tracked=' + [bool](${g} ls-files -- '${REMOTE_RUNNER_PATH}'))`,
+    `Write-Output ('dirty=' + [bool](${g} status --porcelain -- '${REMOTE_RUNNER_PATH}'))`,
+    `Write-Output ('behind=' + (${g} rev-list --count origin/main --not HEAD))`,
+  ].join('; ');
+  const r = q(cmd);
+  if (!r.ok) return null;
+  const kv = {};
+  for (const line of (r.stdout || '').split(String.fromCharCode(10))) {
+    const m = /^(tracked|dirty)=(True|False)$/.exec(line.trim());
+    if (m) { kv[m[1]] = m[2] === 'True'; continue; }
+    const b = /^behind=(\d+)$/.exec(line.trim());
+    if (b) kv.behind = Number(b[1]);
+  }
+  // A partial read is a failed read. Reporting on two of three signals would let the missing
+  // one read as "fine", which is the exact substitution this whole function exists to stop.
+  if (kv.tracked === undefined || kv.dirty === undefined || kv.behind === undefined) return null;
+  const problems = [];
+  if (!kv.tracked) problems.push('UNTRACKED in its checkout — git can never update it');
+  if (kv.dirty) problems.push('modified on the node — it is not any committed version');
+  if (kv.behind > 0) problems.push(`behind origin/main by ${kv.behind} commit(s) — a shipped runner fix may not be running`);
+  return problems.length ? { problems, repo: REMOTE_RUNNER_REPO, file: REMOTE_RUNNER_PATH } : null;
+}
+
 /** Terminal jobs on the compute node with their outcome, via the versioned reader. */
 function doneOutcomes() {
   const summary = onTarget()
@@ -1055,6 +1134,16 @@ function panel(status, ranked, already) {
     // and the two `main`s carry the same subject line -- which is how they got confused.
     L.push(`           advance ${tr ? `${tr.remote}/${tr.branch}` : 'the branch it pulls'}${tr && tr.url ? ` -> ${tr.url}` : ''},`);
     L.push('           or the fix you just shipped is not the code that runs.');
+  }
+
+  // RUNNER - the same question SKEW asks, aimed at the OTHER repo. SKEW covers what a job
+  // reads; this covers what executes it. Three jobs died on an un-updatable runner while
+  // every other line on this panel read clean. See `runnerDrift`.
+  const rd = runnerDrift();
+  if (rd) {
+    L.push(`  RUNNER   ${rd.file} on ${TARGET} is not the code this repo believes is running:`);
+    for (const p of rd.problems) L.push(`           - ${p}`);
+    L.push(`           fix in ${rd.repo} on ${TARGET}; a job's commit pins what it READS, never what RUNS it.`);
   }
 
   return L.join('\n');
