@@ -109,6 +109,34 @@ export const handsFromCapture = (file) => {
     if (!line) continue;
     let rec;
     try { rec = JSON.parse(line); } catch { continue; }
+    // CONNECTION LIFECYCLE — replayed, not skipped.
+    //
+    // This loop used to accept only `kind === 'msg'`, so the replay never told
+    // TableManager that a socket opened or closed. That is not a small omission:
+    // reconnect handling is ENTIRELY driven by those events. A close is what
+    // marks a machine disconnected, and a reconnect is only distinguishable from
+    // a second concurrent table on the same URL by whether the old socket closed
+    // (the game WS URL carries no table identifier — one URL is shared by up to
+    // five connIds across these captures).
+    //
+    // So without this branch the harness silently exercised a lifecycle that
+    // does not occur, and any conclusion it produced about reconnects — session
+    // partitioning included — was measured on the wrong thing. The captures have
+    // carried these frames all along (`kind:'conn'`, `event:'opened'|'closed'`,
+    // code 1005 on the real closes); nothing was missing but the wiring.
+    if (rec.kind === 'conn') {
+      frameT = Number.isFinite(Number(rec.t)) ? Number(rec.t) : frameT;
+      try {
+        if (rec.event === 'creating' || rec.event === 'opened') {
+          tm.registerConnection(rec.connId, rec.url);
+        } else if (rec.event === 'closed') {
+          // Pass the frame's own clock, not wall time — a replay must not have
+          // its grace windows decided by when the replay happens to run.
+          tm.handleConnectionClosed(rec.connId, frameT ?? Date.now());
+        }
+      } catch { threw += 1; }
+      continue;
+    }
     if (rec.kind !== 'msg') continue;
     frames += 1;
     frameT = Number.isFinite(Number(rec.t)) ? Number(rec.t) : null;

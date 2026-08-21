@@ -105,6 +105,12 @@ describe('TableManager', () => {
       const hsm = tm.getHSM('1');
       hsm.state = 'IDLE';
 
+      // The close is now REQUIRED to call this a reconnect. It used to be
+      // omitted here, which made the test model a lifecycle that does not
+      // happen — and made "same URL" alone sufficient to migrate a machine,
+      // which is what let a second concurrent table steal the first's.
+      tm.handleConnectionClosed('1');
+
       // Reconnect with new connId
       tm.registerConnection('2', GAME_URL);
       tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 7 }), GAME_URL);
@@ -129,7 +135,8 @@ describe('TableManager', () => {
       before.heroSeat = 5;
       before.state = 'PREFLOP';
 
-      // Reconnect mid-hand
+      // Reconnect mid-hand — the close comes first, as it does on the wire.
+      tm.handleConnectionClosed('1');
       tm.registerConnection('2', GAME_URL);
       tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 3 }), GAME_URL);
 
@@ -199,6 +206,71 @@ describe('TableManager', () => {
       tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
       expect(tm.getTableCount()).toBe(1);
       expect(tm.getTableStates()['2'].disconnected).toBe(false);
+    });
+
+    // -----------------------------------------------------------------------
+    // MULTI-TABLING — the same URL is NOT the same table
+    // -----------------------------------------------------------------------
+    //
+    // The game WS URL carries no table identifier. Measured across the four real
+    // captures, one URL is shared by up to FIVE connIds, and no two same-URL
+    // connections ever overlap in time (0 overlapping pairs) — which is exactly
+    // why this was invisible: the founder was not multi-tabling. Two tables open
+    // at once share the URL byte-for-byte.
+
+    it('does NOT steal a LIVE table on the same URL — two tables are two tables', () => {
+      // The regression this guards. Without the disconnectedAt check, table 2's
+      // first message migrates table 1's machine and the two tables' hands merge
+      // into one record stream.
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      const first = tm.getHSM('1');
+
+      // Second table opens while the first is still LIVE — no close event.
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 3 }), GAME_URL);
+
+      expect(tm.getTableCount()).toBe(2);
+      expect(tm.getHSM('1')).toBe(first);        // untouched
+      expect(tm.getHSM('2')).not.toBe(first);    // its own machine
+      expect(tm.getHSM('1').dealerSeat).toBe(5); // not clobbered by table 2
+      expect(tm.getHSM('2').dealerSeat).toBe(3);
+    });
+
+    it('still stitches when the old socket DID close — a reconnect is preceded by a close', () => {
+      // The discriminator: same URL + old socket closed = reconnect.
+      //                    same URL + old socket live   = concurrent table.
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      const first = tm.getHSM('1');
+
+      tm.handleConnectionClosed('1');
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+
+      expect(tm.getTableCount()).toBe(1);
+      expect(tm.getHSM('2')).toBe(first);
+    });
+
+    it('keeps two concurrent tables separate through a reconnect of one of them', () => {
+      tm.registerConnection('1', GAME_URL);
+      tm.routeMessage('1', wire('CO_DEALER_SEAT', { seat: 5 }), GAME_URL);
+      tm.registerConnection('2', GAME_URL);
+      tm.routeMessage('2', wire('CO_DEALER_SEAT', { seat: 3 }), GAME_URL);
+      const t1 = tm.getHSM('1');
+      const t2 = tm.getHSM('2');
+      expect(tm.getTableCount()).toBe(2);
+
+      // Table 2's socket cycles. Table 1 must be untouched, and the reconnect
+      // must land on table 2 — the most recent owner of that URL.
+      tm.handleConnectionClosed('2');
+      tm.registerConnection('3', GAME_URL);
+      tm.routeMessage('3', wire('CO_DEALER_SEAT', { seat: 3 }), GAME_URL);
+
+      expect(tm.getHSM('1')).toBe(t1);
+      expect(tm.getHSM('1').dealerSeat).toBe(5);
+      expect(tm.getHSM('3')).toBe(t2);
+      expect(tm.getTableCount()).toBe(2);
     });
   });
 

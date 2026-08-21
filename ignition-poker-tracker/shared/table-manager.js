@@ -121,8 +121,23 @@ export class TableManager {
     let machine = this.tables.get(connId);
     if (!machine && connUrl) {
       const oldConnId = this.urlToConnId.get(connUrl);
-      if (oldConnId !== undefined && oldConnId !== connId && this.tables.has(oldConnId)) {
-        // Same table URL, new connection: this is a reconnect, not a new table.
+      // The old socket must have actually CLOSED for this to be a reconnect.
+      //
+      // The game WS URL carries NO table identifier — measured across the four
+      // real captures, one URL is shared by up to 5 connIds. So "same URL" alone
+      // cannot mean "same table": two tables open at once share it exactly. In
+      // those captures no two same-URL connections ever overlap in time (0
+      // overlapping pairs), which is why this went unnoticed — the founder was
+      // not multi-tabling. Without this guard, opening a second table would have
+      // its first message STEAL the first table's machine and mix two tables'
+      // hands into one record stream.
+      //
+      // A live machine on the same URL is a concurrent table, not a reconnect.
+      // Requiring `disconnectedAt` is what separates them, and it is the honest
+      // signal: a reconnect is preceded by a close.
+      const oldMachine = oldConnId !== undefined ? this.tables.get(oldConnId) : null;
+      if (oldConnId !== undefined && oldConnId !== connId && oldMachine && oldMachine.disconnectedAt) {
+        // Same table URL, new connection, old socket closed: a reconnect.
         // Migrate the machine wholesale — including a hand still in progress.
         //
         // Preserving mid-hand state is safe because Ignition sends CO_TABLE_INFO

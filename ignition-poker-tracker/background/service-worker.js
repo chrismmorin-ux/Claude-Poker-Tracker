@@ -54,6 +54,35 @@ let cachedTournament = null;
  * `onConnect`, on every reload) is what broke the guarded single-slot version.
  */
 const capturePorts = new Set();
+
+/**
+ * Pipeline status PER CAPTURE PORT — one port per frame, and the content script
+ * is injected into all frames.
+ *
+ * Keyed by the port object itself so a frame's contribution dies with its port;
+ * there is no frame id available here that survives a reload.
+ */
+const perPortPipelineStatus = new Map();
+
+/**
+ * Union every frame's view into one.
+ *
+ * `tables` is keyed by connId, which is minted per socket and therefore unique
+ * across frames, so a plain merge cannot collide. `completedHands` sums because
+ * each frame's TableManager counts only its own. The result is "what this tab
+ * can see", which is the question the side panel is actually asking — no single
+ * frame can answer it.
+ */
+function mergePipelineStatus() {
+  const tables = {};
+  let completedHands = 0;
+  for (const status of perPortPipelineStatus.values()) {
+    if (!status) continue;
+    Object.assign(tables, status.tables || {});
+    completedHands += status.completedHands || 0;
+  }
+  return { tables, tableCount: Object.keys(tables).length, completedHands };
+}
 const appBridgePorts = new Set();
 const sidePanelPorts = new Set();
 const swStartTime = Date.now();
@@ -356,8 +385,27 @@ chrome.runtime.onConnect.addListener((port) => {
 
         case 'pipeline_status':
           if (msg.status) {
-            lastPipelineStatus = msg.status;
-            chrome.storage.session.set({ pipeline_status_cache: msg.status }).catch(() => {});
+            // The content script is injected with `all_frames: true`, so EVERY
+            // frame on the Ignition page runs its own pipeline host with its own
+            // TableManager — and every non-game frame (lobby, chrome, ads) holds
+            // zero tables and pushes `tables: {}` on the 30s interval.
+            //
+            // This used to be `lastPipelineStatus = msg.status` — a single
+            // global, last-writer-wins. So the game frame published the real
+            // table, a lobby frame published emptiness seconds later, and the
+            // side panel saw tableCount 0, ran out its 5s grace, and rendered
+            // "No active table detected" over a live hand. The next game-frame
+            // push restored it, the next lobby push killed it again. That is the
+            // flapping the founder reported: seatmap -> no-table -> "Analyzing…"
+            // (advice having been wiped by the table-switch clear) -> repeat.
+            //
+            // The SW is the only place that sees all frames, so it is the place
+            // that has to AGGREGATE rather than overwrite. A frame with no
+            // tables now contributes nothing instead of erasing everyone else.
+            perPortPipelineStatus.set(port, msg.status);
+            lastPipelineStatus = mergePipelineStatus();
+            chrome.storage.session.set({ pipeline_status_cache: lastPipelineStatus }).catch(() => {});
+            msg = { ...msg, status: lastPipelineStatus };
             // A table is live and nothing is draining the hand queue. Open the
             // app ourselves (background tab, no focus steal) — buffered hands
             // are on a 500-deep cap and the founder should never have to think
@@ -423,6 +471,22 @@ chrome.runtime.onConnect.addListener((port) => {
 
     port.onDisconnect.addListener(() => {
       capturePorts.delete(port);
+      // Drop this frame's contribution, or a closed tab would pin its table in
+      // the merged view forever — the mirror of the clobber this map fixes.
+      // Then republish so the panel learns immediately rather than waiting out
+      // the 30s interval of whichever frame happens to push next.
+      if (perPortPipelineStatus.delete(port)) {
+        lastPipelineStatus = mergePipelineStatus();
+        chrome.storage.session.set({ pipeline_status_cache: lastPipelineStatus }).catch(() => {});
+        pushToSidePanel({
+          type: 'push_pipeline_status',
+          tables: lastPipelineStatus.tables,
+          tableCount: lastPipelineStatus.tableCount,
+          completedHands: lastPipelineStatus.completedHands,
+          storedHands: totalHandsSaved,
+          appConnected: isAppConnected(),
+        });
+      }
       pushToAppBridge({ type: 'push_connection_state', state: { captureAlive: capturePorts.size > 0 } });
     });
     // Notify app-bridge that a capture port connected
