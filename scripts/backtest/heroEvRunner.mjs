@@ -554,6 +554,30 @@ export const runHeroEv = async ({
         failures: waveFailures,
       });
     }
+    // ── WS-540 Phase 1 — CONTEXT ROWS ARE EMITTED HERE, IN CANONICAL ORDER ─────────────
+    // NOT from inside the task. Even at `workers: 0` the per-player tasks are async and
+    // interleave, so a sink fed from the task sees completion order: 114 of the first
+    // 1,498 rows arrived out of canonical order.
+    //
+    // That is not cosmetic. It changes no point estimate — every `edgeBB` matched to 4 dp
+    // across the divergence — but it moves EVERY bootstrap figure, because
+    // `clusterBootstrapCI` walks a Map in insertion order, and it changes float
+    // accumulation order in `ruleFires` (360.1000000000002 vs 360.10000000000036). CI, MDE
+    // and power are the numbers a rung is actually judged by.
+    //
+    // A wave is written sorted by `playerIndex`, and waves run in enumeration order, so
+    // wave-local sorting is globally canonical — the same argument `writeChunk` above
+    // already relies on, and the same order `foldAll` merges decisions in. Memory cost is
+    // one wave of context rows, not the whole set.
+    if (captureContext) {
+      for (const f of [...waveFragments].sort((a, b) => a.playerIndex - b.playerIndex)) {
+        if (!Array.isArray(f.contexts)) continue;
+        for (const c of f.contexts) {
+          try { onDecisionContext(c); } catch { /* a sidecar write never kills the run */ }
+        }
+      }
+    }
+    for (const f of waveFragments) delete f.contexts;
     // Records are now durable in the chunk (or capture is off / unchunked and they were
     // already streamed to the sink). Strip them from retained fragments so a long run
     // holds at most one wave of full records in memory.
@@ -578,7 +602,6 @@ export const runHeroEv = async ({
           guard,
           emit: {
             onDecisionRecord,
-            onDecisionContext,
             onProgress: ({ decisionsScored }) => {
               if ((rawDecisionCount + decisionsScored) % 50 === 0) {
                 log(`scored ~${rawDecisionCount + decisionsScored} decisions`);
@@ -622,7 +645,6 @@ export const runHeroEv = async ({
       // coordinates so a reader can canonicalize. The sidecar is capture, never a
       // comparison artifact (ADR-009).
       onRecord: onDecisionRecord,
-      onContext: onDecisionContext,
       log,
     });
     try {

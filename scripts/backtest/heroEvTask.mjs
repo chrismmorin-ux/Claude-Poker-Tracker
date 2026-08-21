@@ -40,7 +40,7 @@ import {
 import {
   poolBestResponseAt, poolBestResponseSweep,
 } from './poolBestResponse.mjs';
-import { strategyPolicyAt, newCoverage } from './strategyArm.mjs';
+import { strategyPolicyAt, newCoverage, mergeCoverage } from './strategyArm.mjs';
 import { buildDecisionContext } from './decisionContextSet.mjs';
 import { seedForDecision, seedForCombo } from './heroEvEnumeration.mjs';
 
@@ -173,7 +173,7 @@ export const mergeTaskCounters = (acc, frag) => {
  *   arm ordinals seed the equity streams.
  * @param {Object} args.policy      - validated behavior policy (validateBehaviorPolicy output)
  * @param {Object} args.guard       - LeakageGuard (per worker, or the run's own in-process)
- * @param {Object} [args.emit]      - { onDecisionRecord, onDecisionContext, onProgress } — all optional
+ * @param {Object} [args.emit]      - { onDecisionRecord, onProgress } — both optional
  * @returns {Promise<Object>} fragment: { playerIndex, playerKey, decisions, counters,
  *   ledger, coverageByArm, contributed }
  */
@@ -188,9 +188,6 @@ export const scoreHeroEvPlayer = async ({
     villainFeed = null, villainSource = 'null',
   } = config;
   const onDecisionRecord = emit.onDecisionRecord ?? null;
-  // WS-540 Phase 1 — the arm-INDEPENDENT context sink. Separate from onDecisionRecord
-  // because the record is per-arm by construction and a later rung has no entry in it.
-  const onDecisionContext = emit.onDecisionContext ?? null;
   const onProgress = emit.onProgress ?? null;
 
   const engineArms = arms.filter((a) => !a.strategy);
@@ -415,16 +412,42 @@ export const scoreHeroEvPlayer = async ({
       // Strategy arms AFTER engine arms so a fallback has its source. Pure functions of
       // the decision: no engine call, no clock, no RNG.
       if (!armFailure) {
+        // ── COVERAGE COUNTS ONLY DECISIONS THAT SURVIVE ─────────────────────────────────
+        // Found 2026-08-21 by WS-540's replay gate, which is the only thing that could have
+        // found it: it scored the same rungs over the same decisions and its coverage block
+        // disagreed with this one.
+        //
+        // `strategyPolicyAt` does `coverage.n++` as its FIRST statement, and this loop
+        // `break`s on the first arm that fails — dropping the decision from the contrast
+        // entirely. So arms scored BEFORE the failure kept a denominator entry for a
+        // decision no arm was ultimately judged on. MEASURED on a 1,498-decision slice:
+        // r0 read n=1638 while r1..r4 read n=1498, all five having covered the same 1,470.
+        // `coveredShare` therefore printed 89.7% for r0 beside 98.1% for the others — an
+        // 8.4-point difference between rungs that covered IDENTICALLY, produced entirely by
+        // which arm happens to be first in the loop.
+        //
+        // That is not cosmetic. The ladder prints these rung-beside-rung as comparable, and
+        // WS-536 makes `coveredShare` load-bearing precisely because an arm covering less
+        // has an edge diluted by construction — so a spurious 8 points reads as a real
+        // property of the rung.
+        //
+        // Scoring into per-decision accumulators and merging only on survival makes the
+        // denominator the same set for every arm, by construction rather than by luck of
+        // ordering. `mergeCoverage` is the existing fragment-merge path, reused.
+        const pending = Object.fromEntries(strategyArms.map((a) => [a.id, newCoverage()]));
         for (const arm of strategyArms) {
           const res = timed('strategyArms', () => strategyPolicyAt({
             arm, ctx, hand: ctx.hand, geo: geometry,
             engineActions: byArm[arm.fallbackArmId]?.actions ?? null,
             poolActions: pool.actions ?? null,
-            coverage: coverageByArm[arm.id],
+            coverage: pending[arm.id],
             combosFor,
           }));
           if (!res.ok) { armFailure = { arm: arm.id, reason: res.reason }; break; }
           byArm[arm.id] = res;
+        }
+        if (!armFailure) {
+          for (const arm of strategyArms) mergeCoverage(coverageByArm[arm.id], pending[arm.id]);
         }
       }
       if (armFailure) {
@@ -541,17 +564,10 @@ export const scoreHeroEvPlayer = async ({
       // (heroEvTask's `--resume` note): a wave seeded from a chunk must be able to replay
       // its context rows into the sink, or a resumed run silently writes a SHORT set — and
       // a short set scores fewer decisions and reports a smaller edge without erroring.
-      if (contextRow) {
-        contexts.push(contextRow);
-        if (onDecisionContext) {
-          try {
-            onDecisionContext(contextRow);
-          } catch (err) {
-            counters.decisionContextErrors = (counters.decisionContextErrors ?? 0) + 1;
-            counters.decisionContextLastError = err?.message || String(err);
-          }
-        }
-      }
+      // Retained on the fragment ONLY. The orchestrator emits these at the wave boundary in
+      // canonical `playerIndex` order — see `persistWave`. Streaming them from here would
+      // hand the sink task-completion order, which silently moves every bootstrap figure.
+      if (contextRow) contexts.push(contextRow);
 
       // WS-393 — the full record, emitted as it completes; WS-431 — ALSO retained on the
       // fragment (`records`), so `persistWave` can put it in the chunk and a `--resume`
