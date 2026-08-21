@@ -1,12 +1,4 @@
-# Auto-maintained by cwos-heartbeat.js and cwos-session-recovery.js.
-# Read by cwos-verify.js INV-026 to detect silently-failing hooks.
-#
-# *_fired_at  the script entrypoint ran. Written FIRST, so a crash between
-#             require and the work is still visible.
-# *_at        the work actually happened (a session heartbeat advanced).
-#             Written last. WS-564: stamping this at entry meant a hook that
-#             resolved nobody still certified liveness, and INV-026 read
-#             GREEN over data that had been dead for two days.
-last_heartbeat_hook_at: "2026-08-20T21:12:12Z"
-last_heartbeat_hook_fired_at: "2026-08-20T21:17:05Z"
-last_session_recovery_hook_at: "2026-08-20T05:14:44Z"
+last_heartbeat_hook_at: "2026-08-21T21:21:23Z"
+last_heartbeat_hook_fired_at: "2026-08-21T21:40:23Z"
+last_session_recovery_hook_at: "2026-08-21T21:45:05Z"
+last_exception_sunset_hook_at: "2026-08-21T21:50:22.255Z"

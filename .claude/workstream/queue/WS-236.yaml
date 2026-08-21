@@ -3,8 +3,8 @@ title: "Surface sample size + confidence on the live HUD; reconcile the parallel
 legacy_id: ""
 type: improvement
 status: done
-claimed_by: "SPR-145"
-claimed_at: "2026-07-22T00:00:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: "2026-07-22T20:00:41.695Z"
 completion_commit: "5aa1419"
 priority_score: 7.0

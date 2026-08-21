@@ -107,3 +107,10 @@ tmp/
 verify-*.png
 yarn-debug.log*
 yarn-error.log*
+
+# Corpus derivative — regenerable from scripts/context/claim-corpus-extract.mjs.
+# 8.2MB, versus 73KB for the largest tracked file in that directory. Heavy
+# machine-produced artifacts do not live in the repo (.claude/rules/artifact-location.md);
+# the repo holds the producing code and the manifest. The SAMPLE
+# (claim-sample.jsonl) stays tracked — that one is the evidence.
+.claude/workstream/evidence/claim-corpus.jsonl

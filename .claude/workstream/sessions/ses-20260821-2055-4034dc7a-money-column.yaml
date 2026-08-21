@@ -1,0 +1,160 @@
+id: "ses-20260821-2055-4034dc7a-money-column"
+status: completed
+started_at: "2026-08-21T17:14:53.253Z"
+ended_at: "2026-08-21T20:55:00.000Z"
+mode: auto
+host: MorinComputer
+agent_session_id: "4034dc7a-462c-4955-a237-4b7c90152c02"
+branch: "fix/compute-supply-chain-ws572"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THIS RECORD EXISTS SEPARATELY — a session-register collision, not a typo.
+#
+# `ses-20260821-1714-4034dc7a.yaml` carries THIS agent_session_id
+# (4034dc7a-462c-4955-a237-4b7c90152c02) and is the only file that does. But its
+# `handoff_notes` and `branch: worktree-sidebar-table-identity` describe the
+# SIDEBAR session's work, and that session identified itself by that id in
+# cross-session messages. Its `files_locked` meanwhile lists THIS session's files.
+#
+# Two sessions wrote one record. Writing this handoff into it would have destroyed
+# a detailed and load-bearing sidebar handoff (4 commits, a merge blocker, two
+# self-caught errors, a measurement that corrects WS-515). So that file was left
+# untouched and this one written beside it.
+#
+# NOT RESOLVED, deliberately — which record is "really" whose is a question about
+# how cwos-session-register keys its files, and guessing would risk the same
+# clobber a second time. Captured as high friction against cwos-session-register.
+# ─────────────────────────────────────────────────────────────────────────────
+
+claimed_items: []
+
+files_locked:
+  - "scripts/villainArchetype/priceHeroDecisions.mjs"
+  - "scripts/villainArchetype/priceSession.mjs"
+  - "scripts/villainArchetype/runMoneyColumn.mjs"
+  - "scripts/villainArchetype/conductCardStore.mjs"
+  - "scripts/villainArchetype/ingestCards.mjs"
+  - "scripts/villainArchetype/reviewSession.mjs"
+  - "scripts/sessionSink/backfillFromCapture.mjs"
+  - "scripts/backtest/poolBestResponse.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+
+commits:
+  - "86bdb60e — feat(review): price hero's own decisions, folds included"
+  - "3d0300c4 — fix(review): a gate about hero's cards was killing every opponent's card too"
+
+handoff_notes: |
+  ASK THAT STARTED IT: the founder wanted a post-session review that CRITICISES his
+  play, repeatable and semi-standardised. Three jobs he named: study one hand, be
+  alerted to missed opportunities, absorb general table-level learning. Plus a
+  warning that proved correct and load-bearing: "careful not to rely too much on
+  the aggregate."
+
+  THE FIRST FINDING REFRAMED EVERYTHING. The session store held only observer hands
+  (mySeat null on all 10). But 15MB of raw captures had been sitting unused in
+  `ignition-poker-tracker/spike-data/captures/` since June, holding the founder's
+  own play. `backfillFromCapture.mjs` now replays them: 9 sessions, 109 hands, 106
+  with hero. The pipeline had never been pointed at his own hands.
+
+  BUILT: the money column. Every hero postflop decision priced in bb against Pool
+  Best Response — the max-EV response to the field's MEASURED behaviour, explicitly
+  not a solver (founder correction, same day). Prices FOLDS, which is the arm the
+  corpus structurally cannot run. `priceHeroDecisions` / `priceSession` /
+  `runMoneyColumn`, wired into `reviewSession`.
+
+  BUILT: a Conduct Card store. None existed — 10 cards lived only inside the
+  review.json that made them, and their ids COLLIDED (two hero cards, two seat-8
+  cards sharing one id). Fixed to a content identity; store accumulates as
+  immutable sealed sets. Corpus now: 3 hero cards, 12 opponent cards, 15 subjects.
+
+  THE MOST IMPORTANT OPEN DEFECT — VILLAIN MODEL IS NULL. The founder read hand
+  4897498850 (Q9 top pair facing a third barrel) and asked whether the equity came
+  from a properly filtered range. It does not. `heroPolicyAt` defaults to
+  `villainSource = NULL`; narrowing removes ~29% of range MASS and ZERO hand
+  classes on a third barrel. Measured on that hand:
+      vs value-heavy barrel range   17.9%
+      vs balanced                   34.7%
+      vs bluff-heavy                64.1%
+      what the engine used          68.2%   <- above the MOST bluff-heavy range
+  Consequence: every big-pot verdict is biased toward "you should have called",
+  and the bias grows with pot size and with villain aggression. THIS IS AHEAD OF
+  THE AGGREGATION FIX — a correctly-aggregated wrong number is still wrong.
+
+  AGGREGATION IS INVALID AND IT IS NOT ONLY THE TOTAL. 61 of 64 priced decisions
+  sit in a hand contributing more than one, and those are mutually exclusive
+  branches (had hero bet the flop, the turn node also charged to him never occurs).
+  Verified by execution that `summarize()` has NO hand-awareness, so `byStreet` and
+  `byAction` inherit it too. Only the bare per-decision list survives. Fix is
+  backward induction per hand; first-priced-decision-only is a legitimate LABELLED
+  interim, not a final number.
+
+  GATE 1 + GATE 2 RUN AND FILED. `docs/design/audits/2026-08-21-entry-post-session-review.md`
+  (RED) and `-blindspot-post-session-review.md` (YELLOW). Gate 2 executed as three
+  independently-dispatched agents per ROUNDTABLES.md, briefed to REFUTE the prior
+  verdict. They overturned three of my claims — see below.
+
+  ITEMS COMPLETED: none marked done in the queue. No queue item was claimed; this
+  was founder-directed work. WS-492 remains claimed from 2026-08-15 by a session
+  that is not this one — NOT released here, since it is not mine to release.
+
+  NEXT ACTION, in order:
+  1. Feed a line-conditioned villain model into `heroPolicyAt`. Everything the
+     money column says about a big pot is suspect until this lands.
+  2. Fix aggregation (backward induction, or labelled first-decision-only).
+  3. Price preflop — 54% of hero decisions are unpriced; `accumulateDecisions`
+     drops preflop and `heroPolicyAt` needs a 3-card board.
+  4. Founder decisions pending: push vs CC-83 passive surfacing for job 2 (red
+     line #5); solver as a SECOND ARM per unmeasured-constants.md vs continued
+     total refusal; SE-02's cold-read block (amend, or author SR-90).
+
+  Autopilot eligible: not assessed — no queue items claimed or completed.
+
+context_notes: |
+  FOUR OF MY OWN CLAIMS WERE OVERTURNED THIS SESSION. Recording them because the
+  pattern is the same each time — I inferred from adjacency instead of looking.
+
+  1. "No commercial tracker can price a fold" — FALSE, and it was in shipped code
+     and in what I told the founder. GTO Wizard's analyzer prices folds explicitly.
+     Category error: the HandHQ corpus masks cards because it is THIRD-PARTY
+     DATAMINED; a player's own history has never masked their own cards. Corrected
+     in place with the error recorded rather than deleted. What survives: everyone
+     else prices a fold against a SOLVER's model of villain's range, and GTO Wizard
+     skips multiway postflop entirely.
+  2. "The sidebar session's commits made the first live capture work" — FALSE. All
+     their commits postdate the session seal; the running build was from 10:40. The
+     capability had been working in UNCOMMITTED code since 2026-08-20 18:41.
+  3. "Capture attached after the deal" as the cause of missing hole cards — FALSE.
+     The real cause is protocol: Ignition's reconnect CO_TABLE_INFO snapshot lists
+     every OTHER seat face-down and OMITS hero's own seat.
+  4. "The gate is leaky / worktreeDrift only reports the first hit" — FALSE. A
+     timing artifact: my heroPolicy.mjs edit postdated their gate run by 4 minutes.
+
+  THE OTHER SESSIONS CAUGHT ALL FOUR BY CHECKING. Every one was checkable and I did
+  not check. The instrument that caught two of them was my own backfill smoke test
+  run against real founder frames — one command, and it saw what 2,544 unit tests
+  and a visual harness could not.
+
+  FIRST LIVE HERO CAPTURE HAPPENED TONIGHT: sess-20260821-174247, 8 hands, sealed on
+  idle, 7 with hero at seat 7 and real hole cards. Play -> sink -> seal -> review
+  with no manual step. NOTE: during exactly that window the panel showed "No active
+  table detected". Read the STORE, never the panel, when asking whether capture works.
+  The sink's own status counters were also wrong (accepted: 0 while hands landed).
+
+  SUPERSEDED ARTIFACTS: `poker-sessions/superseded-partition-20260821/` (original
+  13-session partition) and `.../round2-pre-88841203/`. Kept, not deleted — the
+  capture path changed three times today and each partition is a record of what the
+  code produced at that moment. `poker-cards-superseded-partition-20260821/` likewise.
+
+  TWO DOCTRINE RULES PROPOSED TO THE FOUNDER, neither committed:
+  - mine: "a derived quantity is only as measured as its LEAST measured input, and
+    stating the measured input without the guessed one is worse than stating neither"
+    (from EXPECTED_CARDS = 20000 sitting next to a byte-measured card size).
+  - the sidebar session's: "an error that carries structured diagnosis must not be
+    narrowed to its message at the catch site" (from the swallowed problems array).
+  Each is credited to whoever found it and neither is presented as agreed-between-
+  agents. Both should arrive because they are right, not because two agents converged.
+
+  VERIFICATION SCOPE, stated honestly: 167 tests green across the nine affected
+  suites. The main app's ~14k suite was NOT run — the shared tree holds several
+  other sessions' uncommitted work, so a run there would not be attributable to this
+  session. Vital Signs left at their prior values rather than claiming a fresh pass.

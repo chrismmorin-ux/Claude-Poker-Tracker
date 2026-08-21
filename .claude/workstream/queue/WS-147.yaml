@@ -2,8 +2,8 @@ id: "WS-147"
 title: "SCF G5 child 3 — lesson authoring framework"
 type: improvement
 status: completed
-claimed_by: "session-2026-05-03-next"
-claimed_at: "2026-05-03T13:30:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: "2026-05-03T15:30:00Z"
 priority_score: 18.0
 priority_label: "P2"

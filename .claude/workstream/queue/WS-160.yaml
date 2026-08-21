@@ -2,8 +2,8 @@ id: "WS-160"
 title: "PIO G5 child A — IDB v23 schema + computeStability utility scaffold"
 type: improvement
 status: completed
-claimed_by: "session-2026-05-03-next"
-claimed_at: "2026-05-04T09:45:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: "2026-05-04T11:25:00Z"
 priority_score: 22.0
 priority_label: "P1"

@@ -1,0 +1,51 @@
+id: "ses-20260821-0422-a58ee318"
+status: "abandoned"
+revived_at: "2026-08-21T15:47:11.048Z"
+started_at: "2026-08-21T04:22:43.258Z"
+ended_at: "2026-08-21T17:33:02Z"
+mode: auto
+last_heartbeat: "2026-08-21T17:19:11.721Z"
+pid: 39340
+pid_recorded_at: "2026-08-21T17:19:11.721Z"
+host: MorinComputer
+agent_session_id: "a58ee318-db70-49cc-a34f-ee8bc898a29f"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/lib/ndjsonStore.mjs"
+  - "scripts/__tests__/ndjsonStore.test.js"
+  - "scripts/sessionSink/sessionStore.mjs"
+  - "scripts/sessionSink/serve.mjs"
+  - "scripts/__tests__/sessionSink.test.js"
+  - "ignition-poker-tracker/shared/constants.js"
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/background/service-worker.js"
+  - "ignition-poker-tracker/manifest.json"
+  - "ignition-poker-tracker/popup/popup.js"
+  - "scripts/check-protocol-sync.cjs"
+  - "src/utils/skillAssessment/detectWithRules.js"
+  - "src/utils/skillAssessment/heroLeakDetector.js"
+  - "scripts/villainArchetype/loadLeakRules.mjs"
+  - "scripts/villainArchetype/reviewSession.mjs"
+  - "scripts/__tests__/reviewSession.test.js"
+  - "scripts/sessionSink/start-session-sink.ps1"
+  - "scripts/villainArchetype/renderSessionReview.mjs"
+  - "scripts/sessionSink/mineFieldPolicy.mjs"
+  - "scripts/__tests__/mineFieldPolicy.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-21.
+  Original start: 2026-08-21T04:22:43.258Z.
+  Last heartbeat: 2026-08-21T17:19:11.721Z.
+
+  Git commits during this session (2):
+    - c74536df feat(session-review): play a session, and a review is waiting
+    - 4c724d44 fix(protocol-sync): the gate had been failing on every run, so it guarded nothing
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

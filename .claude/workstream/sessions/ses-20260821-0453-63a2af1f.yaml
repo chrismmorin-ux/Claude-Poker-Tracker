@@ -1,0 +1,51 @@
+id: "ses-20260821-0453-63a2af1f"
+status: "abandoned"
+started_at: "2026-08-21T04:53:37.947Z"
+ended_at: "2026-08-21T20:48:03Z"
+mode: auto
+last_heartbeat: "2026-08-21T16:33:29.224Z"
+pid: 2320
+pid_recorded_at: "2026-08-21T16:33:29.224Z"
+host: MorinComputer
+agent_session_id: "63a2af1f-5752-45f5-9cde-b2eaf87e53be"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/context/claim-judge-brief.md"
+  - "scripts/context/claim-corpus-score.mjs"
+  - ".claude/workstream/evidence/verdicts-run3/p03-B.json"
+  - ".claude/workstream/evidence/verdicts-run3/p03-A.json"
+  - "scripts/context/push-channel-meter.mjs"
+  - ".claude/hooks/channel-arm.cjs"
+  - "scripts/__tests__/channelArm.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-21.
+  Original start: 2026-08-21T04:53:37.947Z.
+  Last heartbeat: 2026-08-21T16:33:29.224Z.
+
+  Git commits during this session (16):
+    - 3d0300c4 fix(review): a gate about hero's cards was killing every opponent's card too
+    - 0bbe26e5 test(capture): pin the heroSeatConfidence lifecycle — 3 of these fail on the pre-fix code
+    - 88841203 fix(capture): heroSeatConfidence described the wrong hand — 10 of 122 stored hands claimed 'high' with no cards
+    - e11f5bd2 feat(capture): a hand hero is not in is still a hand — observed hands survive the pipeline
+    - 71bc54b9 Merge branch 'worktree-sidebar-table-identity' into fix/compute-supply-chain-ws572
+    - 501c1a2f fix(ignition): finish wiring the session sink — main shipped a message type nothing handled
+    - 438a9af5 fix(ignition): a folded player is not an empty chair, and seats stop moving mid-hand
+    - 00e1130d feat(ignition): stamp build provenance into the artifact, three ways
+    - 86bdb60e feat(review): price hero's own decisions, folds included — the arm the corpus cannot run
+    - c74536df feat(session-review): play a session, and a review is waiting
+    - 4c724d44 fix(protocol-sync): the gate had been failing on every run, so it guarded nothing
+    - 76956d54 fix(ignition): WS-515 — a full journal returned success: true and lost the hand
+    - e5912a45 fix(ignition): WS-517 — a dead capture was visually identical to a live one
+    - 6cef6fc5 fix(ignition): WS-516 — the silence alarm could only fire for a capture that never started
+    - f0e15949 Merge branch 'fix/compute-supply-chain-ws572' into worktree-sidebar-table-identity
+    - 02976d97 fix(ignition): the panel said "No active table detected" over a live hand
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

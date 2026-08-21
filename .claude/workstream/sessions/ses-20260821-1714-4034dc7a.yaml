@@ -1,0 +1,175 @@
+id: "ses-20260821-1714-4034dc7a"
+status: completed
+started_at: "2026-08-21T17:14:53.253Z"
+ended_at: "2026-08-21T18:05:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-21T21:39:24.839Z"
+pid: 72148
+pid_recorded_at: "2026-08-21T21:39:24.839Z"
+host: MorinComputer
+agent_session_id: "4034dc7a-462c-4955-a237-4b7c90152c02"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/villainArchetype/priceHeroDecisions.mjs"
+  - "scripts/__tests__/priceHeroDecisions.test.js"
+  - "scripts/villainArchetype/priceSession.mjs"
+  - "scripts/villainArchetype/runMoneyColumn.mjs"
+  - "scripts/__tests__/priceSession.test.js"
+  - "scripts/villainArchetype/conductCardStore.mjs"
+  - "scripts/villainArchetype/ingestCards.mjs"
+  - "scripts/__tests__/conductCardStore.test.js"
+  - "docs/design/audits/2026-08-21-entry-post-session-review.md"
+  - "docs/design/audits/2026-08-21-blindspot-post-session-review.md"
+  - ".claude/workstream/sessions/ses-20260821-2055-4034dc7a-money-column.yaml"
+
+
+branch: "worktree-sidebar-table-identity"
+worktree: ".claude/worktrees/sidebar-table-identity"
+
+handoff_notes: |
+  FOUNDER REPORT THAT STARTED IT: "'No active table detected' when I'm in the
+  hand, and then it'll shuffle in and out of 'analyzing' or say it dropped the
+  connection." Asked for a full sidebar revamp; the reported symptom took
+  priority because the panel was misreporting its own state.
+
+  FOUR DEFECTS, ONE SYMPTOM CLASS — the panel could not tell the truth about
+  whether it was working. All four fixed, 4 commits on
+  `worktree-sidebar-table-identity` (02976d97, 6cef6fc5, e5912a45, 76956d54).
+
+  1. Table identity was the WebSocket connId — a monotonic per-socket counter.
+     Every routine Ignition socket cycle read as a table switch and wiped
+     advice, live context, seat stats, villain reads. Now keyed on the stable
+     game-WS URL (`tableKey`).
+  2. The reconnect-stitch was DEAD on the real lifecycle: it required the old
+     table to still be in `tables`, which the close handler had already
+     deleted. A close now opens a 15s grace window; reconnect migrates the
+     machine intact (CO_TABLE_INFO rehydrates the live hand).
+  3. The HUD shell gated on `hasTableHands` ("a hand finished and was stored"),
+     so it rendered "No active table detected" over a live hand for the whole
+     first hand at any table. Now gates on table presence. Seat arc had the
+     same defect.
+  4. WS-516: the silence alarm was INVERTED — it could only fire for a capture
+     that never started, and was structurally blind to one that died
+     mid-session. Now recency-based, decision extracted to a pure module.
+
+  Plus WS-517 (a dead capture was pixel-identical to a live one on the status
+  bar) and WS-515 (a full journal returned `success: true` and lost the hand).
+
+  ITEMS COMPLETED: none marked done in the queue — deliberately. WS-515/516/517
+  are code-complete and verified, but each carries an accept criterion
+  requiring verification against a REAL loaded extension (a real reconnect, a
+  real journal fill). That has not happened, and the whole character of these
+  defects is that they were invisible. Do not mark them done on test evidence
+  alone.
+
+  ITEMS REMAINING / NEXT ACTION, in order:
+  1. FOUNDER: merge. `git merge --ff-only worktree-sidebar-table-identity`
+     currently REFUSES — see the blocker below. Meanwhile the built extension
+     is loadable directly from
+     `.claude/worktrees/sidebar-table-identity/ignition-poker-tracker/dist/`.
+  2. FOUNDER: play a session with it loaded. That is the only check the
+     tooling cannot do, and it closes the open accept criteria on all three
+     tickets.
+  3. Then: the visual/layout revamp the founder originally asked for. It
+     resumes existing design work rather than starting over — the Sidebar
+     Holistic Coherence program has Gate 4 COMPLETE (doctrine v8, 25 INV-*);
+     Gate 5 (implementation) was never closed.
+
+  MERGE BLOCKER — READ BEFORE FORCING ANYTHING:
+  Five of the files I changed hold 443 lines of ANOTHER SESSION'S uncommitted
+  work in the main tree (service-worker.js +278, storage-writer.js +126,
+  render-orchestrator.js +48, constants.js +29, manifest.json +6). git aborted
+  the ff-only merge cleanly and nothing was forced. That session is building a
+  local session sink (`GET_JOURNAL_HANDS`, `SINK_LAST_SEEN_AT`) and is editing
+  the SAME journal-quota code I changed. Its own comment reasons from "5000
+  undeliverable hands against a 10MB quota" — that premise is false and I
+  measured it (see below). Whoever reconciles these two branches should know
+  before designing retention around it. The only textual conflict is the
+  `permissions` array (I add `unlimitedStorage`, they add `alarms`).
+
+  KEY FINDINGS:
+  - MEASUREMENT THAT CORRECTS A TICKET: WS-515 estimated ~2,932 B/hand giving
+    ~3,576 hands. Measured 500 records through the real HandStateMachine with a
+    realistic action-length spread: mean 4,965 B, p95 9,185 B, max 9,961 B —
+    ~2,112 hands in the 10MB quota, ~651 with frame capture active.
+    `MAX_JOURNAL = 5000` would need ~44MB and was NEVER the binding limit.
+    Caveat recorded in source: the action distribution is synthetic; re-derive
+    from real captures (WS-224 is that ticket).
+  - Every pre-existing test around the reconnect path passed because none of
+    them ever fired a close event. The tests encoded the defect.
+  - `harness/harness.js` held a THIRD, disagreeing copy of the shell gate
+    (keyed on `cachedSeatStats`), so the primary VISUAL verification tool
+    structurally could not display the defect it exists to catch. Same class as
+    `message-harness.js` mirroring handler logic.
+  - `getJournalStatus` had NO caller at all before this session — an inert
+    capability nobody was watching.
+
+  TWO OF MY OWN ERRORS, both caught by checking rather than by reasoning:
+  - My first harness verification was a FALSE PASS. `verify-harness.mjs` reuses
+    whatever server is already on port 3333 and reported "58 screenshots, no
+    anomalies" against ANOTHER worktree's build. The only tell was a fixture
+    count one short. Fixed: it now refuses unless the served bundle matches
+    local dist, and honours HARNESS_PORT. The guard was verified to fire.
+  - My first fix broke the harness with a ReferenceError (removed `hasHands`,
+    still referenced below) and rendered a blank panel. Caught immediately by
+    the mandatory visual check — which is the argument for that rule.
+  - Also misdiagnosed an 8-minute test hang as machine memory pressure; the
+    real cause was the shell cwd having reset to the repo root, so I was
+    running the main app's 14k-test workspace suite instead of the extension's.
+
+  VERIFICATION — what it does and does not cover:
+  - 90 files / 2,510 extension tests green (+78 new) on the worktree branch.
+  - Clean build; `unlimitedStorage` confirmed present in the BUILT manifest.
+  - Harness verified on an isolated port: 52 fixtures, 60 screenshots, no
+    anomalies. Shell exclusivity and no-undefined swept across all 51 scenarios
+    in a live browser.
+  - Live-vs-dead status measured: "Tracking (id:1) · 190 hands" (green) vs
+    "Tracking (id:1) STOPPED — no hand for 22 min · 105 hands" (red).
+  - NOT RUN: the main app's 14k suite. My changes are confined to
+    `ignition-poker-tracker/`, and the main tree currently holds four other
+    sessions' uncommitted work, so a run there would not be attributable to
+    this session. Vital Signs rows left at their 2026-08-12 values rather than
+    claiming a fresh pass.
+
+  Autopilot eligible: not assessed — no queue items were claimed or completed
+  this session.
+
+context_notes: |
+  WHERE THE WORK IS: branch `worktree-sidebar-table-identity`, worktree kept at
+  `.claude/worktrees/sidebar-table-identity`. It already contains the two
+  commits from `fix/compute-supply-chain-ws572` (merged in and verified green),
+  so a fast-forward is possible the moment the main tree is clean on those five
+  files.
+
+  WORKTREE BOOTSTRAP GOTCHA: a fresh worktree lacks the gitignored
+  `ignition-poker-tracker/node_modules` and `assets/`, so both `npm test` and
+  `npm run build` fail immediately. Fixed with a directory junction for
+  node_modules (no admin needed) and a copy of assets/. Friction captured.
+
+  NEW FIXTURES for the visual harness (18 now, was 16):
+  - `firstHandAtTable` — live hand, zero stored hands. The founder's reported
+    state. HUD and seat roster must render; only stats degrade.
+  - `deadCapture` — 105 hands banked, table seated, nothing captured for 22
+    min. Must NOT look like a live session.
+
+  RUN THE HARNESS ON A PRIVATE PORT in a multi-session repo:
+  `HARNESS_PORT=3401 npm run harness:verify`. It now refuses rather than
+  verifying another tree's build, but the port override avoids the collision
+  entirely.
+
+  DOCTRINE WRITTEN INTO ignition-poker-tracker/CLAUDE.md this session (new
+  anti-patterns, all with the mechanism named): never key table identity on
+  connId; never gate a display on "do we have completed hands" when it asks a
+  different question; never gate liveness on a cumulative counter; never claim
+  a healthy status from a cumulative count; a detected gap must be RECORDED not
+  just displayed; never let a caught error become a success return; the binding
+  limit is rarely the one in the constant; the SW rebuilds relayed messages
+  field-by-field so an unlisted field is dropped silently; never let the
+  harness re-implement a gate it is verifying.
+
+  DECISIONS: 8 captured via cwos-capture (5 heavy, 3 medium) — they drain to
+  system/decisions.md on the next reconcile. FRICTION: 4 captured.

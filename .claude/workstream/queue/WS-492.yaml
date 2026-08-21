@@ -2,9 +2,9 @@ id: "WS-492"
 title: "Every prior, policy, curve and reference table in this system is fitted on 2 of the 27 available corpus stake directories — the other 25 have never been read"
 legacy_id: ""
 type: improvement
-status: claimed
-claimed_by: "ses-20260815-0620-63500894"
-claimed_at: "2026-08-15T06:41:15Z"
+status: backlog
+claimed_by: null
+claimed_at: null
 started_at: null
 completed_at: null
 completion_commit: null

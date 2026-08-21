@@ -1400,3 +1400,98 @@ assumptions:
 **Date:** 2026-08-20 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
 **Decision:** A Result Card carrying a NET delta without its GROSS is REJECTED at publish, via a DECLARED net->gross map rather than a name regex
 **Reasoning:** A regex would let each new metrics variant silently opt itself in. The guard fires inside metricsProblems -> resultCardProblems -> buildResultCard, which throws; it rejected 13 pre-existing fixtures on first run including the committed RC-depth-ablation.json (depthDeltaBB -0.4711, no GROSS) - the exact artifact WS-537 was filed against. A NET protected only in the renderer is protected in the one place nobody parses.
+
+### DEC-144: Context-channel composition settled by seeded-coin experiment, not by argument: the seven…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Context-channel composition settled by seeded-coin experiment, not by argument: the seven founder rulings of 2026-08-20 stay pushed in arm A and move behind a routing entry in arm B, randomized at session level, claim survival decides
+**Reasoning:** Relocation is 56 percent of the proposed token saving but measured delivery for relocated doctrine is 8 percent (MEMORY.md: 9 of 112 topic files ever Read across 119 transcripts). Keeping them costs ~130k tokens per roundtable; moving them silently loses them in ~92 percent of sessions. Founder ruled 2026-08-20 that neither is decided by argument. Requires the retrospective accuracy instrument first, since the arms need an outcome measure.
+
+### DEC-145: Context/accuracy infrastructure is EXEMPT from surfaces-reach-the-table.md: an instrument…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Context/accuracy infrastructure is EXEMPT from surfaces-reach-the-table.md: an instrument whose subject is the repo itself need not name a live-table path
+**Reasoning:** Founder ruling 2026-08-20, made with the cost stated. The design-critique run found that no error targeted by the context-retrieval protocol is an error about poker, which under surfaces-reach-the-table.md is a gap. Founder chose exemption over requiring the table-path argument. Recorded cost accepted: this creates a precedent that later instruments may cite to avoid the same question, and the rule it exempts was written 2026-08-20 precisely because study surfaces were outnumbering live ones. Scope of exemption is infrastructure whose subject is the repo, not strategy surfaces.
+
+### DEC-146: Channel-experiment outcome measure is CITATION misplacement, not substance refutation
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Channel-experiment outcome measure is CITATION misplacement, not substance refutation
+**Reasoning:** Run 3 measured substance refutation at 1.7% (1/58) — a floor effect requiring ~1349 claims per arm to detect a doubling. Citation misplacement runs at 8.8%, needs ~232. The citation axis only became measurable because the four-valued rubric separated it from HELD/REFUTED; runs 1-2 could not have used it. Founder ruled the seeded-coin channel experiment settles P6 relocation, making this instrument its prerequisite; the instrument now reports which of its two outputs the experiment should be powered on.
+
+### DEC-147: Channel experiment arms are produced by hook re-injection for arm A, not by withholding f…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Channel experiment arms are produced by hook re-injection for arm A, not by withholding for arm B
+**Reasoning:** A UserPromptSubmit hook cannot withhold from the push channel: the harness composes CLAUDE.md and .claude/rules/* into the system prompt before any hook runs, and hooks are additive only. Plus 4-6 concurrent sessions share one working tree, so per-session file relocation is unsafe. Inverting it -- thin the seven files to stubs, hook re-injects full text for arm A -- yields the identical contrast while being per-session and concurrency-safe.
+
+### DEC-148: Table identity is the stable game-WS URL (tableKey), never the per-socket connId
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Table identity is the stable game-WS URL (tableKey), never the per-socket connId
+**Reasoning:** connId is a monotonic counter reassigned on every reconnect, so keying identity on it made every routine Ignition socket cycle look like a table switch and wipe advice, live context, seat stats and villain reads mid-hand. The URL was already the identity urlToConnId used to stitch reconnects; this exposes it to consumers instead of leaking the connection counter.
+
+### DEC-149: A WebSocket close opens a 15s reconnect grace window instead of destroying the table
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A WebSocket close opens a 15s reconnect grace window instead of destroying the table
+**Reasoning:** handleConnectionClosed deleted the table immediately, emitting a bogus reconnectInterrupted partial for a hand still in progress. It also made the reconnect-stitch unreachable, since the stitch required the old table to still be in the map. Grace expiry (reapDisconnected) emits the partial, and teardown flushes it, so nothing is lost -- it just waits to see whether the socket returns.
+
+### DEC-150: A reconnect preserves the in-flight hand rather than emitting a partial and rebuilding
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A reconnect preserves the in-flight hand rather than emitting a partial and rebuilding
+**Reasoning:** Ignition sends CO_TABLE_INFO on join/reconnect carrying dealer seat, street, hero hole cards and board (spike-data/SPIKE_REPORT.md), and adaptTableInfo already decomposes it into the events that resynchronise the machine. The protocol supplies the rehydration; we only have to keep the machine alive to receive it. The old behaviour discarded completedHandCount, tableConfig, seatDisplayMap, stack observations and the current hand's action sequence.
+
+### DEC-151: Extension requests unlimitedStorage rather than budgeting under the 10MB quota
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Extension requests unlimitedStorage rather than budgeting under the 10MB quota
+**Reasoning:** Measured 500 real records through HandStateMachine: mean 4965 B, p95 9185 B, so the 10MB quota binds at ~2100 hands (~650 with frame capture active) and MAX_JOURNAL=5000 would need ~44MB -- it was never the binding limit. A smaller cap, a tighter record or a retention window are all the same trade of hands for headroom, and the hands ARE the product.
+
+### DEC-152: Capture gaps are written to a durable ledger, not only shown as a banner
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Capture gaps are written to a durable ledger, not only shown as a banner
+**Reasoning:** A banner the founder dismissed leaves no trace. What poisons the corpus is that a session with an unrecorded hole is indistinguishable from a genuinely short session, so every downstream k/n over it is silently conditioned on the interval where capture happened to be alive -- a population nobody chose and nobody can reconstruct afterwards. New STORAGE_KEYS.CAPTURE_GAPS in chrome.storage.local so it survives browser close, stamped with the stable tableKey.
+
+### DEC-153: enqueueHand reports journalled:false instead of unqualified success when the durable writ…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** enqueueHand reports journalled:false instead of unqualified success when the durable write fails
+**Reasoning:** journalAppend swallowed the quota throw, so enqueueHand returned success:true for a hand whose only durable copy had just been lost. 'Do not block the live delivery path on a journal problem' and 'report success for a hand with no durable copy' are separate decisions; only the first is right. The live path is still never blocked.
+
+### DEC-154: Panel shell and seat arc gate on table presence, not on stored completed hands
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Panel shell and seat arc gate on table presence, not on stored completed hands
+**Reasoning:** hasTableHands means 'a hand finished and was written to session storage' -- false for the whole first hand at any table and after every table switch. Gating the shell on it rendered 'No active table detected' over a live hand; the seat arc had the same defect and drew nothing despite the roster being known. Stats are decoration on top of the roster, never its precondition.
+
+### DEC-155: Hand age goes on the always-visible status bar rather than un-hiding the pipeline-health…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Hand age goes on the always-visible status bar rather than un-hiding the pipeline-health strip
+**Reasoning:** WS-517 required choosing between correcting the gate that hides #pipeline-health and making the readout it hides no longer the only one. Took the second: un-hiding the strip moves the defect rather than removing it (diagnostic chrome nobody watches mid-hand), and shell-spec section I.3 rule 9 forbids it co-occurring with HUD content regardless.
+
+### DEC-156: Uncommitted work from a session that has died is LANDED with attribution, not discarded
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Uncommitted work from a session that has died is LANDED with attribution, not discarded — provided it runs
+**Reasoning:** ses-20260821-0422-a58ee318 died leaving 62 files of context-barrier/claim-corpus work uncommitted. Its 44 tests passed, so it was finished work, not a half-edit. Discarding tested coherent work because its author died is the same failure as deleting for a null result. The commit names the dead session, states that ownership was established by ELIMINATION (both live peers were asked and each disclaimed the files) rather than assumed, and says plainly that the committer cannot vouch for the design — only that it runs. Heavy because it sets the precedent for every future abandoned session in a shared tree, and because the alternative (discard) is irreversible.
+
+### DEC-157: Never size a run from an effect-size point estimate whose own interval straddles zero
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Never size a run from an effect-size point estimate whose own interval straddles zero
+**Reasoning:** WS-612 predicted r2's absolute edge would not resolve and needed ~853,000 decisions. It resolved at 235,217. The method was wrong in a specific way: I held the 77k point estimate (+0.0975) fixed and shrank only the MDE around it. That estimate came from a run where r2's CI straddled zero, so it was noise-dominated and had no warrant as a target. At full n the edge itself moved to +0.1696. Note what did NOT fail: the volume projections were accurate (30,072 players vs ~30-31k predicted; 1,070,493 hands vs ~1,077,000). The defect is narrow and repeatable — treat an unresolved effect as unknown WITHIN ITS INTERVAL when sizing, never as a fixed value.
+
+### DEC-158: Conduct Card cardId is a CONTENT IDENTITY over (subjectId, rulesetHash, dealBookHash), an…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Conduct Card cardId is a CONTENT IDENTITY over (subjectId, rulesetHash, dealBookHash), and seat-segment subjectIds are session-scoped
+**Reasoning:** A readable 12-char prefix was doing identity work and collided across sessions: two hero cards and two seat-8 cards shared one id, so any store keyed on cardId would overwrite silently. Measured across 12 real sessions.
+
+### DEC-159: Conduct Card gates are scoped to the card they guard
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Conduct Card gates are scoped to the card they guard — capture-integrity binds every card, cards-known binds hero's only
+**Reasoning:** One hero decision out of 38 lacking hole cards tripped a 0.99 floor and refused hero's card AND all ten opponent cards. An opponent card records what that seat did facing what and has no dependence on hero's holding.
+
+### DEC-160: Hero decisions on a 'carried' hand are UNEXAMINED, not cards-missing: excluded from the c…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Hero decisions on a 'carried' hand are UNEXAMINED, not cards-missing: excluded from the cards-known denominator but reported as their own quantity
+**Reasoning:** Ignition's reconnect CO_TABLE_INFO snapshot omits hero's own seat, so cards for a hand in progress are protocol-unknowable. A bare exclusion would INFLATE the claim (20 unknowable + 5 clean would report 100% and outrank 25 clean).
+
+### DEC-161: The money column's yardstick is Pool Best Response, never a solver; corpus-policy runs ar…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The money column's yardstick is Pool Best Response, never a solver; corpus-policy runs are stamped transferred-not-measured and comparativeClaim:false
+**Reasoning:** Founder 2026-08-21: 'solver is not the ideal strategy'. A corpus level reported about a live table is a levels transfer forbidden by corpus-transfer-is-earned.md.
+
+### DEC-162: Gate 2 blind-spot roundtables are executed by spawning the declared agents; briefs state…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Gate 2 blind-spot roundtables are executed by spawning the declared agents; briefs state the prior verdict as the thing to refute
+**Reasoning:** ROUNDTABLES.md declares the engine; engine-execution-fidelity.md makes inline simulation invalid output. Briefing to refute rather than ratify is what let the agents overturn three of my claims.

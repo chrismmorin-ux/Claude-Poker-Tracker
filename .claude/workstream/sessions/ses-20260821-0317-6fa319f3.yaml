@@ -1,0 +1,31 @@
+id: "ses-20260821-0317-6fa319f3"
+status: "abandoned"
+started_at: "2026-08-21T03:17:44.665Z"
+ended_at: "2026-08-21T15:44:29Z"
+mode: auto
+last_heartbeat: "2026-08-21T04:12:02.148Z"
+pid: 43312
+pid_recorded_at: "2026-08-21T04:12:02.148Z"
+host: MorinComputer
+agent_session_id: "6fa319f3-4a4d-4dea-a463-15e353acf1e2"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "ignition-poker-tracker/side-panel/render-orchestrator.js"
+  - "ignition-poker-tracker/side-panel/__tests__/render-orchestrator.test.js"
+  - "ignition-poker-tracker/background/service-worker.js"
+  - "ignition-poker-tracker/background/__tests__/port-slot-identity.test.js"
+  - "ignition-poker-tracker/vitest.config.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-21.
+  Original start: 2026-08-21T03:17:44.665Z.
+  Last heartbeat: 2026-08-21T04:12:02.148Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

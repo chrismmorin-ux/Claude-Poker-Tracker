@@ -3,8 +3,8 @@ title: "Gate 5 — Implementation (multi-PR)"
 legacy_id: "PIO-G5"
 type: improvement
 status: decomposed
-claimed_by: "session-2026-05-03-next"
-claimed_at: "2026-05-04T09:45:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: "2026-05-04T11:00:00Z"
 priority_score: 22.0
 priority_label: "P1"

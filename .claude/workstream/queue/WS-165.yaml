@@ -2,8 +2,8 @@ id: "WS-165"
 title: "PIO G5 child F — Settings photo-toggle + source-util-policy CI-grep (SET + SUP)"
 type: improvement
 status: completed
-claimed_by: "session-2026-05-03-next"
-claimed_at: "2026-05-04T14:50:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: "2026-05-04T15:30:00Z"
 priority_score: 15.0
 priority_label: "P2"

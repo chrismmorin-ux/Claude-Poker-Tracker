@@ -1,0 +1,103 @@
+id: "WS-615"
+title: "The journal's 5000-hand ceiling was never reachable — measured mean 4,965 B/record puts the 10MB quota at ~2,100 hands (~650 with frame capture), so any retention or sink design budgeting against MAX_JOURNAL=5000 is off by ~20x on bytes"
+legacy_id: ""
+type: finding
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "extension"
+program: "data-provenance"
+finding_id: ""
+description: |
+  MEASURED 2026-08-21 during the WS-515 fix. Filed separately because the number invalidates a
+  premise that at least one OTHER work stream is actively designing against, and a correction
+  that lives only in a commit message on an unmerged branch will not reach them.
+
+  THE MEASUREMENT. 500 hand records built through the real `HandStateMachine` (not estimated,
+  not hand-authored) and serialized exactly as `chrome.storage` stores them, with a realistic
+  spread of action-sequence lengths — 3..9 players seeing the flop, 1..4 betting rounds per
+  street, which is the dominant size term:
+
+      mean 4,965 B    p50 4,382 B    p95 9,185 B    max 9,961 B
+
+  Against `chrome.storage.local`'s 10MB default quota:
+
+      ~2,112 records at mean
+      ~1,141 records at p95
+      ~651   records with frame-capture's 4.5MB-per-context reservation active
+      5,000 records would need ~44 MB at p95
+
+  So `MAX_JOURNAL = 5000` (`shared/storage-writer.js`) was NEVER the binding limit and its
+  eviction branch is dead code in practice — the quota throw arrives first, by a wide margin.
+
+  WHAT THIS CORRECTS. WS-515 itself estimated ~2,932 B/record giving ~3,576 hands. That was
+  optimistic by roughly half; the ticket's conclusion holds harder than it claimed, not weaker.
+
+  WHO IS AFFECTED, and this is the reason for a separate ticket. The local-session-sink work
+  (`GET_JOURNAL_HANDS`, `SINK_LAST_SEEN_AT`, commit c74536df plus ~443 uncommitted lines from
+  session ses-20260821-0422-a58ee318) carries this comment in `shared/constants.js`:
+
+      "without this, a founder who never runs the sink would accumulate 5000 undeliverable
+       hands against a 10MB quota. See SINK_STALE_MS in storage-writer."
+
+  The retention rule is sized against a number that cannot be reached. Whatever SINK_STALE_MS
+  is tuned to, it should be re-derived from ~2,100 (or ~650 with frame capture on), not 5,000.
+  Note that session is ABANDONED with a dead PID, so nobody is currently going to notice this.
+
+  ALREADY MITIGATED, PARTIALLY. `worktree-sidebar-table-identity` adds `unlimitedStorage` to
+  the manifest, which removes the 10MB ceiling entirely, plus a dedicated quota-failure counter,
+  a `journalled:false` return from `enqueueHand`, and an observable-headroom surface. If that
+  branch merges, the quota stops binding — but the SIZING PREMISE is still wrong wherever it was
+  used to pick a retention window, and `unlimitedStorage` does not make a 5,000-shaped
+  assumption correct.
+
+  THE CAVEAT, ON ITS FACE. The action-length distribution in the measurement is SYNTHETIC — real
+  hands, real builder, but a spread I chose. Record size is dominated by action-sequence length,
+  so the exact figure is only as good as that spread. The DIRECTION is robust (the quota binds
+  long before MAX_JOURNAL, under any plausible distribution); the precise number is not yet
+  earned. WS-224 (raw WS frame dump to spike-data/) is what would supply real captures and
+  retire this caveat.
+accept_criteria:
+  - "Per-record size is re-derived from REAL captured hands rather than a synthetic action-length spread. Report mean, p50, p95 and max, with n and the capture source named. This is the step that retires the caveat; WS-224 supplies the input."
+  - "Every place that sizes behaviour against a hand count is re-derived from the measured bytes: `MAX_JOURNAL`, `SINK_STALE_MS`, and any retention window in the sink work. A constant that was picked against 5,000 and left unchanged must be SHOWN to be correct at ~2,100, not assumed to be."
+  - "The relationship between MAX_JOURNAL and the quota is asserted in code, not in a comment. A test that fills the journal with records of the MEASURED p95 size and shows which limit fires first — against HEAD-before-unlimitedStorage the quota fires, which is the defect. A comment claiming '5000 hands is many sessions of headroom' is exactly what was believed and it was never true."
+  - "`frame-capture.js`'s per-context reservation is reconciled with whatever the journal actually needs, rather than two writers each assuming they have the whole 10MB. (The stale 'default quota is 10MB' comment was already corrected on the sidebar branch — confirm it landed.)"
+  - "If `unlimitedStorage` has NOT merged, this stays open regardless of the sink's retention choice: an unreachable cap plus a swallowed quota throw is the WS-515 loss path, and sizing alone does not close it."
+effort: "S"
+runs_on: "g16"
+files_involved:
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/shared/constants.js"
+  - "ignition-poker-tracker/shared/frame-capture.js"
+  - "ignition-poker-tracker/manifest.json"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-515-record-size-measurement-2026-08-21"
+created_at: "2026-08-21"
+updated_at: "2026-08-21"
+status_note: |
+  The figures and the caveat are carried in-source as `MEASURED_RECORD_BYTES` in
+  `ignition-poker-tracker/shared/storage-writer.js` on branch
+  `worktree-sidebar-table-identity`, so they travel with the code rather than only with this
+  ticket.
+
+  Filed from the Ignition sidebar session at the suggestion of the fleet-compute session, which
+  correctly pointed out that a load-bearing refutation living only in a cross-session message
+  dies when the session ends. The measurement is mine; the prompt to file it was theirs.
+
+  NOT filed against the sink work's own ticket because that work is uncommitted and its owning
+  session is abandoned — there is no item to attach it to. If the sink work is later adopted,
+  link this from it rather than duplicating the number.

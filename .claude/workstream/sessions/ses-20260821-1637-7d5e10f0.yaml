@@ -1,0 +1,91 @@
+id: "ses-20260821-1637-7d5e10f0"
+status: completed
+started_at: "2026-08-21T16:37:10.099Z"
+ended_at: "2026-08-21T21:35:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-21T21:40:23.768Z"
+pid: 2320
+pid_recorded_at: "2026-08-21T21:40:23.768Z"
+host: MorinComputer
+agent_session_id: "7d5e10f0-b47c-472f-9070-ebdcc3fabc84"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []
+
+handoff_notes: |
+  SPRINT SPR-197 COMPLETE. WS-540 closed — all six accept criteria met and verified
+  individually, not assumed.
+
+  THE RESULT. The rule ladder now measurably beats the field. Three runs, same instrument:
+      n=85      nothing resolved
+      n=77,450  all four paired DELTAS resolved; no absolute edge did
+      n=235,217 four of five ABSOLUTE edges resolve. r4-spr-gate +0.2465 bb
+                [+0.1189, +0.3790]. r0 resolves NEGATIVE (-0.1700) — entry-only is
+                measurably worse than the field. r1 is the only one left straddling zero
+                (+0.1179 [-0.0090, +0.2453]).
+  Both runs gated bit-identical on replay (edges/deltas/coverage). Replay costs ~4-12 min
+  against ~11-42 min to produce, so a NEW rung is now cheap — that was the point of WS-540.
+
+  WHAT IS NOT ESTABLISHED, and must not be quoted as if it were:
+    - NO RESULT CARD exists (WS-613). Per ADR-009 none of these numbers is citable.
+    - essShare 0.397, under the 0.50 threshold — lowSupport flags on every rung.
+    - Corpus is HandHQ online cash July 2009 50NL. Any live 9-handed 1/2-1/3 reading is
+      TRANSFERRED, not measured.
+    - The support-matched conditional differs a lot from the unconditional (r4: +0.5556 vs
+      +0.2201). Both are real; they answer different questions.
+
+  A PREDICTION I MADE THAT THE MEASUREMENT REFUTED — recorded, not buried. WS-612 said r2's
+  edge would not resolve and needed ~853,000 decisions. It resolved at 235,217. I projected an
+  EFFECT SIZE from a point estimate whose own interval straddled zero. The volume projections
+  were fine (30,072 players vs ~30-31k; 1,070,493 hands vs ~1,077,000). DEC-157 records the
+  rule; WS-612's description carries the worked example and an explicit warning not to size
+  r1's run the same way.
+
+  Items completed: WS-540 (closed), SPR-197 (done), WS-612 (resolved, NOT closed — awaiting
+    founder go-ahead; one accept criterion's premise was falsified by its own run).
+  Items created: WS-611, WS-612, WS-613, WS-614, WS-616, WS-617.
+  Items released: none — this session held no claims. WS-492 remains claimed since 2026-08-15
+    by another session and was deliberately left alone.
+
+  ORPHAN CLEANUP. ses-20260821-0422-a58ee318 died (PID 39340 verified dead) leaving 62 files
+  of context-barrier / claim-corpus / channel-arm work uncommitted. Landed as 2fd6de59 after
+  both live peers were asked and each disclaimed it, and after its own 44 tests passed.
+  claim-corpus.jsonl (7.9 MB) deliberately NOT committed — a re-derivable corpus derivative,
+  per artifact-location.md. It is untracked, NOT deleted, and still needs a home decision.
+  DEC-156 records the precedent.
+
+  Next recommended action: WS-613 (Result Card for the ladder) — until it ships the headline
+  result is not citable by the repo's own standard, and it is wiring, not invention:
+  resultCard.js, manifest.js and registerVersion() all exist with three working emitters to
+  copy. Then WS-614 (ladder sharding) before any run larger than this stratum.
+
+  Autopilot eligible: not assessed this session.
+context_notes: |
+  OPEN DECISIONS LEFT FOR THE FOUNDER — none were taken unilaterally:
+    1. Close WS-612? All criteria met except one whose premise its own run falsified.
+    2. WS-540's completion_commit is c74536df — an ABANDONED session's extension/sink commit,
+       nothing to do with the ladder. `cwos-next done` stamps whatever HEAD is, and in a tree
+       with 3-5 concurrent sessions HEAD is routinely someone else's work. Same class as the
+       skew bug WS-595 fixed: a record that looks authoritative and answers a different
+       question. NOT filed — awaiting the founder's word.
+    3. claim-corpus.jsonl (7.9 MB) needs a home: regenerate-on-demand, or park on node1 with
+       a manifest pointer.
+    4. WS-615 is claude-poker-tracker-82's; it should land its own work.
+
+  SHARED-TREE FACTS THE NEXT SESSION NEEDS:
+    - This tree had 3-5 concurrent sessions today. `.claude/hooks/git-guard.cjs` BLOCKS
+      tree-wide staging and it is right to — stage by explicit path. Shared derived state
+      (queue-index, sprint-index, findings-index, events/current.jsonl, system-summary,
+      programs/, system/*.md) is rebuilt by reconcile and was deliberately left uncommitted.
+    - ses-20260821-0435-3a047fd1 was heartbeating during this session's final commits.
+    - Pre-cleanup snapshot of the whole working tree (572 KB patch + 87 untracked files) is in
+      the session scratchpad at tree-snapshot-20260821-161323, if anything needs reversing.
+
+  FLEET: cm-node1 idle at 86bdb60e. WS-503 is unblocked and ready in the runway but was NOT
+  fed — it is a multi-hour unattended job and the founder had not asked for it.
+  node1's origin is G16 over the tailnet, NOT GitHub — advancing main means `git push origin
+  HEAD:main` AND `git branch -f main`, then pulling on node1. Missing the second step leaves
+  node1 stale while GitHub looks correct.

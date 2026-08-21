@@ -195,15 +195,15 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "Installed 2026-07-31 with a promoted baseline but no protocol run under the program itself. Run /pulse run data-provenance baseline to establish a score."
 findings_open: 3
-work_items_open: 8
+work_items_open: 9
 
 cap_breach:
   active: true
-  work_items_open: 8
+  work_items_open: 9
   findings_open: 3
   max_open_items: 5
   priority_floor: 20
-  ratio: 1.6
+  ratio: 1.8
   since: "2026-08-17"
 evidence:
   last_audit_report: "docs/provenance/data-source-registry.md"

@@ -9,7 +9,7 @@
 # the invariant suite. They are carried forward from the last writer that did,
 # with vitals_observed_at naming when that was. Check that date before
 # trusting them, and run /verify if it is old.
-last_updated: "2026-08-20T21:15:11Z"
+last_updated: "2026-08-21T21:50:22Z"
 generated_by: cwos-reconcile
 vital_signs_ok: true
 red_vitals: []
@@ -18,16 +18,15 @@ verify_last_completed_at: null
 reconcile_integrity_ok: true
 queue_counts:
   decomposed: 1
-  done: 77
+  done: 78
   in_progress: 4
   deferred: 46
-  backlog: 255
+  backlog: 267
   dismissed: 5
   completed: 7
   review: 1
   blocked: 10
   active: 2
-  claimed: 1
 top_3_unclaimed:
   - id: WS-575
     title: "Completing depth-2 pushes hero to raise 98% of the time — the truncation was MASKING an aggression…"
@@ -55,7 +54,7 @@ stale_programs:
 
   - id: data-provenance
     tier: active
-    overdue_protocols: [delta (6d overdue), challenge (never run)]
+    overdue_protocols: [delta (7d overdue), challenge (never run)]
 
   - id: design
     tier: active
@@ -63,7 +62,7 @@ stale_programs:
 
   - id: domain-correctness
     tier: critical
-    overdue_protocols: [theory_completeness (never run), delta (2d overdue)]
+    overdue_protocols: [theory_completeness (never run), delta (3d overdue)]
 
   - id: engineering
     tier: watch
@@ -83,7 +82,7 @@ stale_programs:
 
   - id: self-compliance
     tier: critical
-    overdue_protocols: [delta (6d overdue), challenge (never run), blind_spot (never run)]
+    overdue_protocols: [delta (7d overdue), challenge (never run), blind_spot (never run)]
 
   - id: strategy-of-record
     tier: active

@@ -21,7 +21,7 @@ command_usage:
   # Quick fix and standard mode aren't commands but track session types
   quick_fix_sessions: 0
   standard_sessions: 0
-  strategic_sessions: 5   # ses-20260807-0535 overnight run
+  strategic_sessions: 6   # +1 2026-08-21 (ses-20260821-1637 SPR-197/WS-540)
 engine_runs:
   # engine_name: { runs: N, last_run: date, findings_generated: N, items_created: N }
   # Example:
@@ -31,13 +31,13 @@ engine_runs:
 # Each entry is a timestamped record of value delivered
 value_ledger:
   total_findings_caught: 72   # +57 2026-08-07 (FIND-055..111, overnight protocol runs)
-  total_items_completed: 7   # +5 2026-08-07 (WS-428/429/430/437/438)
-  total_items_created: 45       # +40 this session (WS-386..425)
+  total_items_completed: 9   # +2 2026-08-21 (WS-540 closed, SPR-197 done)
+  total_items_created: 51   # +6 2026-08-21 (WS-611/612/613/614/616/617)
   regressions_prevented: 0       # Findings that matched failure library patterns
   invariant_violations_caught: 1  # Times invariant checks caught issues
-  drift_corrections: 9           # State drift detected and fixed — +5: 12 orphan finding refs, 3 prior-run findings recovered, problem_class vocabulary split, 2 undeclared engine substitutions, 1 orphan session lock
-  decisions_recorded: 41   # +26 2026-08-07 (6 overnight captures + 20 recovered DEC-048..067)
-  sessions_with_handoff: 5   # +1 ses-20260807-0535 (evidence/overnight-handoff-2026-08-07.md)
+  drift_corrections: 11   # +2 2026-08-21 (orphaned compute job record + stale worktree on cm-node1)
+  decisions_recorded: 43   # +2 2026-08-21 (DEC-156 orphan-landing precedent, DEC-157 effect-size sizing)
+  sessions_with_handoff: 6   # +1 2026-08-21 (ses-20260821-1637)
   # Calculated at read time:
   # value_density = total_findings_caught / max(engine_runs_total, 1)
   # session_continuity = sessions_with_handoff / max(total_sessions, 1)

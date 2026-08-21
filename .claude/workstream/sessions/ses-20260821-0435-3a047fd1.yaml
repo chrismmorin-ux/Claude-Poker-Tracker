@@ -1,0 +1,64 @@
+id: "ses-20260821-0435-3a047fd1"
+status: active
+revived_at: "2026-08-21T15:48:23.971Z"
+started_at: "2026-08-21T04:35:18.383Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-21T21:19:41.621Z"
+pid: 43312
+pid_recorded_at: "2026-08-21T21:19:41.621Z"
+host: MorinComputer
+agent_session_id: "3a047fd1-14e5-481e-9742-1c09e00a0a51"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/table-manager.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/__tests__/table-manager.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/side-panel.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/state-invariants.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/__tests__/pipeline-visibility-gating.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/__tests__/state-invariants.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/harness/harness.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/__tests__/fixtures.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/harness/verify-harness.mjs"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/CLAUDE.md"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/constants.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/storage-writer.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/content/ignition-capture.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/background/service-worker.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/__tests__/capture-gap-ledger.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/silence-detector.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/__tests__/silence-detector.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/render-orchestrator.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/render-coordinator.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/__tests__/status-bar-recency.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/__tests__/connected-waiting-rearm.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/manifest.json"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/frame-capture.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/__tests__/journal-quota.test.js"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/side-panel.html"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/STATE_FIELD_SCOPES.md"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/side-panel/__tests__/storage-warning.test.js"
+  - "system/state.md"
+  - ".claude/workstream/sessions/ses-20260821-1714-4034dc7a.yaml"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/build.mjs"
+  - ".claude/worktrees/sidebar-table-identity/ignition-poker-tracker/shared/__tests__/build-stamp.test.js"
+  - ".claude/workstream/queue/WS-615.yaml"
+  - "ignition-poker-tracker/manifest.json"
+  - "ignition-poker-tracker/shared/constants.js"
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/shared/hand-state-machine.js"
+  - ".claude/workstream/queue/WS-618.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-21.
+  Original start: 2026-08-21T04:35:18.383Z.
+  Last heartbeat: 2026-08-21T04:35:18.383Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

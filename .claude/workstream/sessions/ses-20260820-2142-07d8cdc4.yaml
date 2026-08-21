@@ -1,12 +1,12 @@
 id: "ses-20260820-2142-07d8cdc4"
-status: active
+status: "abandoned"
 started_at: "2026-08-20T21:42:12.496Z"
-ended_at: null
+ended_at: "2026-08-21T03:18:02Z"
 mode: auto
-last_heartbeat: "2026-08-20T21:42:12.496Z"
+last_heartbeat: "2026-08-21T01:14:37.149Z"
 pid: 37200
-pid_recorded_at: "2026-08-20T21:42:12.496Z"
-host: "MorinComputer"
+pid_recorded_at: "2026-08-21T01:14:37.149Z"
+host: MorinComputer
 agent_session_id: "07d8cdc4-19b8-41e5-b043-4080e6e7d0b9"
 
 # Registered automatically by cwos-session-register (SessionStart hook, WS-533).
@@ -15,4 +15,20 @@ agent_session_id: "07d8cdc4-19b8-41e5-b043-4080e6e7d0b9"
 claimed_items: []
 files_locked:
   - "scripts/__tests__/guideLedger.test.js"
+  - ".claude/workstream/queue/WS-607.yaml"
+  - "docs/standard-of-record/REFINEMENT-BUDGET-CURVE.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-21.
+  Original start: 2026-08-20T21:42:12.496Z.
+  Last heartbeat: 2026-08-21T01:14:37.149Z.
 
+  Git commits during this session (3):
+    - c1db43d9 feat(ws-540): state the n that would resolve a rung, and queue the 100k run on node1
+    - 6b66266d feat(ws-540): replay rungs from a persisted set — and the gate caught three real bugs
+    - 5ace2629 feat(ws-540): the decision set an arm authored tomorrow can still be scored against
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

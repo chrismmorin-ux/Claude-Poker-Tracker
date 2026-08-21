@@ -3,8 +3,8 @@ title: "Per-branch rake on the pot each branch actually reaches — including th
 legacy_id: ""
 type: fix
 status: active
-claimed_by: "ses-20260815-0027-08103047"
-claimed_at: "2026-08-15T00:40:00Z"
+claimed_by: null
+claimed_at: null
 started_at: "2026-08-13T15:20:00Z"
 completed_at: null
 completion_commit: null

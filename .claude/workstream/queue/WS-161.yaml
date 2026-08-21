@@ -2,8 +2,8 @@ id: "WS-161"
 title: "PIO G5 child B — Camera Capture Modal (S2)"
 type: improvement
 status: completed
-claimed_by: "session-2026-05-03-next"
-claimed_at: "2026-05-04T14:50:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: "2026-05-04T16:25:00Z"
 priority_score: 18.0
 priority_label: "P2"

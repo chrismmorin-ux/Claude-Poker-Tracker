@@ -3,8 +3,8 @@ title: "Gate 5 — Implementation (multi-PR + ongoing authoring) — TRACKING PA
 legacy_id: "SCF-G5"
 type: improvement
 status: done
-claimed_by: "session-2026-05-03-next"
-claimed_at: "2026-05-03T08:45:00Z"
+claimed_by: null
+claimed_at: null
 completed_at: null
 children: ["WS-145", "WS-146", "WS-147", "WS-148", "WS-149"]
 status_note: |

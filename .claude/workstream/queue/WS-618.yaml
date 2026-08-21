@@ -1,0 +1,91 @@
+id: "WS-618"
+title: "Session recovery builds its release list from the session's self-reported `claimed_items`, so a session that died without recording a claim fences that item forever — WS-492 sat claimed by a 6-day-dead session while recovery reported 'none abandoned'"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 55.0
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  FOUND 2026-08-21 while clearing the queue. Every file:line verified against the installed kit.
+
+  THE DEFECT. `kit/scripts/cwos-session-recovery.js:338`:
+
+      releaseClaimedItems(wsDir, session.id, session.claimed_items);
+
+  The candidate list comes from the SESSION RECORD's `claimed_items` array. The authoritative
+  fact lives on the other side of the relationship — `claimed_by` on the queue item. When a
+  session dies without ever writing its claim into its own record, the two disagree, and
+  recovery iterates an empty list and releases nothing.
+
+  MEASURED INSTANCE:
+
+      .claude/workstream/queue/WS-492.yaml     claimed_by: ses-20260815-0620-63500894
+      .../sessions/ses-20260815-0620-63500894  status: abandoned, ended 2026-08-15T11:18:02Z
+      .../sessions/ses-20260815-0620-63500894  claimed_items: []
+
+      $ node kit/scripts/cwos-session-recovery.js --auto
+      session-recovery: 1 active session(s), none abandoned.
+
+  WS-492 was claimed by a session that ended six days earlier, and recovery reported success
+  while releasing nothing. The item was invisible to `/next` for that entire period — it is a
+  P1 (`priority_score: 44`, "every prior, policy, curve and reference table in this system is
+  fitted on 2 of the 27 available corpus stake directories"), so the queue was fenced off from
+  one of its higher-value items by a bookkeeping mismatch.
+
+  WHY THIS IS NOT WS-564, THOUGH IT LOOKS LIKE IT. WS-564 fixed HOW ownership is tested —
+  `releaseClaimedItems` used to guard on `status === 'claimed'`, a value nothing writes, and it
+  now correctly tests `claimed_by`. That fix is intact and the function is right. This is one
+  level up: WHERE THE CANDIDATE LIST COMES FROM. A correct test applied to a list that was
+  never populated still releases nothing, and still reports success. The function's own header
+  comment describes the WS-564 lesson at length, which makes the surviving instance of the same
+  shape easy to miss.
+
+  WHY THE LIST IS EMPTY. `claimed_items` is written into the session record at claim time. Any
+  path that claims an item without updating the session record — or any session registered by
+  the SessionStart hook that never ran `/workstream claim` — leaves the array empty while the
+  queue item carries the owner. The registry is populated automatically (WS-533) but the claim
+  linkage is not, so the two are independently maintained and drift silently.
+
+  SCOPE NOTE: `kit/` is synced from HomeBase (`.cwos-version.homebase_path:
+  C:/Users/chris/repos/homebase`, kit 3.10.3). A fix applied only in this repo is reverted by
+  the next `/kit-upgrade`. The fix belongs upstream and should land in HomeBase, then flow back.
+accept_criteria:
+  - "Recovery derives its release candidates from the QUEUE, not from the session record: scan `queue/*.yaml` for a non-null `claimed_by` whose owning session is not live, and release those. The session's own `claimed_items` may remain as a hint, but it must not be the only source — a list that was never written cannot be the authority on what was claimed."
+  - "A test that reproduces the exact measured state: an item with `claimed_by: <session>` where that session's record exists, is abandoned, and has `claimed_items: []`. Against the current kit the item stays claimed and recovery reports success; that assertion must fail before the fix and pass after."
+  - "Recovery's summary line distinguishes 'nothing to do' from 'found nothing to look at'. `none abandoned` was printed while an orphan claim existed, which is the same class of statement as the swallowed quota throw in WS-515 — a report of success from a path that never examined the thing it claims to have checked."
+  - "Orphan claims are DETECTABLE without running recovery: `cwos-reconcile`'s integrity checks report any `claimed_by` naming a session that is not live. A fence nobody can see is the defect one layer up, and reconcile runs from the SessionStart hook where recovery does not."
+  - "Fixed in HomeBase's kit and flowed back here, not patched locally. Verify after a `/kit-upgrade` that the fix survived — a local-only patch to `kit/` is reverted by design and would make this look fixed while it regressed."
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "kit/scripts/cwos-session-recovery.js"
+  - "kit/scripts/cwos-reconcile.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "queue-cleanup-2026-08-21"
+created_at: "2026-08-21"
+updated_at: "2026-08-21"
+status_note: |
+  WS-492's claim was released by hand during this cleanup, so that specific item is back in the
+  queue. This ticket is about the mechanism, not the instance — nothing prevents the next
+  crashed session from fencing another item the same way.
+
+  Worth checking as part of the fix: how many other items are currently claimed by sessions that
+  are not live. One was found here, but the search was prompted by noticing WS-492 in a
+  `by-status claimed` listing rather than by any check that exists.

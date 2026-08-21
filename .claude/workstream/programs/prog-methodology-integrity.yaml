@@ -46,22 +46,34 @@ capability_brief:
 problem_classes:
   - name: "Scoring/Classification Bias"
     description: "The method of scoring or classifying produces systematically skewed results"
-    examples: ["[CUSTOMIZE: e.g., missing-data inflates scores, evidence tier misapplied, confidence overfit]"]
+    examples:
+      - "claim-survival reported as 45.9% (39/85) by putting the 8 UNVERIFIABLE claims in the denominator, i.e. scoring them as refuted; the pre-registered statistic is held/(held+refuted) = 39/77 = 50.6% (compact-tier.cjs:86-90, 2026-08-06)"
+      - "a census of 145 label-shaped constructs reported as 145 doctrine VIOLATIONS; labelLedger.js:11-12 is an inventory and marks legitimate members (design-critique 2026-08-20)"
+      - "an audit judged by the same model whose error rate is the object of study, reported as an accuracy rate rather than as agreement with an unvalidated judge"
     detection: "Bias audit, calibration check, sensitivity analysis on methodology parameters"
 
   - name: "Sample Size & Statistical Validity"
     description: "Decisions are made on insufficient data, or confidence exceeds what the data supports"
-    examples: ["[CUSTOMIZE: e.g., n=5 treated as conclusive, confidence intervals too tight, Bayesian priors miscalibrated]"]
+    examples:
+      - "a detector precision result drawn from the 14 SMALLEST transcripts over 200KB - the sessions carrying the least accumulated context, and therefore the least of the error under study (p2class.py:39-40, 2026-08-20)"
+      - "AS-CRP-5 reported refuted at n=103 when the on-point evidence was n=4; the n=103 set carried no hole markers and so tested a different proposition (design-critique Phase 3, 2026-08-20)"
+      - "n=5 treated as conclusive; an interval quoted without the n that would resolve it"
     detection: "Sample size verification, confidence calibration check, prior sensitivity analysis"
 
   - name: "Post-Hoc Fitting & Flexibility"
     description: "Results look good because the method was tuned to match known answers"
-    examples: ["[CUSTOMIZE: e.g., parameters chosen to match first, then 'predicted'; search space not disclosed]"]
+    examples:
+      - "a prototype whose own output said 2 TP-candidate, relabelled by its author to 0/11 precision and reported as a refutation (design-critique Phase 2, 2026-08-20)"
+      - "a detector that auto-classifies a whole input class as false positives via its own spec bug, then reports the resulting rate as the detector precision"
+      - "parameters chosen to match a known answer first, then described as predicted; search space not disclosed"
     detection: "Degrees of freedom audit, search space enumeration, blind prediction verification"
 
   - name: "Cross-Method Consistency"
     description: "Different methods applied to the same question produce different answers"
-    examples: ["[CUSTOMIZE: e.g., two calculation paths give different totals, aggregation hides detail-level disagreement]"]
+    examples:
+      - "one quantity, three published values: the always-injected residue is stated as 51,684 bytes at context-barrier.cjs:20, as ~71,953 in the accuracy-program handoff, and measures 107,825 today - none marked superseded"
+      - "two calculation paths give different totals; aggregation hides a detail-level disagreement"
+      - "a figure quoted from a document whose own re-check corrected it, with the correction sitting in a sibling file nobody opened"
     detection: "Multi-path verification, reconciliation check, aggregate-vs-detail comparison"
 
   - name: "Methodology Drift"
@@ -212,15 +224,15 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
 findings_open: 11
-work_items_open: 24
+work_items_open: 29
 
 cap_breach:
   active: true
-  work_items_open: 24
+  work_items_open: 29
   findings_open: 11
   max_open_items: 20
   priority_floor: 18
-  ratio: 1.2
+  ratio: 1.45
   since: "2026-08-20"
 evidence:
   last_audit_report: null

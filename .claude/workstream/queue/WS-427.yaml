@@ -3,8 +3,8 @@ title: "Rename `edgeBBPer100` to `edgeBBPer100Decisions` — it was diagnosed as
 legacy_id: ""
 type: chore
 status: done
-claimed_by: ses-20260806-1914-a5dbb4b5
-claimed_at: "2026-08-06T20:30:00Z"
+claimed_by: null
+claimed_at: null
 started_at: "2026-08-06T20:30:00Z"
 completed_at: "2026-08-06T20:35:00Z"
 completion_commit: null
