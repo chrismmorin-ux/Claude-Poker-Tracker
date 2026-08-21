@@ -991,6 +991,34 @@ function panel(status, ranked, already) {
     L.push('  REVIEWS  none outstanding');
   }
 
+  // FAILED — the half REVIEWS structurally cannot show, and the reason `status` could report
+  // a dead job as an idle machine.
+  //
+  // harvest() already files a review item for every non-succeeded run (see its comment: a
+  // failed job "lands in no inbox and is exactly as invisible as an unreviewed success —
+  // arguably worse, since the machine then sits idle having achieved nothing"). But harvest
+  // runs at the top of /next. Between the failure and the next /next, the ONLY thing `status`
+  // said was `NOW IDLE`.
+  //
+  // MEASURED FAILURE, 2026-08-20: ws-594 died at worktree setup, `status` printed IDLE, and
+  // the run was reported as in progress on that basis. The data was already here —
+  // doneOutcomes() had the record and its detail — and nothing rendered it. Once harvest has
+  // filed a failure it appears under REVIEWS, so this line shows only the UNFILED ones and
+  // does not double-report.
+  const unfiledFailures = doneOutcomes()
+    .filter((t) => t.outcome && t.outcome !== 'succeeded' && /^ws-\d+-/i.test(t.id))
+    .filter((t) => !fs.existsSync(path.join(INBOX_DIR, t.id, HARVEST_MARKER)));
+  if (unfiledFailures.length) {
+    L.push(`  FAILED   ${unfiledFailures.length} job(s) ended NON-SUCCESSFULLY and are not yet filed as reviews:`);
+    for (const f of unfiledFailures.slice(0, 3)) {
+      const why = String(f.recordDetail || 'no detail recorded').split(String.fromCharCode(10))[0].trim().slice(0, 96);
+      L.push(`           ${f.id} — ${why}`);
+    }
+    if (unfiledFailures.length > 3) L.push(`           …and ${unfiledFailures.length - 3} more`);
+    L.push('           These file as review items on the next /next. A failed job returns no');
+    L.push('           artifacts, so nothing else surfaces it — do not read IDLE as finished.');
+  }
+
   // BLOCKED — named so they stop reading as "just needs a spec" forever.
   if (blocked.length) {
     L.push(`  BLOCKED  ${blocked.length} item(s) need CODE before they can ever run: ${blocked.map((c) => c.id).join(', ')}`);
