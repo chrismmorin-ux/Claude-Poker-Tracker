@@ -12,8 +12,13 @@ export const MSG = {
   GET_LIVE_CONTEXT: 'get_live_context',
   GET_ACTION_ADVICE: 'get_action_advice',
   GET_PIPELINE_STATUS: 'get_pipeline_status',
+  // LEGACY, and both are no-ops. They addressed a staging buffer that no longer exists;
+  // GET_CAPTURED_HANDS returning an empty array is what made the popup's Export button
+  // silently produce empty files. Use GET_JOURNAL_HANDS instead.
   GET_CAPTURED_HANDS: 'get_captured_hands',
   CLEAR_CAPTURED_HANDS: 'clear_captured_hands',
+  // The durable journal — where completed hands actually live.
+  GET_JOURNAL_HANDS: 'get_journal_hands',
   PING: 'ping',
   GET_DIAGNOSTIC_LOG: 'get_diagnostic_log',
   // App-bridge → SW (storage relay, replaces direct chrome.storage.session access)
@@ -61,7 +66,31 @@ export const STORAGE_KEYS = {
   // Monotonic count of journal entries evicted by the cap without ever being
   // ACKed by the app — i.e. actual, permanent hand loss. Surfaced, not silent.
   HAND_JOURNAL_DROPPED: 'ignition_hand_journal_dropped',
+  // Wall-clock ms of the last successful contact with the local session sink.
+  // The journal keeps a hand for the sink only while the sink is DEMONSTRABLY in
+  // use; without this, a founder who never runs the sink would accumulate 5000
+  // undeliverable hands against a 10MB quota. See SINK_STALE_MS in storage-writer.
+  SINK_LAST_SEEN_AT: 'ignition_sink_last_seen_at',
 };
+
+/**
+ * Local session sink (scripts/sessionSink/serve.mjs) — the path that puts a played hand on
+ * disk where the review runner can read it.
+ *
+ * Loopback only, and 8791 deliberately: 5173 is this repo's Vite dev server (already in
+ * host_permissions), 8384 is Syncthing's UI, 8001 is the police-accountability tailnet service.
+ *
+ * NOTHING in the capture path may depend on this being up. It is a convenience on top of a
+ * journal that is already durable — if the sink never runs, the founder loses a review, never
+ * a hand.
+ */
+export const SESSION_SINK = Object.freeze({
+  ORIGIN: 'http://127.0.0.1:8791',
+  HAND: 'http://127.0.0.1:8791/hand',
+  HANDS: 'http://127.0.0.1:8791/hands',
+  HEALTH: 'http://127.0.0.1:8791/health',
+  TIMEOUT_MS: 2000,
+});
 
 // Default values for settings keys. Single source of truth — options page
 // and side-panel boot both read through this map.

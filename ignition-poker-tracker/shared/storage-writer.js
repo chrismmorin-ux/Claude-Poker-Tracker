@@ -55,6 +55,7 @@ const QUEUE_LOCK = 'poker_hand_queue_lock';
 // money-hand data is the right side of the bet.
 const JOURNAL_KEY = STORAGE_KEYS.HAND_JOURNAL;
 const DROPPED_KEY = STORAGE_KEYS.HAND_JOURNAL_DROPPED;
+const SINK_LAST_SEEN_KEY = STORAGE_KEYS.SINK_LAST_SEEN_AT;
 const JOURNAL_LOCK = 'poker_hand_journal_lock';
 export const MAX_JOURNAL = 5000;
 
@@ -96,24 +97,131 @@ const journalAppend = (handRecord) => {
   });
 };
 
+// ============================================================================
+// TWO CONSUMERS, ONE JOURNAL
+// ============================================================================
+//
+// The journal originally had exactly one consumer — the app — so an entry was
+// removed the moment the app ACKed it. The local session sink is a SECOND
+// consumer, and it is frequently offline (it only runs on G16, and G16 is
+// shutdown-prone). An entry dropped on the app's ACK alone would be gone before
+// the sink ever saw it, which is precisely the loss WS-358 exists to prevent.
+//
+// So an entry now carries two flags and leaves only when BOTH consumers are
+// satisfied. Entries written before this change have neither flag; absent reads
+// as false, which is correct — anything still in the journal is by definition
+// un-ACKed by the app.
+//
+// THE BOUND, AND THE COST IT ACCEPTS.
+//
+// If the sink is never installed, "satisfied by the sink" would never arrive and
+// the journal would fill to MAX_JOURNAL (5000 hands, ~9MB measured against a
+// 10MB quota). So sink retention applies only while the sink has been SEEN
+// within SINK_STALE_MS. Past that the sink is treated as not in use and the
+// journal reverts to exactly its pre-existing app-only behaviour.
+//
+// The cost, named: if the sink stays down for longer than SINK_STALE_MS while the
+// founder plays, those hands still reach the app and IndexedDB — they are not
+// lost — but they will not backfill to the sink, and a review for them has to be
+// rebuilt from the app's own export instead. Every ordinary outage (browser
+// restart, sink crash, reboot, a weekend away) is far inside the window.
+const SINK_STALE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** Has the sink been seen recently enough that the journal should hold hands for it? */
+const sinkRetentionActive = async () => {
+  if (!_checkLocal()) return false;
+  try {
+    const r = await chrome.storage.local.get(SINK_LAST_SEEN_KEY);
+    const seen = Number(r?.[SINK_LAST_SEEN_KEY] || 0);
+    return seen > 0 && (Date.now() - seen) < SINK_STALE_MS;
+  } catch (_) {
+    return false;
+  }
+};
+
+/** Record that the sink answered. Cheap, and it is what arms retention. */
+export const noteSinkSeen = async () => {
+  if (!_checkLocal()) return;
+  try {
+    await chrome.storage.local.set({ [SINK_LAST_SEEN_KEY]: Date.now() });
+  } catch (e) {
+    errors.report('storage', e, { op: 'noteSinkSeen' });
+  }
+};
+
 /**
- * Drop journal entries the app has confirmed receiving.
+ * Mark journal entries as ACKed by one consumer, and drop those both consumers have.
  * @param {Set<string>} idSet
+ * @param {'app'|'sink'} consumer
  */
-const journalPrune = (idSet) => {
+const journalAck = (idSet, consumer) => {
   if (!_checkLocal()) return Promise.resolve();
   return navigator.locks.request(JOURNAL_LOCK, async () => {
     try {
+      const holdForSink = await sinkRetentionActive();
       const result = await chrome.storage.local.get(JOURNAL_KEY);
       const journal = result[JOURNAL_KEY] || [];
-      const kept = journal.filter(h => !idSet.has(h.captureId));
-      if (kept.length !== journal.length) {
-        await chrome.storage.local.set({ [JOURNAL_KEY]: kept });
+      const flag = consumer === 'sink' ? '_ackSink' : '_ackApp';
+
+      const next = [];
+      let changed = false;
+      for (const h of journal) {
+        const entry = idSet.has(h.captureId) && !h[flag]
+          ? (changed = true, { ...h, [flag]: true })
+          : h;
+        // The app is always required. The sink is required only while retention is armed —
+        // otherwise an uninstalled sink would pin every hand forever.
+        const done = entry._ackApp && (!holdForSink || entry._ackSink);
+        if (done) changed = true; else next.push(entry);
       }
+      if (changed) await chrome.storage.local.set({ [JOURNAL_KEY]: next });
     } catch (e) {
-      errors.report('storage', e, { op: 'journalPrune' });
+      errors.report('storage', e, { op: `journalAck:${consumer}` });
     }
   });
+};
+
+const journalPrune = (idSet) => journalAck(idSet, 'app');
+
+/**
+ * Every hand the journal is holding, for export.
+ *
+ * The popup's Export button used to ask the service worker for a staging buffer that had been
+ * removed, got `[]`, and wrote a valid-looking empty file. This is the real source.
+ */
+export const getJournalHands = async () => {
+  if (!_checkLocal()) return [];
+  try {
+    const result = await chrome.storage.local.get(JOURNAL_KEY);
+    return result[JOURNAL_KEY] || [];
+  } catch (e) {
+    errors.report('storage', e, { op: 'getJournalHands' });
+    return [];
+  }
+};
+
+/** The sink's ACK. Also arms retention, since an ACK proves the sink is there. */
+export const journalAckSink = async (captureIds) => {
+  if (!captureIds || captureIds.length === 0) return;
+  await noteSinkSeen();
+  await journalAck(new Set(captureIds), 'sink');
+};
+
+/**
+ * Hands the sink has not confirmed yet — the backfill payload after an outage.
+ * Oldest first, so a capped backfill makes progress from the front rather than
+ * re-sending the same tail forever.
+ */
+export const journalPendingForSink = async (limit = 250) => {
+  if (!_checkLocal()) return [];
+  try {
+    const result = await chrome.storage.local.get(JOURNAL_KEY);
+    const journal = result[JOURNAL_KEY] || [];
+    return journal.filter(h => !h._ackSink).slice(0, limit);
+  } catch (e) {
+    errors.report('storage', e, { op: 'journalPendingForSink' });
+    return [];
+  }
 };
 
 /**
@@ -157,8 +265,12 @@ export const getJournalStatus = async () => {
   if (!_checkLocal()) return { pending: 0, dropped: 0 };
   try {
     const result = await chrome.storage.local.get([JOURNAL_KEY, DROPPED_KEY]);
+    const journal = result[JOURNAL_KEY] || [];
     return {
-      pending: (result[JOURNAL_KEY] || []).length,
+      pending: journal.length,
+      // How many hands are waiting on the SINK specifically. A number that keeps climbing is
+      // the visible symptom of a sink that is down, which is the whole point of surfacing it.
+      pendingSink: journal.filter(h => !h._ackSink).length,
       dropped: result[DROPPED_KEY] || 0,
     };
   } catch (_) {

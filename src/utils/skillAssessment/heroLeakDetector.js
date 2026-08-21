@@ -14,6 +14,10 @@
  */
 
 import { getSolverBaseline } from './solverBaselines.js';
+// The matching loop lives in its own module so plain Node can run it. This file keeps the
+// `import.meta.glob` registry, which is Vite-only and is what made the whole tree
+// unimportable outside the browser. See detectWithRules.js for the full reasoning.
+import { detectWithRules } from './detectWithRules.js';
 
 // Auto-load all rule files. Excludes _template.js (not a real rule).
 const ruleModules = import.meta.glob('./leakRules/*.js', { eager: true });
@@ -38,51 +42,20 @@ const REGISTRY = (() => {
  * Iterate all registered leak rules against the accumulator buckets, return
  * the array of fired leaks (CD-5-compliant claim objects).
  *
+ * The loop itself is `detectWithRules` — shared with the node-side session-review runner so
+ * there is exactly one implementation of rule matching. This function's only job is to supply
+ * the browser's glob-built registry and the default solver-baseline lookup.
+ *
  * @param {object} accumulatorOutput - Output of accumulateHeroDecisions().
  * @param {object} [options]
  * @param {function} [options.baselineLookup] - Override (test injection).
  * @returns {Array<object>} - Fired leaks; empty if none.
  */
-export const detectHeroLeaks = (accumulatorOutput, options = {}) => {
-  if (!accumulatorOutput?.buckets) return [];
-  const lookupBaseline = options.baselineLookup || getSolverBaseline;
-
-  // Rules declare which bucket type they consume via `bucketType`:
-  //   - 'action' (default) — the 8-axis per-action buckets (fold-rate rules).
-  //   - 'decision' — the parallel aggression-frequency decision buckets
-  //     (WS-146 SPR-108; e.g. multiway cbet-frequency). These live in
-  //     accumulatorOutput.decisionBuckets.
-  // Each rule is invoked ONLY against its own bucket type so a frequency rule
-  // never sees a fold-rate bucket and vice versa.
-  const actionRules = REGISTRY.filter(({ rule }) => (rule.bucketType ?? 'action') === 'action');
-  const decisionRules = REGISTRY.filter(({ rule }) => rule.bucketType === 'decision');
-
-  const fired = [];
-
-  for (const bucket of Object.values(accumulatorOutput.buckets)) {
-    for (const { rule } of actionRules) {
-      if (!rule.matchesBucket(bucket.situationKey)) continue;
-      const baselineKey = rule.solverBaselineKey(bucket.situationKey);
-      const baseline = lookupBaseline(baselineKey);
-      const leak = rule.detect(bucket, baseline);
-      if (leak) fired.push(leak);
-    }
-  }
-
-  if (decisionRules.length && accumulatorOutput.decisionBuckets) {
-    for (const bucket of Object.values(accumulatorOutput.decisionBuckets)) {
-      for (const { rule } of decisionRules) {
-        if (!rule.matchesBucket(bucket.situationKey)) continue;
-        const baselineKey = rule.solverBaselineKey(bucket.situationKey);
-        const baseline = lookupBaseline(baselineKey);
-        const leak = rule.detect(bucket, baseline);
-        if (leak) fired.push(leak);
-      }
-    }
-  }
-
-  return fired;
-};
+export const detectHeroLeaks = (accumulatorOutput, options = {}) => detectWithRules(
+  accumulatorOutput,
+  REGISTRY,
+  { baselineLookup: options.baselineLookup || getSolverBaseline },
+);
 
 /**
  * Diagnostic: list all registered rule IDs (for tests + catalog sync).

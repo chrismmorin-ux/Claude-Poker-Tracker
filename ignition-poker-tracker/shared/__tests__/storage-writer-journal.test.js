@@ -173,3 +173,128 @@ describe('storage-writer — durable hand journal', () => {
     expect(stub.localStore[JOURNAL_KEY]).toHaveLength(1);
   });
 });
+
+/**
+ * TWO CONSUMERS, ONE JOURNAL.
+ *
+ * The local session sink is a second consumer of the same journal, and it is offline far more
+ * often than the app is — it only runs on G16, and G16 is shutdown-prone. Releasing an entry on
+ * the app's ACK alone would destroy it before the sink ever saw it, which is the same class of
+ * loss WS-358 was written to end.
+ *
+ * The bound matters as much as the retention: a founder who never installs the sink must not
+ * accumulate 5000 undeliverable hands against a 10MB quota. So retention is armed only by
+ * evidence that the sink exists, and it disarms when that evidence goes stale.
+ */
+describe('storage-writer — the journal serves the app AND the local sink', () => {
+  let stub;
+  let sw;
+
+  const SINK_SEEN_KEY = 'ignition_sink_last_seen_at';
+  const JOURNAL_KEY2 = 'ignition_hand_journal';
+  const QUEUE_KEY2 = 'hand_delivery_queue';
+
+  beforeEach(async () => {
+    stub = makeChromeStub();
+    globalThis.chrome = stub.chrome;
+    vi.stubGlobal('navigator', { locks: locksStub });
+    stub.chrome.runtime = { getManifest: () => ({ version: 'test' }) };
+    sw = await import('../storage-writer.js?two-consumer-test');
+  });
+
+  it('releases on the app ACK alone when the sink has never been seen — unchanged behaviour', async () => {
+    await sw.enqueueHand(hand(1));
+    const [id] = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+
+    await sw.dequeueHands([id]);
+
+    // No sink has ever answered, so nothing is being held for it. This is the property that
+    // stops an uninstalled sink from pinning the journal forever.
+    expect(stub.localStore[JOURNAL_KEY2]).toHaveLength(0);
+  });
+
+  it('HOLDS the hand when the sink is live and only the app has ACKed', async () => {
+    await sw.noteSinkSeen();
+    await sw.enqueueHand(hand(1));
+    const [id] = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+
+    await sw.dequeueHands([id]);
+
+    // The app has it; the sink has not. Dropping it here is exactly the loss being prevented.
+    expect(stub.localStore[JOURNAL_KEY2]).toHaveLength(1);
+    expect(stub.localStore[JOURNAL_KEY2][0]._ackApp).toBe(true);
+    expect(stub.localStore[JOURNAL_KEY2][0]._ackSink).toBeUndefined();
+  });
+
+  it('releases only once BOTH consumers have ACKed', async () => {
+    await sw.noteSinkSeen();
+    await sw.enqueueHand(hand(1));
+    const [id] = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+
+    await sw.journalAckSink([id]);
+    expect(stub.localStore[JOURNAL_KEY2]).toHaveLength(1); // app still outstanding
+
+    await sw.dequeueHands([id]);
+    expect(stub.localStore[JOURNAL_KEY2]).toHaveLength(0);
+  });
+
+  it('order does not matter — sink first or app first both release', async () => {
+    await sw.noteSinkSeen();
+    await sw.enqueueHand(hand(1));
+    await sw.enqueueHand(hand(2));
+    const [a, b] = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+
+    await sw.dequeueHands([a]);        // app first
+    await sw.journalAckSink([a]);
+    await sw.journalAckSink([b]);      // sink first
+    await sw.dequeueHands([b]);
+
+    expect(stub.localStore[JOURNAL_KEY2]).toHaveLength(0);
+  });
+
+  it('offers exactly the un-ACKed hands as the backfill payload', async () => {
+    await sw.noteSinkSeen();
+    await sw.enqueueHand(hand(1));
+    await sw.enqueueHand(hand(2));
+    await sw.enqueueHand(hand(3));
+    const ids = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+
+    await sw.journalAckSink([ids[1]]);
+
+    const pending = await sw.journalPendingForSink();
+    expect(pending.map(h => h.captureId)).toEqual([ids[0], ids[2]]);
+  });
+
+  it('disarms retention when the sink has been gone too long, so the journal cannot grow forever', async () => {
+    // Four days ago — past the 3-day retention window.
+    stub.localStore[SINK_SEEN_KEY] = Date.now() - 4 * 24 * 60 * 60 * 1000;
+    await sw.enqueueHand(hand(1));
+    const [id] = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+
+    await sw.dequeueHands([id]);
+
+    // The sink is treated as not in use. The cost is named in the source: those hands reached
+    // the app and IndexedDB, so they are not lost — they just will not backfill to the sink.
+    expect(stub.localStore[JOURNAL_KEY2]).toHaveLength(0);
+  });
+
+  it('reports the sink backlog separately, so a dead sink is visible rather than silent', async () => {
+    await sw.noteSinkSeen();
+    await sw.enqueueHand(hand(1));
+    await sw.enqueueHand(hand(2));
+    const ids = stub.sessionStore[QUEUE_KEY2].map(h => h.captureId);
+    await sw.journalAckSink([ids[0]]);
+
+    const status = await sw.getJournalStatus();
+    expect(status).toMatchObject({ pending: 2, pendingSink: 1, dropped: 0 });
+  });
+
+  it('getJournalHands returns the real hands — the export button had been shipping []', async () => {
+    await sw.enqueueHand(hand(1));
+    await sw.enqueueHand(hand(2));
+
+    const hands = await sw.getJournalHands();
+    expect(hands).toHaveLength(2);
+    expect(hands.every(h => h.captureId)).toBe(true);
+  });
+});
