@@ -151,6 +151,10 @@ export class RenderCoordinator {
       staleContext: false,
       // Has-hands flag for no-table visibility (Fix 2)
       hasTableHands: true,
+      // WS-515: durable-journal capacity + permanent-loss counters. Null until
+      // the first read; renderStorageWarning shows nothing while unknown,
+      // because unknown is not evidence of loss.
+      journalHealth: null,
       // Fix 6c: Pipeline event log (capped at 50, NOT in renderKey)
       pipelineEvents: [],
       // RT-66 + STP-1: invariant-violation surfacing.
@@ -307,6 +311,7 @@ export class RenderCoordinator {
       appSeatDataVersion: s.appSeatDataVersion,
       staleContext: s.staleContext,
       hasTableHands: s.hasTableHands,
+      journalHealth: s.journalHealth,
       planPanelOpen: s.planPanelOpen,
       modeAExpired: s.modeAExpired,
       // V-status §I INV-STATUS-4: surface the timeout flag so renderers can
@@ -1232,19 +1237,35 @@ export class RenderCoordinator {
    * arm/clear the timer accordingly. Callers pass a triple of inputs;
    * the method decides the outcome.
    *
-   * Spec §I.8: condition = connected && tableCount > 0 && handCount === 0.
-   * `handCount === 0` is strict — `null` (boot-race / not yet computed)
-   * does NOT arm the timer; only a confirmed-empty count does. This
-   * prevents the timer from arming during the first-frame hydration gap
-   * where lastHandCount is briefly null.
+   * Spec §I.8: condition = connected && tableCount > 0 && no recent hand.
+   *
+   * `handCount === 0` is strict — `null` (boot-race / not yet computed) does
+   * NOT arm the timer; only a confirmed-empty count does. This prevents the
+   * timer from arming during the first-frame hydration gap where lastHandCount
+   * is briefly null. That distinction is correct and is preserved exactly.
+   *
+   * WS-517: the condition used to be `handCount === 0` ALONE, so the escalation
+   * could only ever arm before the first hand of a session and never re-armed
+   * afterwards. A capture that died after 40 hands sat at a confident "Tracking
+   * · 40 hands" indefinitely with no escalation available. Staleness now also
+   * arms it: a table is present, we are connected, and no hand has completed
+   * for HAND_STALE_MS. Passing `handStaleMs` is how the caller reports that;
+   * omitting it preserves the original behaviour exactly.
    *
    * @param {Object} params
    * @param {boolean} params.connected - port-bridge connected
    * @param {number} params.tableCount - active table count from pipeline
    * @param {number|null} params.handCount - lastHandCount (null = unknown)
+   * @param {number|null} [params.handAgeMs] - ms since the last completed hand
+   *   (null = unknown; never arms the timer, for the same reason null handCount
+   *   does not — unknown is not evidence of a problem)
+   * @param {number} [params.handStaleMs] - threshold above which hand flow is stale
    */
-  evaluateConnectedWaitingTimer({ connected, tableCount, handCount }) {
-    const inWaitingState = !!connected && tableCount > 0 && handCount === 0;
+  evaluateConnectedWaitingTimer({ connected, tableCount, handCount, handAgeMs = null, handStaleMs = 300_000 }) {
+    const noHandsYet = handCount === 0;
+    const handFlowStale =
+      handCount > 0 && Number.isFinite(handAgeMs) && handAgeMs >= handStaleMs;
+    const inWaitingState = !!connected && tableCount > 0 && (noHandsYet || handFlowStale);
     if (inWaitingState) {
       // Don't re-arm if we already expired — the user has been told to
       // reload; keep the message visible until a hand arrives or the

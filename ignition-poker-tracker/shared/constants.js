@@ -68,9 +68,30 @@ export const STORAGE_KEYS = {
   HAND_JOURNAL_DROPPED: 'ignition_hand_journal_dropped',
   // Wall-clock ms of the last successful contact with the local session sink.
   // The journal keeps a hand for the sink only while the sink is DEMONSTRABLY in
-  // use; without this, a founder who never runs the sink would accumulate 5000
-  // undeliverable hands against a 10MB quota. See SINK_STALE_MS in storage-writer.
+  // use; without this, a founder who never runs the sink would accumulate
+  // undeliverable hands against the quota. See SINK_STALE_MS in storage-writer.
+  //
+  // WS-615: this comment originally read "5000 undeliverable hands against a
+  // 10MB quota". That premise is false and was never reachable — a measured
+  // 9-handed record averages 4,965 B (p95 9,185), so 10MB binds at ~2,100 hands
+  // (~650 with frame capture) and 5,000 would need ~44MB. `unlimitedStorage` now
+  // removes the ceiling, but SINK_STALE_MS must not be re-derived from 5,000.
   SINK_LAST_SEEN_AT: 'ignition_sink_last_seen_at',
+  // Monotonic count of journal writes that failed because storage was FULL.
+  // Distinct from HAND_JOURNAL_DROPPED, which counts cap eviction: the cap is
+  // a policy we chose, the quota is a wall we hit. Before WS-515 the quota
+  // throw was caught and reported to `errors` only, so the failure that
+  // actually happens was the one the loss counter could not see.
+  HAND_JOURNAL_QUOTA_FAILURES: 'ignition_hand_journal_quota_failures',
+  // Durable record of intervals during which capture was DEAD (chrome.storage.local).
+  //
+  // A capture that dies mid-session does not leave a visible gap — it leaves a
+  // session that looks complete and shorter. Hands played after the death are
+  // absent with no marker, so every downstream k/n over that session is silently
+  // conditioned on "the part of the session where capture happened to be alive",
+  // which is not a population anyone chose. A banner the founder dismissed leaves
+  // no trace; this does.
+  CAPTURE_GAPS: 'ignition_capture_gaps',
 };
 
 /**
@@ -133,6 +154,38 @@ export const EXTENSION_VERSION = (() => {
 // Build-time hash — injected by build.mjs via esbuild define, changes on every rebuild.
 // Falls back to EXTENSION_VERSION in unbundled/test contexts.
 export const BUILD_GUARD = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : EXTENSION_VERSION;
+
+/**
+ * Provenance of the loaded artifact — which branch, which commit, which
+ * checkout, built when. Injected by build.mjs (see the BUILD STAMP block there
+ * for why this exists).
+ *
+ * The fallback is deliberately conspicuous rather than plausible: an unbundled
+ * or test context must NOT be able to masquerade as a real build. `sourceDir`
+ * is the field that matters in practice — it distinguishes the main checkout
+ * from a worktree, which is the confusion this exists to end.
+ */
+export const BUILD_STAMP = typeof __BUILD_STAMP__ !== 'undefined'
+  ? __BUILD_STAMP__
+  : { version: EXTENSION_VERSION, branch: 'UNBUILT', commit: 'UNBUILT', builtAt: null, sourceDir: 'UNBUILT' };
+
+/**
+ * One-line build identity for display. Short enough for a panel footer, and
+ * carries the four things needed to tell two builds apart:
+ *   0.9.0 · sidebar-table-identity@76956d5 · 12:21
+ * `sourceDir` is prefixed when it differs from the branch, since a worktree
+ * folder name and its branch name are usually — but not always — the same.
+ */
+export const buildStampLine = (stamp = BUILD_STAMP) => {
+  const t = stamp?.builtAt ? new Date(stamp.builtAt) : null;
+  const hhmm = t && !Number.isNaN(t.getTime())
+    ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+    : '—';
+  const where = stamp?.sourceDir && stamp.sourceDir !== stamp?.branch
+    ? `${stamp.sourceDir}/${stamp.branch}`
+    : (stamp?.branch || 'unknown');
+  return `v${stamp?.version || '?'} · ${where}@${stamp?.commit || '?'} · built ${hhmm}`;
+};
 
 // Protocol version for extension ↔ app bridge messages (window.postMessage).
 // Bump when the message schema changes so mismatches are detected, not silent.

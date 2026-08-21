@@ -7,12 +7,58 @@
 
 import * as esbuild from 'esbuild';
 import { cpSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, 'dist');
 const isWatch = process.argv.includes('--watch');
+
+// ---------------------------------------------------------------------------
+// BUILD STAMP — which code is this, and where did it come from?
+// ---------------------------------------------------------------------------
+//
+// A loaded unpacked extension gives no way to tell WHICH checkout produced it.
+// On 2026-08-21 that cost a live test cycle: the founder loaded
+// `ignition-poker-tracker/dist/`, the canonical path the docs name, and it held
+// a build of a DIFFERENT branch's in-flight work — none of the fixes he was
+// testing, plus someone else's half-finished changes. The panel reported the
+// bug faithfully, and there was no way to see from inside it that the code
+// under test was not the code in question.
+//
+// The tickets had already flagged the hazard in prose ("dist/ was last built
+// 2026-08-04 and the source is two commits ahead; anything checked against the
+// loaded extension is testing old code"). Prose did not stop it. This does: the
+// build's identity is compiled INTO the artifact and rendered where it is
+// looked at, so a wrong build announces itself instead of being inferred.
+//
+// `sourceDir` is the load-bearing field — it is what distinguishes the main
+// checkout from a worktree, which is exactly the confusion that occurred.
+const git = (cmd, fallback = '') => {
+  try {
+    return execSync(cmd, { cwd: __dirname, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim();
+  } catch (_) {
+    return fallback; // not a git checkout, or git unavailable — never fail a build for this
+  }
+};
+
+const BUILD_STAMP = (() => {
+  const branch = git('git rev-parse --abbrev-ref HEAD', 'unknown');
+  const commit = git('git rev-parse --short HEAD', 'unknown');
+  // Scope the dirty check to the extension: unrelated churn elsewhere in the
+  // repo must not mark this artifact as modified.
+  const dirty = git('git status --porcelain -- .') !== '';
+  return {
+    version: JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8')).version,
+    branch,
+    commit: dirty ? `${commit}+dirty` : commit,
+    builtAt: new Date().toISOString(),
+    // Parent of ignition-poker-tracker/ — the checkout root's folder name.
+    sourceDir: basename(resolve(__dirname, '..')),
+  };
+})();
 
 // Clean dist/
 if (existsSync(DIST)) rmSync(DIST, { recursive: true });
@@ -45,6 +91,8 @@ const commonOptions = {
   sourcemap: false,
   define: {
     '__BUILD_HASH__': JSON.stringify(BUILD_HASH),
+    // Object literal, not a string — consumers read fields directly.
+    '__BUILD_STAMP__': JSON.stringify(BUILD_STAMP),
     '__CHANNEL_ID__': JSON.stringify(CHANNEL_ID),
     '__T_LC__': String(MSG_TYPES.T_LC),
     '__T_MSG__': String(MSG_TYPES.T_MSG),
@@ -179,9 +227,25 @@ manifest.content_scripts = manifest.content_scripts.map(cs => {
   return cs;
 });
 
+// `version_name` is rendered by Chrome on chrome://extensions next to the
+// version. Stamping provenance there means a wrong build announces itself AT
+// THE MOMENT OF LOADING — before any behaviour is judged — rather than only
+// inside the panel where you have to know to look. This is the cheap half of
+// the fix and the half that fires earliest.
+manifest.version_name = `${BUILD_STAMP.version} (${BUILD_STAMP.sourceDir}/${BUILD_STAMP.branch}@${BUILD_STAMP.commit})`;
+
 writeFileSync(resolve(DIST, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
+// Plain-text sibling so the artifact can be identified without Chrome, without
+// the panel, and without parsing JSON — e.g. from a shell, in a bug report, or
+// when comparing two dist/ folders.
+writeFileSync(
+  resolve(DIST, 'BUILD_INFO.txt'),
+  Object.entries(BUILD_STAMP).map(([k, v]) => `${k}: ${v}`).join('\n') + '\n'
+);
+
 console.log('[build] Generated manifest.json');
+console.log(`[build] Stamp: ${BUILD_STAMP.sourceDir}/${BUILD_STAMP.branch}@${BUILD_STAMP.commit}`);
 console.log('[build] Done! Load dist/ as unpacked extension in Chrome.');
 
 if (isWatch) {

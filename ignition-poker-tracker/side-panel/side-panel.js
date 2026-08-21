@@ -10,7 +10,7 @@ import { injectTokens } from '../shared/design-tokens.js';
 import * as stats from '../shared/stats-engine.js';
 import * as cardUtils from '../shared/card-utils.js';
 import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.js';
-import { MSG, SESSION_KEYS } from '../shared/constants.js';
+import { MSG, SESSION_KEYS, BUILD_STAMP, buildStampLine } from '../shared/constants.js';
 import { loadSettings, observeSettings } from '../shared/settings.js';
 import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../shared/frame-capture.js';
 import * as errors from '../shared/error-reporter.js';
@@ -38,10 +38,13 @@ import {
   buildModelAuditHTML,
   buildStreetProgressHTML,
   buildStatusBar,
+  buildStorageWarning,
+  HAND_STALE_MS,
   buildTournamentBarHTML,
   buildTournamentDetailHTML,
 } from './render-orchestrator.js';
 import { RenderCoordinator, PRIORITY } from './render-coordinator.js';
+import { getJournalStorageHealth } from '../shared/storage-writer.js';
 import {
   installAffordanceListener,
 } from '../shared/render-affordance.js';
@@ -243,10 +246,17 @@ injectTokens();
     const tables = pipeline?.tables || {};
     const tableCount = pipeline?.tableCount ?? Object.keys(tables).length;
     const handCount = coordinator.get('lastHandCount');
+    // WS-517: hand-flow staleness re-arms the escalation after the first hand.
+    // Gated on `handCount === 0` alone, it could only fire before a session's
+    // first hand and never again — so a capture that died after 40 hands had no
+    // escalation path at all.
+    const lastHandAt = coordinator.get('cachedDiag')?.lastHandCompletedAt ?? null;
     coordinator.evaluateConnectedWaitingTimer({
       connected: !!c.connected,
       tableCount,
       handCount,
+      handAgeMs: Number.isFinite(lastHandAt) && lastHandAt > 0 ? Date.now() - lastHandAt : null,
+      handStaleMs: HAND_STALE_MS,
     });
   };
 
@@ -386,9 +396,14 @@ injectTokens();
     if (tableEntries.length > 0) {
       // Table present — cancel any pending grace timer (RT-60)
       coordinator.clearTimer('tableGrace');
-      const [connId] = tableEntries[0];
-      coordinator.set('currentActiveTableId', `table_${connId}`);
-      coordinator.set('currentTableState', tableEntries[0][1]);
+      const [connId, tableState] = tableEntries[0];
+      // Identity MUST come from tableKey, which TableManager holds stable across
+      // socket reconnects. connId is a per-socket counter, so keying on it made
+      // every routine Ignition reconnect look like a table switch — which ran
+      // clearForTableSwitch() and wiped advice, live context, seat stats and
+      // villain reads mid-hand. Fallback keeps older payloads working.
+      coordinator.set('currentActiveTableId', tableState?.tableKey || `table_${connId}`);
+      coordinator.set('currentTableState', tableState);
     } else if (prevTableId && !coordinator.hasTimer('tableGrace')) {
       // Tables went empty — start 5s grace period before clearing (RT-60).
       coordinator.scheduleTimer('tableGrace', () => {
@@ -803,7 +818,13 @@ injectTokens();
     // SR-6.10 (Z0 0.2): R-4.2 unknown placeholder. null = boot-race, no data yet.
     $('hand-count').textContent = handCount == null ? '\u2014' : handCount;
 
-    const result = buildStatusBar(pipeline, handCount, connectedWaitingExpired);
+    // WS-517: freshness is part of the tier. `lastHandCompletedAt` rides in on
+    // the pipeline diagnostics payload (buildDiagPayload in ignition-capture.js).
+    // Without it buildStatusBar cannot tell a live capture from a dead one and
+    // reports LIVE off a cumulative hand count forever.
+    const result = buildStatusBar(pipeline, handCount, connectedWaitingExpired, {
+      lastHandCompletedAt: diagData?.lastHandCompletedAt ?? null,
+    });
     // V-status \u00a7I writer #2 (Gate 5 PR-6): routes through applyMonotonicTier
     // so updateStatusBar can never silently downgrade a more-severe tier
     // set earlier in the same render frame by renderConnectionStatus
@@ -844,6 +865,101 @@ injectTokens();
   // canonical-writer skip-when-same-tier guard.
   let lastPipelineDetailHtml = null;
   let lastPipelineCounterText = null;
+
+  /**
+   * WS-515 — sole writer for #storage-warning.
+   *
+   * Permanent hand loss is the one state in this panel meaning data the founder
+   * cannot get back, and before this it was reported only to `errors.report`,
+   * which nobody reads. The quota throw was swallowed entirely, so the founder's
+   * first evidence that hands were missing would have been a short session in
+   * the corpus months later.
+   */
+  /**
+   * Sole writer for #build-stamp — which artifact is this, and where did it
+   * come from?
+   *
+   * Deliberately OUTSIDE the debugDiagnostics gate: the moment you most need to
+   * know which build is running is when it is behaving unexpectedly, which is
+   * exactly when nobody has diagnostics turned on. On 2026-08-21 that cost a
+   * live test cycle — the canonical `dist/` held another branch's in-flight
+   * build and the panel had no way to say so.
+   *
+   * Runs on the render path rather than once at boot. The provenance cannot
+   * change while loaded, so a one-shot write looks correct — but it silently
+   * does nothing if the markup is not in the DOM yet, which is a script-order
+   * dependency, and the replay harness (which appends this IIFE dynamically)
+   * demonstrated exactly that: element present, text empty, no error. Writing
+   * from the render path is idempotent and has no ordering assumption.
+   */
+  let _buildStampWired = false;
+  const renderBuildStamp = () => {
+    const el = $('build-stamp');
+    if (!el) return;
+
+    // An unbundled/dev artifact must never pass for a real build.
+    const unbuilt = BUILD_STAMP.commit === 'UNBUILT' || BUILD_STAMP.sourceDir === 'UNBUILT';
+    const text = unbuilt ? 'UNBUILT ARTIFACT — not a real build' : buildStampLine();
+    if (el.textContent !== text) el.textContent = text;
+    if (unbuilt) el.classList.add('unbuilt');
+
+    if (_buildStampWired) return;
+    _buildStampWired = true;
+    el.addEventListener('click', () => {
+      const full = [
+        buildStampLine(),
+        `branch=${BUILD_STAMP.branch}`,
+        `commit=${BUILD_STAMP.commit}`,
+        `sourceDir=${BUILD_STAMP.sourceDir}`,
+        `builtAt=${BUILD_STAMP.builtAt || 'UNBUILT'}`,
+      ].join('  ');
+      // Best-effort: clipboard may be denied. Never throw from a footer.
+      try {
+        navigator.clipboard?.writeText(full);
+        el.classList.add('copied');
+        // RT-60 / SR-6.3: registered timer, never a bare setTimeout — so
+        // clearAllTimers can cancel it and no orphan callback outlives a
+        // table switch or a destroy.
+        coordinator.scheduleTimer(
+          'buildStampCopied',
+          () => el.classList.remove('copied'),
+          1500
+        );
+      } catch (_) { /* no clipboard — the text is still selectable via user-select:all */ }
+    });
+  };
+
+  const renderStorageWarning = (snap) => {
+    const el = $('storage-warning');
+    if (!el) return;
+    // Decision lives in buildStorageWarning (pure, tested); this does the DOM
+    // write only.
+    const text = buildStorageWarning(snap?.journalHealth ?? coordinator.get('journalHealth'));
+    if (!text) { hideEl(el); return; }
+    if (el.textContent !== text) el.textContent = text;
+    showEl(el);
+  };
+
+  /**
+   * Poll durable-journal health. Cheap (two storage reads) and slow-cadence —
+   * this is a capacity signal, not a hot path.
+   */
+  const refreshJournalHealth = async () => {
+    try {
+      const health = await getJournalStorageHealth();
+      const prev = coordinator.get('journalHealth');
+      if (prev
+        && prev.quotaFailures === health.quotaFailures
+        && prev.dropped === health.dropped
+        && prev.estRemainingHands === health.estRemainingHands) {
+        return; // nothing changed — don't churn a render
+      }
+      coordinator.set('journalHealth', health);
+      scheduleRender('journal_health');
+    } catch (e) {
+      console.warn('[Side Panel] journal health read failed:', e?.message);
+    }
+  };
 
   const renderPipelineHealth = (snap) => {
     const healthEl = $('pipeline-health');
@@ -1855,10 +1971,29 @@ injectTokens();
     const street = snap.street;
 
     // SR-6.17: single shell. Zones z1-z4 + zx live inside #hud-content; z0
-    // lives at body top-level (always visible). hasTableHands gates the
-    // content shell only; Z0 chrome (status + pipeline-health) stays
-    // reachable when no table is seated.
-    if (!snap.hasTableHands) {
+    // lives at body top-level (always visible). Z0 chrome (status +
+    // pipeline-health) stays reachable when no table is seated.
+    //
+    // The shell gate asks "is a table present?" and the ONLY signal that
+    // answers that is currentActiveTableId. It used to ask `hasTableHands`,
+    // which means "has a hand finished and been written to session storage" —
+    // a different question with a different answer for the whole of the first
+    // hand at any table, and after every table switch (clearForTableSwitch
+    // resets it). The panel rendered "No active table detected" over a live
+    // hand as a result. Hands gate the stats that need hands, nothing more.
+    //
+    // WS-517 asked whether this gate should stop hiding `#pipeline-health`,
+    // which holds the panel's only freshness readout, exactly when a table is
+    // seated and freshness starts to matter. It offered two ways out; this is
+    // the second, stated as the ticket requires: THE READOUT IT HIDES IS NO
+    // LONGER THE ONLY ONE. Hand age now appears in the status bar
+    // ("Tracking (id:1) STOPPED — no hand for 12 min"), which is always
+    // visible and is what a founder actually glances at on a phone mid-hand.
+    // Un-hiding the strip instead would have moved the defect rather than
+    // removed it — it is diagnostic chrome nobody watches — and shell-spec
+    // §I.3 #9 forbids it co-occurring with HUD content regardless.
+    const tablePresent = !!snap.currentActiveTableId;
+    if (!tablePresent) {
       showEl($('no-table'));
       showEl($('pipeline-health'));
       hideEl($('hud-content'));
@@ -1875,6 +2010,12 @@ injectTokens();
 
     // --- App connection status ---
     updateAppStatus(snap.appConnected);
+
+    // --- Build provenance (always visible) ---
+    renderBuildStamp();
+
+    // --- Permanent hand loss (WS-515) ---
+    renderStorageWarning(snap);
 
     // --- Pipeline health + PID summary ---
     renderPipelineHealth(snap);
@@ -1942,9 +2083,14 @@ injectTokens();
     }
 
     // --- Seat arc ---
-    if (snap.cachedSeatStats) {
-      renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap, snap);
-    }
+    // Rendered whenever a table is present, NOT only when seat stats exist.
+    // The arc displays the table roster — seats, hero, dealer, folded — all of
+    // which come from currentTableState / currentLiveContext and are known from
+    // the first hand. Stats are decoration layered on top of that roster, and
+    // buildSeatArcHTML already handles a null stats map. Gating the whole arc
+    // on stats left the founder looking at an empty seat area for the entire
+    // first hand at every table, and after every reconnect.
+    renderSeatArc(snap.cachedSeatStats, snap.currentTableState, snap.cachedSeatMap, snap);
 
     // --- Zone 1: Action Bar + Zone 2: Context Strip + Cards Strip ---
     renderActionBar(advice, liveCtx, snap);
@@ -2063,6 +2209,13 @@ injectTokens();
   // both keys immediately after this IIFE returns.
   coordinator.scheduleTimer('staleContext', _staleContextTick, 10_000, 'interval');
   coordinator.scheduleTimer('adviceAgeBadge', _adviceAgeBadgeTick, 1000, 'interval');
+
+  // WS-515: durable-journal capacity + permanent-loss counters. Registered
+  // through scheduleTimer for the same RT-60 reason as the two above. Slow
+  // cadence — this is a capacity signal, not a hot path — and read once at boot
+  // so an existing loss is surfaced immediately rather than 60s later.
+  coordinator.scheduleTimer('journalHealth', refreshJournalHealth, 60_000, 'interval');
+  refreshJournalHealth();
 
   // RT-73: reset refreshHandStats in-flight flags on table switch so a
   // storage read that was awaiting at the moment of the switch doesn't
@@ -2553,6 +2706,16 @@ injectTokens();
     }
 
     // 3. Side panel filter state
+    // Build provenance goes FIRST in the state block: every other line below is
+    // only meaningful once you know which code produced it. A diagnostics dump
+    // that cannot identify its own build is how a bug report gets filed against
+    // code that was never running.
+    lines.push(`\n[Build]`);
+    lines.push(`  ${buildStampLine()}`);
+    lines.push(`  branch: ${BUILD_STAMP.branch}  commit: ${BUILD_STAMP.commit}`);
+    lines.push(`  sourceDir: ${BUILD_STAMP.sourceDir}`);
+    lines.push(`  builtAt: ${BUILD_STAMP.builtAt || 'UNBUILT'}`);
+
     lines.push(`\n[Side Panel State]`);
     // RT-58: read coordinator state instead of deleted module vars.
     const _dumpHandCount = coordinator.get('lastHandCount');

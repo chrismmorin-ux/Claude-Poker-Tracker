@@ -571,6 +571,78 @@ export const noTable = {
 };
 
 // =========================================================================
+// DEAD CAPTURE — WS-517. Hands were captured, then capture died.
+//
+// The state the status bar could not express: 40 hands banked, a table still
+// seated, and nothing captured for 22 minutes. Keyed on the cumulative hand
+// count alone the bar read "Tracking · 40 hands" — indistinguishable from a
+// healthy session at a glance, which is the whole defect.
+//
+// `diagData.lastHandCompletedAt` is what makes it distinguishable, so it is the
+// load-bearing field of this fixture.
+// =========================================================================
+
+export const deadCapture = {
+  cachedSeatStats: {
+    2: makeStats(2, 35, 10, 0.8, 'Fish', 20),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 50),
+    8: makeStats(8, 18, 15, 2.5, 'TAG', 35),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [2, 5, 8] },
+  currentLiveContext: null,
+  lastGoodAdvice: null,
+  appSeatData: {
+    2: makeAppSeat('Fish', 20, 'Loose passive fish'),
+    8: makeAppSeat('TAG', 35, 'Tight aggressive reg'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+  // 22 minutes since the last captured hand — past HAND_DEAD_MS.
+  diagData: { lastHandCompletedAt: Date.now() - 22 * 60_000 },
+};
+
+// =========================================================================
+// FIRST HAND AT A TABLE — a live hand with NOTHING in session storage yet.
+//
+// The state the founder actually reported and that no fixture covered: seated,
+// cards dealt, hand in progress, but zero completed hands stored for this table.
+// It occurs at the start of every session, after every table switch, and after
+// every socket reconnect (clearForTableSwitch resets the hand-count state).
+//
+// The panel used to gate its whole content shell on `hasTableHands` — "has a
+// hand finished and been written to session storage" — so this state rendered
+// "No active table detected" ON TOP OF a live hand. cachedSeatStats is null
+// here on purpose: seat stats need completed hands, and there are none. The HUD
+// must still render; the stats sections are what degrade, not the shell.
+// =========================================================================
+
+export const firstHandAtTable = {
+  cachedSeatStats: null,
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [2, 5, 8] },
+  currentLiveContext: {
+    state: 'PREFLOP',
+    currentStreet: 'preflop',
+    heroSeat: 5,
+    communityCards: ['', '', '', '', ''],
+    holeCards: ['Q♦', 'Q♣'],
+    pot: 3,
+    activeSeatNumbers: [2, 5, 8],
+    foldedSeats: [1, 3, 4, 6, 7, 9],
+    dealerSeat: 8,
+    pfAggressor: null,
+    actionSequence: [],
+  },
+  lastGoodAdvice: null,
+  appSeatData: {},
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+};
+
+// =========================================================================
 // Z3-PROVISIONAL — WS-574: the FIRST of the two pushes per decision
 //
 // `evaluateGameTree` has been two-phase since WS-334 and the app now delivers the depth-1
@@ -1662,6 +1734,8 @@ export const ALL_FIXTURES = {
   betweenHandsTournament,
   heroFolded,
   noTable,
+  firstHandAtTable,
+  deadCapture,
   pinnedVillainOverride,
   fullNineHanded,
   nullEdges,

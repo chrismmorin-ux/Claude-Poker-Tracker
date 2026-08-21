@@ -1684,6 +1684,42 @@
       box-sizing: border-box;
     }
     .zone-z0  { min-height: 72px;  }  /* status strip + health strip + footer */
+
+    /* Build stamp — always present, deliberately quiet. It must be findable
+       when asked for and invisible when not. `unbuilt` flips it loud: a
+       dev/unbundled artifact must never be mistakable for a real build. */
+    .build-stamp {
+      text-align: center;
+      padding: 3px 8px 5px;
+      /* V-density §VI: token, not a literal. 9px here was sub-WCAG — the
+         reason --type-meta-stat exists at 11px in the first place. */
+      font-size: var(--type-meta-stat);
+      line-height: 1.2;
+      color: var(--text-faint);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      cursor: pointer;
+      user-select: all;
+    }
+    .build-stamp:hover { color: var(--text-muted); }
+    .build-stamp.unbuilt {
+      color: var(--status-conn-disconnected);
+      font-weight: 600;
+    }
+    .build-stamp.copied::after { content: ' ✓ copied'; }
+
+    /* WS-515 — permanent hand loss. Deliberately loud: this is the only state
+       in the panel that means data the founder cannot get back. */
+    .storage-warning {
+      margin: 4px 8px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--status-conn-disconnected);
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--status-conn-disconnected);
+      font-size: var(--type-meta-stat);
+      line-height: 1.35;
+    }
+    .storage-warning.hidden { display: none; }
     .zone-z1  { min-height: 204px; }  /* seat arc + villain pill row */
     .zone-z2  { min-height: 150px; }  /* 3 fixed bands: headline + spr + board */
     .zone-z3  { min-height: 300px; }  /* street card incl. ~152px range slot */
@@ -1747,6 +1783,11 @@
     <div id="pipeline-msg-counters" style="display:none;font-size:var(--type-meta-stat);color:var(--text-faint);padding:2px 8px"></div>
     <div id="pid-summary" class="hidden"></div>
   </div>
+  <!-- WS-515: permanent hand loss. Lives in Z0 because Z0 is always visible —
+       a loss warning inside #pipeline-health would be hidden exactly when a
+       table is seated, which is when hands are being lost. Single writer:
+       renderStorageWarning() in side-panel.js. -->
+  <div id="storage-warning" class="storage-warning hidden" role="status" aria-live="polite"></div>
   </div><!-- /zone-z0 -->
 
   <!-- Recovery Banner -->
@@ -1868,6 +1909,14 @@
   <div id="diag-footer" style="text-align:center;margin-top:6px;display:none">
     <button id="diag-show" class="show-toggle-btn subtle" role="link">show diagnostics</button>
   </div>
+
+  <!-- BUILD STAMP — always visible, NOT gated by debugDiagnostics.
+       A loaded unpacked extension otherwise gives no way to tell which checkout
+       produced it. On 2026-08-21 that cost a live test cycle: the canonical
+       dist/ path held another branch's in-flight build, and the panel had no
+       way to say so. Single writer: renderBuildStamp() in side-panel.js.
+       Click copies it, so it can be pasted into a report verbatim. -->
+  <div id="build-stamp" class="build-stamp" title="Click to copy — tells you which build is loaded"></div>
 
   <!-- Seat Popover -->
   <div id="seat-popover" class="seat-popover hidden"></div>

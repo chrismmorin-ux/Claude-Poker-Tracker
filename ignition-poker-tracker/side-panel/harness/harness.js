@@ -63,10 +63,19 @@ function applyState(state) {
     currentTableState: state.currentTableState,
   });
 
-  const hasHands = state.cachedSeatStats && Object.keys(state.cachedSeatStats).length > 0;
+  // Visibility. This MUST ask the same question renderAll asks — "is a table
+  // present?" — or the harness verifies a gate the panel does not have.
+  //
+  // It previously keyed on cachedSeatStats being non-empty, a third variant of
+  // this decision (renderAll used hasTableHands, TableManager used connId
+  // presence). None of the three agreed, and the harness — the primary visual
+  // verification tool — could not have shown the shipped defect: a live hand at
+  // a present table with nothing yet written to session storage rendered
+  // "No active table detected". `currentTableState` is the fixture-level
+  // equivalent of currentActiveTableId.
+  const tablePresent = !!state.currentTableState;
 
-  // Visibility
-  if (hasHands) {
+  if (tablePresent) {
     hideEl($('no-table'));
     hideEl($('pipeline-health'));
     showEl($('hud-content'));
@@ -81,10 +90,19 @@ function applyState(state) {
   const pipeline = state.lastGoodExploits
     ? { tableCount: 1, tables: { '1': {} }, appConnected }
     : null;
+  // Distinct from `tablePresent` above, and deliberately so: the shell asks
+  // "is a table present?", the status bar asks "how many hands do we have?".
+  // Collapsing the two is the defect this file previously mirrored.
+  const hasHands = !!state.cachedSeatStats && Object.keys(state.cachedSeatStats).length > 0;
   const handCount = state.cachedSeatStats
     ? Object.values(state.cachedSeatStats).reduce((s, v) => s + (v?.sampleSize || 0), 0)
     : 0;
-  const status = buildStatusBar(pipeline, hasHands ? handCount : 0);
+  // WS-517: freshness is part of the tier, so the harness must thread it or the
+  // dead-capture scenario renders identically to a live one — which is exactly
+  // the defect being verified.
+  const status = buildStatusBar(pipeline, hasHands ? handCount : 0, false, {
+    lastHandCompletedAt: state.diagData?.lastHandCompletedAt ?? null,
+  });
   const dot = $('status-dot');
   const text = $('status-text');
   // V-status §I writer #5 (Gate 5 PR-6): harness uses writeStatusDot
@@ -102,8 +120,10 @@ function applyState(state) {
   if (appBadge) writeAppStatusBadge(appBadge, mapAppConnectedToTier(appConnected));
 
   // Seat arc
+  // Mirrors renderAll: the arc renders whenever a table is present, not only
+  // when seat stats exist. buildSeatArcHTML handles a null stats map.
   const arc = $('seat-arc');
-  if (arc && state.cachedSeatStats) {
+  if (arc && tablePresent) {
     arc.innerHTML = buildSeatArcHTML(
       state.cachedSeatStats,
       state.currentTableState,

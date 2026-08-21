@@ -60,16 +60,40 @@ describe('StateInvariantChecker', () => {
   });
 
   // R1: HUD visibility
-  it('R1: detects hasTableHands=false when hands exist with active table', () => {
+  it('R1a: detects hasTableHands=false when hands exist with active table', () => {
     const snap = validSnapshot({ hasTableHands: false });
     const result = checker.check(snap);
-    expect(result.violations.some(v => v.startsWith('R1:'))).toBe(true);
+    expect(result.violations.some(v => v.startsWith('R1a:'))).toBe(true);
   });
 
-  it('R1: no violation when hasTableHands=false and no hands', () => {
+  it('R1a: no violation when hasTableHands=false and no hands', () => {
     const snap = validSnapshot({ hasTableHands: false, lastHandCount: 0 });
     const result = checker.check(snap);
-    expect(result.violations.some(v => v.startsWith('R1:'))).toBe(false);
+    expect(result.violations.some(v => v.startsWith('R1a:'))).toBe(false);
+  });
+
+  it('R1b: detects a live hand with no active table', () => {
+    // The state that actually shipped: the panel renders "No active table
+    // detected" over a hand in progress. R1a is gated on lastHandCount > 0 and
+    // was structurally blind to it — during the first hand at a table nothing
+    // has been written to session storage yet, so lastHandCount is 0.
+    const snap = validSnapshot({ currentActiveTableId: null });
+    const result = checker.check(snap);
+    expect(result.violations.some(v => v.startsWith('R1b:'))).toBe(true);
+  });
+
+  it('R1b: no violation when there is no live context either', () => {
+    const snap = validSnapshot({ currentActiveTableId: null, currentLiveContext: null });
+    const result = checker.check(snap);
+    expect(result.violations.some(v => v.startsWith('R1b:'))).toBe(false);
+  });
+
+  it('R1b: no violation for a live hand at a present table with zero stored hands', () => {
+    // The legitimate first-hand state. Must be clean — this is exactly what the
+    // panel now renders the HUD for.
+    const snap = validSnapshot({ lastHandCount: 0, hasTableHands: false });
+    const result = checker.check(snap);
+    expect(result.violations.some(v => v.startsWith('R1'))).toBe(false);
   });
 
   // R2: Street non-null during live hand
