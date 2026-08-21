@@ -686,3 +686,88 @@ describe('buildBetweenHandsHTML', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// ADVICE EXPIRY — a recommendation is scoped to ONE decision
+// ---------------------------------------------------------------------------
+//
+// Reported live at the table 2026-08-21, on the fixed build: "its also giving
+// me action advice after I've already folded, when the different streets
+// progress", and "the action set it reflects is stale".
+//
+// One root cause: `lastGoodAdvice` was only ever REPLACED — by the next push, a
+// new hand, or a table switch — and never INVALIDATED. So a recommendation
+// outlived the decision it was computed for and kept rendering as the current
+// one. `classifyDecisionState` already returned OBSERVING/REFLECTION on a hero
+// fold, and invariant R3 already detected advice trailing the street; neither
+// was consulted by the bar that draws the recommendation.
+
+describe('action bar — advice expires with its decision', () => {
+  const adviceOn = (street) => ({
+    currentStreet: street,
+    recommendations: [{ action: 'bet', sizing: 5, confidence: 'high' }],
+  });
+  const ctxOn = (street, extra = {}) => ({
+    state: street.toUpperCase(),
+    currentStreet: street,
+    heroSeat: 5,
+    foldedSeats: [],
+    holeCards: ['A♥', 'K♠'],
+    communityCards: ['2♣', '7♦', 'J♠', '', ''],
+    ...extra,
+  });
+
+  it('shows the recommendation while it is still hero\'s decision', () => {
+    const r = buildActionBarHTML(adviceOn('flop'), ctxOn('flop'));
+    expect(r.html).toMatch(/bet/i);
+    expect(r.className).not.toMatch(/observing/);
+  });
+
+  it('does NOT recommend an action once hero has folded', () => {
+    // The dangerous case: advice on a decision hero cannot take.
+    const r = buildActionBarHTML(adviceOn('flop'), ctxOn('flop', { foldedSeats: [5] }));
+    expect(r.html).not.toMatch(/\bbet\b/i);
+    expect(r.html).toMatch(/Observing/i);
+    expect(r.className).toMatch(/observing/);
+  });
+
+  it('does not claim to be "Analyzing" after a fold — nothing is coming', () => {
+    const r = buildActionBarHTML(null, ctxOn('turn', { foldedSeats: [5] }));
+    expect(r.html).not.toMatch(/Analyzing/i);
+    expect(r.html).toMatch(/Observing/i);
+  });
+
+  it('drops flop advice once the turn arrives', () => {
+    const r = buildActionBarHTML(adviceOn('flop'), ctxOn('turn'));
+    expect(r.html).not.toMatch(/\bbet\b/i);
+    expect(r.html).toMatch(/Analyzing/i);
+  });
+
+  it('drops flop advice on the river — two streets stale', () => {
+    const r = buildActionBarHTML(adviceOn('flop'), ctxOn('river'));
+    expect(r.html).toMatch(/Analyzing/i);
+  });
+
+  it('keeps advice that matches the current street', () => {
+    const r = buildActionBarHTML(adviceOn('river'), ctxOn('river'));
+    expect(r.html).toMatch(/bet/i);
+  });
+
+  it('falls back to the table state for hero seat when context omits it', () => {
+    const ctx = ctxOn('flop', { heroSeat: undefined, foldedSeats: [5] });
+    const r = buildActionBarHTML(adviceOn('flop'), ctx, { currentTableState: { heroSeat: 5 } });
+    expect(r.html).toMatch(/Observing/i);
+  });
+
+  it('still waits between hands rather than claiming to observe', () => {
+    const r = buildActionBarHTML(null, { state: 'IDLE', currentStreet: null, heroSeat: 5, foldedSeats: [5] });
+    expect(r.html).toMatch(/Waiting for next deal/i);
+  });
+
+  it('does not suppress when the advice carries no street (cannot judge staleness)', () => {
+    // Absence of a street is not evidence of staleness — refusing here would
+    // blank the bar on any producer that omits the field.
+    const r = buildActionBarHTML({ recommendations: [{ action: 'bet' }] }, ctxOn('turn'));
+    expect(r.html).toMatch(/bet/i);
+  });
+});

@@ -298,13 +298,54 @@ export const formatBetFraction = (betFraction) => {
 export const buildActionBarHTML = (advice, liveContext, opts = {}) => {
   const ctx = liveContext || opts.currentLiveContext;
   const isLive = ctx && ctx.state && ctx.state !== 'IDLE' && ctx.state !== 'COMPLETE';
-  const hasAdvice = advice && advice.recommendations && advice.recommendations.length > 0;
+  let hasAdvice = advice && advice.recommendations && advice.recommendations.length > 0;
+
+  // ADVICE IS SCOPED TO A DECISION, AND A DECISION EXPIRES.
+  //
+  // `lastGoodAdvice` was only ever REPLACED \u2014 by the next push, a new hand, or a
+  // table switch \u2014 and never INVALIDATED. So a recommendation outlived the
+  // decision it was computed for, and the bar went on presenting it as the
+  // current one. Founder, live at the table 2026-08-21: "its also giving me
+  // action advice after I've already folded, when the different streets
+  // progress", and "the action set it reflects is stale". Both are this.
+  //
+  // Two ways a recommendation stops being about the decision in front of hero:
+
+  const heroSeat = ctx?.heroSeat ?? opts.currentTableState?.heroSeat ?? null;
+
+  // 1. HERO FOLDED. There is no action to recommend \u2014 hero is not in the hand.
+  //    `classifyDecisionState` already knew this and returns OBSERVING /
+  //    REFLECTION, but the action bar never consulted it. Showing a live-looking
+  //    recommendation to a player who is out of the pot is worse than showing
+  //    nothing: it is advice on a decision he cannot take.
+  const heroFolded = heroSeat != null && (ctx?.foldedSeats || []).includes(heroSeat);
+
+  // 2. THE STREET MOVED ON. `handleAdvicePush` already rejects advice from a
+  //    street EARLIER than the context at ingest, so accepted advice matched the
+  //    street it arrived on. What nothing handled is the context advancing
+  //    afterwards: flop advice stayed on screen through the turn and river.
+  //    Invariant R3 detects exactly this and only counts it; the renderer kept
+  //    drawing it.
+  const adviceStreet = advice?.currentStreet ?? null;
+  const contextStreet = ctx?.currentStreet ?? null;
+  const streetMoved = !!(isLive && adviceStreet && contextStreet && adviceStreet !== contextStreet);
+
+  if (hasAdvice && (heroFolded || streetMoved)) hasAdvice = false;
 
   // Between-hands / no live context
   if (!hasAdvice && !isLive) {
     return {
       html: `<div class="ab-waiting">Waiting for next deal\u2026</div>`,
       className: 'action-bar is-waiting',
+    };
+  }
+
+  // Folded and the hand is still running \u2014 say so plainly rather than falling
+  // through to "Analyzing\u2026", which would imply advice is coming.
+  if (heroFolded && isLive) {
+    return {
+      html: `<div class="ab-row1"><span class="uh-observing">Observing \u2014 folded</span></div>`,
+      className: 'action-bar is-observing',
     };
   }
 
