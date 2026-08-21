@@ -1613,3 +1613,77 @@ describe('money convention: the record speaks total street commitment (WS-555)',
     expect(raw.amount).toBe(8);
   });
 });
+
+// ---------------------------------------------------------------------------
+// heroSeatConfidence lifecycle — the claim must describe THIS hand
+// ---------------------------------------------------------------------------
+//
+// Measured 2026-08-21: 10 of 122 hands in the session store claimed
+// heroSeatConfidence 'high' while carrying no hole cards at all — 100% of the
+// hands that could not know hero's cards asserted they had seen them.
+//
+// Cause: heroSeat and heroSeatConfidence were BOTH sticky across hands. Seat
+// stickiness is deliberate (it is what lets a hand whose deal we missed still
+// be attributed to the right seat, worth 5 hero hands across the corpus).
+// Confidence stickiness is a defect: 'high' is set only when hole cards are
+// seen, so once one hand saw them, every later hand inherited the claim.
+//
+// The cards go missing because of a protocol fact, not a capture bug: on a
+// mid-hand reconnect Ignition's CO_TABLE_INFO snapshot lists every OTHER seat
+// face-down (32896) and omits hero's own pcard entirely, so hero's cards for a
+// hand already in progress are never re-sent.
+
+describe('heroSeatConfidence lifecycle', () => {
+  it("is 'high' only for a hand whose hole cards were actually seen", () => {
+    const { hsm } = makeHSM();
+    hsm.setHeroSeat(5, true);
+    expect(hsm.heroSeat).toBe(5);
+    expect(hsm.heroSeatConfidence).toBe('high');
+  });
+
+  it("demotes 'high' to 'carried' on the next hand, KEEPING the seat", () => {
+    // The regression. Before the fix this stayed 'high' forever.
+    const { hsm } = makeHSM();
+    hsm.setHeroSeat(5, true);
+
+    hsm.reset();
+
+    expect(hsm.heroSeat).toBe(5);             // seat survives — deliberate
+    expect(hsm.heroSeatConfidence).toBe('carried'); // the claim to have SEEN it does not
+  });
+
+  it("restores 'high' when this hand's hole cards do arrive", () => {
+    const { hsm } = makeHSM();
+    hsm.setHeroSeat(5, true);
+    hsm.reset();
+    expect(hsm.heroSeatConfidence).toBe('carried');
+
+    hsm.setHeroSeat(5, true); // this hand's deal observed
+    expect(hsm.heroSeatConfidence).toBe('high');
+  });
+
+  it('stays carried across several unobserved hands, never re-earning high', () => {
+    const { hsm } = makeHSM();
+    hsm.setHeroSeat(5, true);
+    for (let i = 0; i < 4; i++) hsm.reset();
+    expect(hsm.heroSeat).toBe(5);
+    expect(hsm.heroSeatConfidence).toBe('carried');
+  });
+
+  it("does not invent 'carried' when no hero seat is known", () => {
+    const { hsm } = makeHSM();
+    hsm.reset();
+    expect(hsm.heroSeat).toBeFalsy();
+    expect(hsm.heroSeatConfidence).not.toBe('carried');
+  });
+
+  it("does not promote a 'low' inference by resetting", () => {
+    // Only 'high' is demoted. A low-confidence seat stays low — reset must not
+    // launder a weaker signal into a stronger-sounding label.
+    const { hsm } = makeHSM();
+    hsm.setHeroSeat(5, false);
+    expect(hsm.heroSeatConfidence).toBe('low');
+    hsm.reset();
+    expect(hsm.heroSeatConfidence).toBe('low');
+  });
+});
