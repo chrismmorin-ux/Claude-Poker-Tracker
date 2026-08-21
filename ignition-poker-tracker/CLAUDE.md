@@ -12,6 +12,25 @@ npm run harness:build      # Build visual test harness
 npm run harness            # Build + serve harness on localhost:3333
 ```
 
+## Which build am I running?
+
+**Check this BEFORE judging any behaviour.** An unpacked extension gives no hint which
+checkout produced it, and this repo has multiple worktrees — on 2026-08-21 a live test
+cycle was spent on `ignition-poker-tracker/dist/` (the path this file names) while it held
+a build of a *different branch's* in-flight work.
+
+Three places the answer now appears, cheapest first:
+
+1. **`chrome://extensions`** — `version_name` renders beside the version:
+   `0.9.0 (sidebar-table-identity/worktree-sidebar-table-identity@76956d54)`
+2. **The side panel footer** — always visible, not gated by debugDiagnostics. Click to copy.
+   A dev/unbundled artifact reads **`UNBUILT ARTIFACT — not a real build`** in red.
+3. **`dist/BUILD_INFO.txt`** — plain text, for shells and bug reports.
+
+`sourceDir` is the load-bearing field: it is what separates the main checkout from a worktree.
+All three come from the BUILD STAMP block in `build.mjs`. **Always `npm run build` before
+loading** — a stale `dist/` is indistinguishable from a fresh one by timestamp alone.
+
 ## Visual Verification (PRIMARY troubleshooting method)
 
 **Any sidebar rendering change MUST be visually verified before considering it complete.**

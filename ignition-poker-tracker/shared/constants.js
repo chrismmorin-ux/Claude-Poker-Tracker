@@ -120,6 +120,38 @@ export const EXTENSION_VERSION = (() => {
 // Falls back to EXTENSION_VERSION in unbundled/test contexts.
 export const BUILD_GUARD = typeof __BUILD_HASH__ !== 'undefined' ? __BUILD_HASH__ : EXTENSION_VERSION;
 
+/**
+ * Provenance of the loaded artifact — which branch, which commit, which
+ * checkout, built when. Injected by build.mjs (see the BUILD STAMP block there
+ * for why this exists).
+ *
+ * The fallback is deliberately conspicuous rather than plausible: an unbundled
+ * or test context must NOT be able to masquerade as a real build. `sourceDir`
+ * is the field that matters in practice — it distinguishes the main checkout
+ * from a worktree, which is the confusion this exists to end.
+ */
+export const BUILD_STAMP = typeof __BUILD_STAMP__ !== 'undefined'
+  ? __BUILD_STAMP__
+  : { version: EXTENSION_VERSION, branch: 'UNBUILT', commit: 'UNBUILT', builtAt: null, sourceDir: 'UNBUILT' };
+
+/**
+ * One-line build identity for display. Short enough for a panel footer, and
+ * carries the four things needed to tell two builds apart:
+ *   0.9.0 · sidebar-table-identity@76956d5 · 12:21
+ * `sourceDir` is prefixed when it differs from the branch, since a worktree
+ * folder name and its branch name are usually — but not always — the same.
+ */
+export const buildStampLine = (stamp = BUILD_STAMP) => {
+  const t = stamp?.builtAt ? new Date(stamp.builtAt) : null;
+  const hhmm = t && !Number.isNaN(t.getTime())
+    ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+    : '—';
+  const where = stamp?.sourceDir && stamp.sourceDir !== stamp?.branch
+    ? `${stamp.sourceDir}/${stamp.branch}`
+    : (stamp?.branch || 'unknown');
+  return `v${stamp?.version || '?'} · ${where}@${stamp?.commit || '?'} · built ${hhmm}`;
+};
+
 // Protocol version for extension ↔ app bridge messages (window.postMessage).
 // Bump when the message schema changes so mismatches are detected, not silent.
 export const PROTOCOL_VERSION = 2;

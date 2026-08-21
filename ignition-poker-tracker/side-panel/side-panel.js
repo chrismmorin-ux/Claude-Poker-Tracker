@@ -10,7 +10,7 @@ import { injectTokens } from '../shared/design-tokens.js';
 import * as stats from '../shared/stats-engine.js';
 import * as cardUtils from '../shared/card-utils.js';
 import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.js';
-import { MSG, SESSION_KEYS } from '../shared/constants.js';
+import { MSG, SESSION_KEYS, BUILD_STAMP, buildStampLine } from '../shared/constants.js';
 import { loadSettings, observeSettings } from '../shared/settings.js';
 import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../shared/frame-capture.js';
 import * as errors from '../shared/error-reporter.js';
@@ -875,6 +875,60 @@ injectTokens();
    * first evidence that hands were missing would have been a short session in
    * the corpus months later.
    */
+  /**
+   * Sole writer for #build-stamp — which artifact is this, and where did it
+   * come from?
+   *
+   * Deliberately OUTSIDE the debugDiagnostics gate: the moment you most need to
+   * know which build is running is when it is behaving unexpectedly, which is
+   * exactly when nobody has diagnostics turned on. On 2026-08-21 that cost a
+   * live test cycle — the canonical `dist/` held another branch's in-flight
+   * build and the panel had no way to say so.
+   *
+   * Runs on the render path rather than once at boot. The provenance cannot
+   * change while loaded, so a one-shot write looks correct — but it silently
+   * does nothing if the markup is not in the DOM yet, which is a script-order
+   * dependency, and the replay harness (which appends this IIFE dynamically)
+   * demonstrated exactly that: element present, text empty, no error. Writing
+   * from the render path is idempotent and has no ordering assumption.
+   */
+  let _buildStampWired = false;
+  const renderBuildStamp = () => {
+    const el = $('build-stamp');
+    if (!el) return;
+
+    // An unbundled/dev artifact must never pass for a real build.
+    const unbuilt = BUILD_STAMP.commit === 'UNBUILT' || BUILD_STAMP.sourceDir === 'UNBUILT';
+    const text = unbuilt ? 'UNBUILT ARTIFACT — not a real build' : buildStampLine();
+    if (el.textContent !== text) el.textContent = text;
+    if (unbuilt) el.classList.add('unbuilt');
+
+    if (_buildStampWired) return;
+    _buildStampWired = true;
+    el.addEventListener('click', () => {
+      const full = [
+        buildStampLine(),
+        `branch=${BUILD_STAMP.branch}`,
+        `commit=${BUILD_STAMP.commit}`,
+        `sourceDir=${BUILD_STAMP.sourceDir}`,
+        `builtAt=${BUILD_STAMP.builtAt || 'UNBUILT'}`,
+      ].join('  ');
+      // Best-effort: clipboard may be denied. Never throw from a footer.
+      try {
+        navigator.clipboard?.writeText(full);
+        el.classList.add('copied');
+        // RT-60 / SR-6.3: registered timer, never a bare setTimeout — so
+        // clearAllTimers can cancel it and no orphan callback outlives a
+        // table switch or a destroy.
+        coordinator.scheduleTimer(
+          'buildStampCopied',
+          () => el.classList.remove('copied'),
+          1500
+        );
+      } catch (_) { /* no clipboard — the text is still selectable via user-select:all */ }
+    });
+  };
+
   const renderStorageWarning = (snap) => {
     const el = $('storage-warning');
     if (!el) return;
@@ -1957,6 +2011,9 @@ injectTokens();
     // --- App connection status ---
     updateAppStatus(snap.appConnected);
 
+    // --- Build provenance (always visible) ---
+    renderBuildStamp();
+
     // --- Permanent hand loss (WS-515) ---
     renderStorageWarning(snap);
 
@@ -2649,6 +2706,16 @@ injectTokens();
     }
 
     // 3. Side panel filter state
+    // Build provenance goes FIRST in the state block: every other line below is
+    // only meaningful once you know which code produced it. A diagnostics dump
+    // that cannot identify its own build is how a bug report gets filed against
+    // code that was never running.
+    lines.push(`\n[Build]`);
+    lines.push(`  ${buildStampLine()}`);
+    lines.push(`  branch: ${BUILD_STAMP.branch}  commit: ${BUILD_STAMP.commit}`);
+    lines.push(`  sourceDir: ${BUILD_STAMP.sourceDir}`);
+    lines.push(`  builtAt: ${BUILD_STAMP.builtAt || 'UNBUILT'}`);
+
     lines.push(`\n[Side Panel State]`);
     // RT-58: read coordinator state instead of deleted module vars.
     const _dumpHandCount = coordinator.get('lastHandCount');
