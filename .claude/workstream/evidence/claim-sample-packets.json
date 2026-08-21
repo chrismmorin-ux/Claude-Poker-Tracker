@@ -1,0 +1,626 @@
+[
+  {
+    "packet_id": "p01",
+    "claims": [
+      {
+        "claim_id": "CTRL-1",
+        "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+        "claim": "HealthIndicator.jsx:999999",
+        "cited_path": "HealthIndicator.jsx",
+        "cited_line": 999999,
+        "cited_line_end": null,
+        "sentence": "The relevant logic is at HealthIndicator.jsx:999999, which sets the ceiling."
+      },
+      {
+        "claim_id": "d435e738-t13-4746",
+        "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+        "claim": "HealthIndicator.jsx",
+        "cited_path": "HealthIndicator.jsx",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "I also overrode my own accept criterion: it said \"TableView renders a save indicator,\" but `HealthIndicator.jsx` cites `navigation-ia.md` — a per-view warning is invisible from the table, so health signals extend HealthIndicator."
+      },
+      {
+        "claim_id": "fc271296-t32-1942",
+        "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+        "claim": "gameTreeDepth2.js",
+        "cited_path": "gameTreeDepth2.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "The entire toolchain (`run-hole-map.mjs`, `holeMap.mjs`, `holeMapLines.mjs`) is **untracked**, and `foldEquityCalculator.js` / `gameTreeEvaluator.js` / `gameTreeDepth2.js` have uncommitted edits."
+      },
+      {
+        "claim_id": "e53d9810-t4-6155",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "SCORED-READOUT-SPEC.md",
+        "cited_path": "SCORED-READOUT-SPEC.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "| 6 | WS-537 | Change ledger — spec'd in `SCORED-READOUT-SPEC.md` §9, **zero code hits repo-wide**."
+      },
+      {
+        "claim_id": "fcb6029f-t2-2862",
+        "commit": "52d0cae4ab8f53986eb9c11bbcde170c094854a6",
+        "claim": "layout-doctrine.md",
+        "cited_path": "layout-doctrine.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Both explorers are running — one tracing the recovered design doctrine (DEC-026/DEC-027, layout-doctrine.md, whether the orphan-branch merge is actually in this branch), one mapping the TableView/CommandStrip layout code and the test exemption."
+      },
+      {
+        "claim_id": "e53d9810-t2-6134",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "faultRegister.js",
+        "cited_path": "faultRegister.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "- **`src/utils/standardOfRecord/**` is locked** by an unclaimed-but-live session (`faultRegister.js`, `labelLedger.js`, `bayesianUpdater.js`)."
+      },
+      {
+        "claim_id": "f6141ba8-t2-3814",
+        "commit": "6f4cf7dbec6d71509b5bb54c6483d5b74a3e9538",
+        "claim": "study-ladder.json",
+        "cited_path": "study-ladder.json",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "6a1f1d42… study-ladder.json       (run B)   ← payload IS byte-identical"
+      },
+      {
+        "claim_id": "10a55c6c-t9-5473",
+        "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+        "claim": "out/ws333-geometry.json",
+        "cited_path": "out/ws333-geometry.json",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`out/ws333-geometry.json`:"
+      },
+      {
+        "claim_id": "063e78fa-t13-6118",
+        "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+        "claim": "groundTruthEstimators.test.js",
+        "cited_path": "groundTruthEstimators.test.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": ""
+      },
+      {
+        "claim_id": "02c3373d-t6-3211",
+        "commit": "540002648c30404d28ea0739babeb4409b485ba3",
+        "claim": "src/utils/potCalculator.js",
+        "cited_path": "src/utils/potCalculator.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "M src/utils/potCalculator.js"
+      },
+      {
+        "claim_id": "fc271296-t27-1889",
+        "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+        "claim": "scripts/backtest/run-depth-ablation.mjs",
+        "cited_path": "scripts/backtest/run-depth-ablation.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "node scripts/backtest/run-depth-ablation.mjs --reference none \\"
+      }
+    ]
+  },
+  {
+    "packet_id": "p02",
+    "claims": [
+      {
+        "claim_id": "e53d9810-t2-6136",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "bayesianUpdater.js",
+        "cited_path": "bayesianUpdater.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "- **`src/utils/standardOfRecord/**` is locked** by an unclaimed-but-live session (`faultRegister.js`, `labelLedger.js`, `bayesianUpdater.js`)."
+      },
+      {
+        "claim_id": "fc271296-t16-1770",
+        "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+        "claim": "useLiveActionAdvisor.js",
+        "cited_path": "useLiveActionAdvisor.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Which is its new HIGH finding — all effective-stack awareness in the app runs through one narrow thread, so any refactor of `useLiveActionAdvisor.js` or `useSyncBridge.js` silently orphans it app-wide."
+      },
+      {
+        "claim_id": "a5dbb4b5-t12-2618",
+        "commit": "18f49f2234862d0b2e2a62caecb9ce9c66734076",
+        "claim": "strategyPosition.mjs",
+        "cited_path": "strategyPosition.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Also: `strategyPosition.mjs` already *throws* on a bare scalar, so the pairing is enforced in code."
+      },
+      {
+        "claim_id": "CTRL-2",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "thisFileDoesNotExist_ctrl.js:12",
+        "cited_path": "thisFileDoesNotExist_ctrl.js",
+        "cited_line": 12,
+        "cited_line_end": null,
+        "sentence": "This is implemented in thisFileDoesNotExist_ctrl.js:12 and nothing else reads it."
+      },
+      {
+        "claim_id": "666c2885-t1-351",
+        "commit": "dbfef755bf3e8668e9443efb92cb9299dcd55050",
+        "claim": "POKER_THEORY.md",
+        "cited_path": "POKER_THEORY.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "25 for the runner-up), and it's a direct hit on the repo's most binding domain rule: **labels are outputs of the decision process, never inputs.** `POSITIONAL_FOLD_TO_3BET` is a hardcoded lookup keyed on a position label — exactly the anti-pattern `POKER_THEORY.md §7` and `exploitEngine/CLAUDE.md` prohibit."
+      },
+      {
+        "claim_id": "b19c15d1-t11-6686",
+        "commit": "274c86e20dee58935944814f49e3b3bcf9eaa522",
+        "claim": "MEMORY.md",
+        "cited_path": "MEMORY.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**Net token-negative at every observed session length, while buying retrieval that today does not fit at all.** Nothing is deleted — `MEMORY.md` keeps all 97 pointer entries, the rules files stay on disk, `compact-tier.cjs` keeps re-emitting their operative imperatives every turn."
+      },
+      {
+        "claim_id": "436c0fcc-t10-2362",
+        "commit": "228c6af9d2ab34a23a4ff52487d17267aab0e691",
+        "claim": "CLAUDE.md",
+        "cited_path": "CLAUDE.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**The verification earned its keep.** It caught two of my tests going red *after* I'd reported 42/42 — a concurrent session rewrote `CLAUDE.md`, and two compact-tier anchors stopped resolving."
+      },
+      {
+        "claim_id": "d23acfbd-t2-1041",
+        "commit": "f4fa0fe63e1f6831998aaab3dc902012353a4800",
+        "claim": "exploitEngine/CLAUDE.md",
+        "cited_path": "exploitEngine/CLAUDE.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**Files:** `gameTreeEquity.js` (new `heroAheadNow` + `computeFilteredShowdownValue`), `gameTreeEvaluator.js` (threaded on bet **and** check-raise paths), `actionClassifier.js` (realised-fraction veto), `POKER_THEORY.md` §3.4.3, `exploitEngine/CLAUDE.md` anti-pattern, plus a new behavioural suite and 13 unit tests."
+      },
+      {
+        "claim_id": "b19c15d1-t3-6549",
+        "commit": "274c86e20dee58935944814f49e3b3bcf9eaa522",
+        "claim": "CLAUDE.md",
+        "cited_path": "CLAUDE.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**The one poker rule that *is* always-loaded is the repo's clearest proof that always-loaded doesn't bind.** \"Labels are outputs, never inputs\" sits in `CLAUDE.md`, in `MEMORY.md`, and in two engine files."
+      },
+      {
+        "claim_id": "e53d9810-t10-6210",
+        "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+        "claim": "strategyArm.mjs",
+        "cited_path": "strategyArm.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Movement on the gate: **WS-540's session has committed** — `heroEvRunner.mjs`, `heroEvTask.mjs`, `heroEvWorker.mjs` and `strategyArm.mjs` are clean now."
+      },
+      {
+        "claim_id": "036e7335-t3-3030",
+        "commit": "2dbfb01326510f1efee5d290e508a9094bca43a6",
+        "claim": "schemas.test.js",
+        "cited_path": "schemas.test.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Extending `index.js` and `schemas.test.js`."
+      }
+    ]
+  },
+  {
+    "packet_id": "p03",
+    "claims": [
+      {
+        "claim_id": "35418976-t1-685",
+        "commit": "b43efbd12db14329d3c155ff7ffcf049ca04d990",
+        "claim": "cwos-reconcile-core.js",
+        "cited_path": "cwos-reconcile-core.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "That splits dependencies apart: your locally-patched `cwos-utils.js` was preserved, while `cwos-reconcile-core.js` was replaced with a version calling a function only the *new* utils provides."
+      },
+      {
+        "claim_id": "8b91db30-t5-5335",
+        "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+        "claim": "corpus-transfer-is-earned.md",
+        "cited_path": "corpus-transfer-is-earned.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "| Transfer is earned per quantity, by test | `corpus-transfer-is-earned.md` | ~31 items |"
+      },
+      {
+        "claim_id": "48e79e5e-t5-3686",
+        "commit": "f54e955735bd9310ba2f22bc9672fba9c150a820",
+        "claim": "compactTier.test.js",
+        "cited_path": "compactTier.test.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "- `compactTier.test.js` walked `.claude/worktrees/`, going red for anyone with a worktree."
+      },
+      {
+        "claim_id": "454852a2-t3-3288",
+        "commit": "a2757c5beda246e7b3612c6a4bff6f871c822e48",
+        "claim": "schemas.test.js",
+        "cited_path": "schemas.test.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "| `schemas.test.js` failure I flagged | ✅ Resolved — stale Vite transform, passes with cache cleared |"
+      },
+      {
+        "claim_id": "dabcbfdf-t7-2921",
+        "commit": "cc6291453e48bdfc5ff926e87f2afeae2e2796b2",
+        "claim": "foldCurveShape.test.js",
+        "cited_path": "foldCurveShape.test.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Now the `foldCurveShape.test.js` and `foldEquityCalculator.test.js` failures:"
+      },
+      {
+        "claim_id": "dcab5942-t4-1436",
+        "commit": "7b5639197132e1b5ab27b52166fa3994927b35b3",
+        "claim": "system/state.md",
+        "cited_path": "system/state.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Now updating `system/state.md` — vital signs and a Recent Sessions row:"
+      },
+      {
+        "claim_id": "CTRL-3",
+        "commit": "b43efbd12db14329d3c155ff7ffcf049ca04d990",
+        "claim": "cwos-reconcile-core.js",
+        "cited_path": "cwos-reconcile-core.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "cwos-reconcile-core.js does not exist in this repository."
+      },
+      {
+        "claim_id": "74727ffa-t3-3862",
+        "commit": "fab750e62093ef3fd00455250e83134607827d4c",
+        "claim": "docs/research/player-archetypes-empirical-2026-07-26.md",
+        "cited_path": "docs/research/player-archetypes-empirical-2026-07-26.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`docs/research/player-archetypes-empirical-2026-07-26.md`:"
+      },
+      {
+        "claim_id": "a924eff4-t2-5344",
+        "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+        "claim": "record-builder.js",
+        "cited_path": "record-builder.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "So I moved it to `record-builder.js`, derived from the finished hand."
+      },
+      {
+        "claim_id": "ce918290-t3-6434",
+        "commit": "274c86e20dee58935944814f49e3b3bcf9eaa522",
+        "claim": "compute-runner.js",
+        "cited_path": "compute-runner.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**`compute-runner.js` was untracked in node1's checkout** — a hand-placed copy byte-identical to the pre-fix commit `9b10635`."
+      },
+      {
+        "claim_id": "063e78fa-t2-6028",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "ipsEstimator.mjs",
+        "cited_path": "ipsEstimator.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**node1 is a commit behind.** `ipsEstimator.mjs`, `calibrationArms.mjs` and `calibrationPrereg.json` are not live there, so a calibration re-run on the compute node would execute pre-fix code."
+      }
+    ]
+  },
+  {
+    "packet_id": "p04",
+    "claims": [
+      {
+        "claim_id": "119aa927-t7-5854",
+        "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+        "claim": "run-calibration.mjs",
+        "cited_path": "run-calibration.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`run-calibration.mjs` must add it separately:"
+      },
+      {
+        "claim_id": "e53d9810-t3-6142",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "loadVillain.mjs",
+        "cited_path": "loadVillain.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "| 1 | WS-579 | Nine-handed subject selection — both existing cards are 6-max by selection artifact, while the founder's game is 9-handed | execute | S | weak model (one comparator in `loadVillain.mjs`) |"
+      },
+      {
+        "claim_id": "14719115-t6-26",
+        "commit": "a0543767a7e29c4c8752df5aa2b882be9ae462f5",
+        "claim": "POKER_THEORY.md",
+        "cited_path": "POKER_THEORY.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Now the mandatory doc updates — first POKER_THEORY.md §6.5a:"
+      },
+      {
+        "claim_id": "4ddd5368-t3-1491",
+        "commit": "b984dff50451f6a1a55b5eb52317fea91c3001d7",
+        "claim": "side-panel/side-panel.js",
+        "cited_path": "side-panel/side-panel.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Line 82–85 of `side-panel/side-panel.js`:"
+      },
+      {
+        "claim_id": "1eb06748-t1-1100",
+        "commit": "078f8f0967deb65afe37d4e9e8dd784585ccdcf7",
+        "claim": "behaviorPolicy.mjs",
+        "cited_path": "behaviorPolicy.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**The critical realization:** `behaviorPolicy.mjs` is already the population model Instrument II needs."
+      },
+      {
+        "claim_id": "fc271296-t38-2010",
+        "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+        "claim": "ROUNDTABLES.md",
+        "cited_path": "ROUNDTABLES.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "Three stages meet ❌ on `ROUNDTABLES.md`'s **own written rubric** — Stage A's ❌ is defined as \"new core persona missing entirely\" (two are), and Stage B's ❌ is a missing JTBD domain, which is the remedy Gate 1 itself proposed."
+      },
+      {
+        "claim_id": "0ff9f354-t3-3713",
+        "commit": "6f4cf7dbec6d71509b5bb54c6483d5b74a3e9538",
+        "claim": "cwos-fleet-compute.js",
+        "cited_path": "cwos-fleet-compute.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`cwos-fleet-compute.js` now refuses to submit on unmet blockers."
+      },
+      {
+        "claim_id": "0f827d81-t2-4061",
+        "commit": "56ef59096f41b29980e74d7d13871b64cd1f1c17",
+        "claim": "villain-strategy-inference-2026-08-17.md",
+        "cited_path": "villain-strategy-inference-2026-08-17.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "It holds locks on `villain-strategy-inference-2026-08-17.md`, `VILLAIN-STRATEGY-CARD-50NL-ONLINE-2009.md`, the EM-recovery scripts, the rule-ladder spec, and as of 11:51 today `ws543-instrument-calibration-2026-08-18.md`."
+      },
+      {
+        "claim_id": "8b91db30-t1-5308",
+        "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+        "claim": "conductCard.js",
+        "cited_path": "conductCard.js",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`conductCard.js` takes `subjectId` and nothing else."
+      },
+      {
+        "claim_id": "CTRL-4",
+        "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+        "claim": "run-calibration.mjs:999999",
+        "cited_path": "run-calibration.mjs",
+        "cited_line": 999999,
+        "cited_line_end": null,
+        "sentence": "The relevant logic is at run-calibration.mjs:999999, which sets the ceiling."
+      },
+      {
+        "claim_id": "09d1ac03-t2-3571",
+        "commit": "f54e955735bd9310ba2f22bc9672fba9c150a820",
+        "claim": "docs/guides/GUIDE-STANDARD.md",
+        "cited_path": "docs/guides/GUIDE-STANDARD.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "**What I'd write:** the program YAML, plus `docs/guides/GUIDE-STANDARD.md` — which is literally the maximally-general element of your lattice, every slot empty, i.e."
+      }
+    ]
+  },
+  {
+    "packet_id": "p05",
+    "claims": [
+      {
+        "claim_id": "f51c84ae-t4-327",
+        "commit": "dbfef755bf3e8668e9443efb92cb9299dcd55050",
+        "claim": "run.mjs",
+        "cited_path": "run.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`run.mjs` builds a scorecard and throws the records away — the data exists in-process but is never persisted."
+      },
+      {
+        "claim_id": "CTRL-5",
+        "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+        "claim": "thisFileDoesNotExist_ctrl.js:12",
+        "cited_path": "thisFileDoesNotExist_ctrl.js",
+        "cited_line": 12,
+        "cited_line_end": null,
+        "sentence": "This is implemented in thisFileDoesNotExist_ctrl.js:12 and nothing else reads it."
+      },
+      {
+        "claim_id": "393476c9-t1-5900",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "atomStore.mjs",
+        "cited_path": "atomStore.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`atomStore.mjs` already exists (32KB), so the substrate for persisting the decision set is in place."
+      },
+      {
+        "claim_id": "454852a2-t5-3304",
+        "commit": "a2757c5beda246e7b3612c6a4bff6f871c822e48",
+        "claim": "dealBook.mjs",
+        "cited_path": "dealBook.mjs",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "`dealBook.mjs` already *is* \"the resolved file list hash\" — sorted, relativized, content-hashed."
+      },
+      {
+        "claim_id": "fc271296-t24-1849",
+        "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+        "claim": "schemas.js:101",
+        "cited_path": "schemas.js",
+        "cited_line": 101,
+        "cited_line_end": null,
+        "sentence": "Every hour of run time so far has produced an aggregate and thrown away the record — while `schemas.js:101` has said *\"Aggregates are VIEWS over atoms, never the record\"* for seven weeks."
+      },
+      {
+        "claim_id": "21fc0d17-t12-1514",
+        "commit": "cb0820333b39e428995464c70c0a8d6e71883be3",
+        "claim": "exportUtils.js:226-232",
+        "cited_path": "exportUtils.js",
+        "cited_line": 226,
+        "cited_line_end": 232,
+        "sentence": "Contamination isn't hypothetical — `exportUtils.js:226-232` routes imports through `saveHand`, which stamps nothing, so it's already shipping."
+      },
+      {
+        "claim_id": "d435e738-t3-4627",
+        "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+        "claim": "SYSTEM_MODEL.md:252",
+        "cited_path": "SYSTEM_MODEL.md",
+        "cited_line": 252,
+        "cited_line_end": null,
+        "sentence": "Also: `SYSTEM_MODEL.md:252` claims a \"backup before destructive ops\" mitigation for migrations."
+      },
+      {
+        "claim_id": "d435e738-t5-4647",
+        "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+        "claim": "findings-index.yaml:726-778",
+        "cited_path": "findings-index.yaml",
+        "cited_line": 726,
+        "cited_line_end": 778,
+        "sentence": "The **2026-08-07 sweep produced all six of the security program's open findings** — `findings-index.yaml:726-778` tags them `program: security` from `run-launch-sweep-2026-08-07`."
+      },
+      {
+        "claim_id": "393476c9-t1-5898",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "strategyArm.mjs:200",
+        "cited_path": "strategyArm.mjs",
+        "cited_line": 200,
+        "cited_line_end": null,
+        "sentence": "WS-540 reads *\"Strategy arms cannot run in workers.\"* **That is already fixed.** I checked the code rather than the ticket body: the `not yet transportable` throw is gone (`heroEvRunner.mjs:249`), `rehydrateStrategy` ships with a re-derived content-hash assertion (`strategyArm.mjs:200`), and the tampered-card test exists (`strategyArmWorkerTransport.test.js:67`)."
+      },
+      {
+        "claim_id": "3acf26b5-t6-2445",
+        "commit": "228c6af9d2ab34a23a4ff52487d17267aab0e691",
+        "claim": "compact-tier.cjs:85",
+        "cited_path": "compact-tier.cjs",
+        "cited_line": 85,
+        "cited_line_end": null,
+        "sentence": "**The file carries a stale measurement of itself, in itself:** `compact-tier.cjs:85` says \"the full 16-rule tier is 1,912 B.\" It is 18 rules / 2,304 B."
+      },
+      {
+        "claim_id": "fc271296-t10-1718",
+        "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+        "claim": "gameTreeSizingHelpers.js:162-180",
+        "cited_path": "gameTreeSizingHelpers.js",
+        "cited_line": 162,
+        "cited_line_end": 180,
+        "sentence": "**One genuine poker-math defect, not a wiring gap.** `tightenRatesForContinuation` (`gameTreeSizingHelpers.js:162-180`) is a second, **bucket-label-keyed** narrowing channel — a direct AP-RL-01 violation — applied **twice in sequence** on the flop depth-3 line (`gameTreeDepth2.js:1073-1078`)."
+      }
+    ]
+  },
+  {
+    "packet_id": "p06",
+    "claims": [
+      {
+        "claim_id": "fc271296-t43-2071",
+        "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+        "claim": "CLAUDE.md:337",
+        "cited_path": "CLAUDE.md",
+        "cited_line": 337,
+        "cited_line_end": null,
+        "sentence": "- §7 — the most-cited section at **156**, and the *only* one that already has an always-loaded compressed form in `CLAUDE.md:337`"
+      },
+      {
+        "claim_id": "08103047-t1-3066",
+        "commit": "af3f7e162f4f6270c8297e422fa182fe3a0443c3",
+        "claim": "foldEquityCalculator.js:168",
+        "cited_path": "foldEquityCalculator.js",
+        "cited_line": 168,
+        "cited_line_end": null,
+        "sentence": "`POKER_THEORY` §11.3 and `potCalculator.js:460–463` state as doctrine that **rake never touches the fold branch** — \"no showdown, no drop\" — and `foldEquityCalculator.js:168` implements it (`foldEquity = foldPct * potSize`, untaxed)."
+      },
+      {
+        "claim_id": "a5dbb4b5-t25-2711",
+        "commit": "18f49f2234862d0b2e2a62caecb9ce9c66734076",
+        "claim": "ipsEstimator.mjs:24",
+        "cited_path": "ipsEstimator.mjs",
+        "cited_line": 24,
+        "cited_line_end": null,
+        "sentence": "Someone wrote it down as a **bias** statement — and it has propagated verbatim into four places: `ipsEstimator.mjs:24`, `docs/runbooks/baseline-ev-run.md:28`, the fault register at `:66`, and the spec at `:157`."
+      },
+      {
+        "claim_id": "fc271296-t16-1767",
+        "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+        "claim": "gameTreeEvaluator.js:814",
+        "cited_path": "gameTreeEvaluator.js",
+        "cited_line": 814,
+        "cited_line_end": null,
+        "sentence": "`refinementBudgetMs = 2000` (`gameTreeEvaluator.js:814`) is a **wall-clock control, not a poker-theory control**, and it silently decides the top action."
+      },
+      {
+        "claim_id": "CTRL-6",
+        "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+        "claim": "CLAUDE.md",
+        "cited_path": "CLAUDE.md",
+        "cited_line": null,
+        "cited_line_end": null,
+        "sentence": "CLAUDE.md does not exist in this repository."
+      },
+      {
+        "claim_id": "f51c84ae-t3-311",
+        "commit": "dbfef755bf3e8668e9443efb92cb9299dcd55050",
+        "claim": "villainDecisionModel.js:148",
+        "cited_path": "villainDecisionModel.js",
+        "cited_line": 148,
+        "cited_line_end": null,
+        "sentence": "`villainDecisionModel.js:148` claims texture is preserved through L3 *\"because wet vs dry boards have the largest impact on villain action distribution after street context.\"* **The data does not support that.** Dropping texture first is a hair better, well inside noise."
+      },
+      {
+        "claim_id": "f6141ba8-t2-3812",
+        "commit": "6f4cf7dbec6d71509b5bb54c6483d5b74a3e9538",
+        "claim": "WS-293.yaml:96",
+        "cited_path": "WS-293.yaml",
+        "cited_line": 96,
+        "cited_line_end": null,
+        "sentence": "`WS-293.yaml:96` already sets `--max-old-space-size=12288`."
+      },
+      {
+        "claim_id": "07d8cdc4-t3-6302",
+        "commit": "b93b34526cb6a82f2ca8deee9e92ac7c524e8866",
+        "claim": "run-depth-ablation.mjs:79",
+        "cited_path": "run-depth-ablation.mjs",
+        "cited_line": 79,
+        "cited_line_end": null,
+        "sentence": "Two things are now wrong at `run-depth-ablation.mjs:79`: the production default is **20000** (not 2000), and `gameTreeEvaluator.js:701` is unrelated code."
+      },
+      {
+        "claim_id": "baf3c783-t1-4392",
+        "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+        "claim": "induceCore.mjs:110",
+        "cited_path": "induceCore.mjs",
+        "cited_line": 110,
+        "cited_line_end": null,
+        "sentence": "What blocks it is that `facing` has a third value with only 12 decisions, and `induceCore.mjs:110` drops the **entire feature** when any remainder falls under the floor."
+      },
+      {
+        "claim_id": "02c3373d-t5-3184",
+        "commit": "540002648c30404d28ea0739babeb4409b485ba3",
+        "claim": "build-equity-matrix.mjs:52-55",
+        "cited_path": "build-equity-matrix.mjs",
+        "cited_line": 52,
+        "cited_line_end": 55,
+        "sentence": "Also note: `build-equity-matrix.mjs:52-55` explicitly claims the CSV is **\"byte-reproducible\"**."
+      },
+      {
+        "claim_id": "119aa927-t4-5821",
+        "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+        "claim": "rangeCalibrationProbe.mjs:149-164",
+        "cited_path": "rangeCalibrationProbe.mjs",
+        "cited_line": 149,
+        "cited_line_end": 164,
+        "sentence": "`rangeCalibrationProbe.mjs:149-164` already records the problem, and it's directly on B's path:"
+      }
+    ]
+  }
+]

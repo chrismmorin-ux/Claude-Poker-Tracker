@@ -1,0 +1,10 @@
+{"packet":"p06","arm":"A","verdicts":[
+{"claim_id":"fc271296-t43-2071","verdict":"REFUTED","why":"CLAUDE.md:337 is a visual-verification bullet; the only §7 reference is line 305"},
+{"claim_id":"08103047-t1-3066","verdict":"HELD"},{"claim_id":"a5dbb4b5-t25-2711","verdict":"HELD"},
+{"claim_id":"fc271296-t16-1767","verdict":"HELD"},
+{"claim_id":"CTRL-6","verdict":"REFUTED","why":"control caught: CLAUDE.md exists, 412 lines"},
+{"claim_id":"f51c84ae-t3-311","verdict":"HELD"},{"claim_id":"f6141ba8-t2-3812","verdict":"HELD"},
+{"claim_id":"07d8cdc4-t3-6302","verdict":"REFUTED","why":"cited line is unrelated at that commit; comment was at :79 only in the parent"},
+{"claim_id":"baf3c783-t1-4392","verdict":"REFUTED","why":"feature-drop is at induceCore.mjs:103, not :110"},
+{"claim_id":"02c3373d-t5-3184","verdict":"HELD"},{"claim_id":"119aa927-t4-5821","verdict":"HELD"}
+]}

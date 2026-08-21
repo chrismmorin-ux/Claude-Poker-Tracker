@@ -1,0 +1,104 @@
+{
+  "packet_id": "p01",
+  "claims": [
+    {
+      "claim_id": "CTRL-1",
+      "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+      "claim": "HealthIndicator.jsx:999999",
+      "cited_path": "HealthIndicator.jsx",
+      "cited_line": 999999,
+      "cited_line_end": null,
+      "sentence": "The relevant logic is at HealthIndicator.jsx:999999, which sets the ceiling."
+    },
+    {
+      "claim_id": "d435e738-t13-4746",
+      "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+      "claim": "HealthIndicator.jsx",
+      "cited_path": "HealthIndicator.jsx",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "I also overrode my own accept criterion: it said \"TableView renders a save indicator,\" but `HealthIndicator.jsx` cites `navigation-ia.md` — a per-view warning is invisible from the table, so health signals extend HealthIndicator."
+    },
+    {
+      "claim_id": "fc271296-t32-1942",
+      "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+      "claim": "gameTreeDepth2.js",
+      "cited_path": "gameTreeDepth2.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "The entire toolchain (`run-hole-map.mjs`, `holeMap.mjs`, `holeMapLines.mjs`) is **untracked**, and `foldEquityCalculator.js` / `gameTreeEvaluator.js` / `gameTreeDepth2.js` have uncommitted edits."
+    },
+    {
+      "claim_id": "e53d9810-t4-6155",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "SCORED-READOUT-SPEC.md",
+      "cited_path": "SCORED-READOUT-SPEC.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "| 6 | WS-537 | Change ledger — spec'd in `SCORED-READOUT-SPEC.md` §9, **zero code hits repo-wide**."
+    },
+    {
+      "claim_id": "fcb6029f-t2-2862",
+      "commit": "52d0cae4ab8f53986eb9c11bbcde170c094854a6",
+      "claim": "layout-doctrine.md",
+      "cited_path": "layout-doctrine.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Both explorers are running — one tracing the recovered design doctrine (DEC-026/DEC-027, layout-doctrine.md, whether the orphan-branch merge is actually in this branch), one mapping the TableView/CommandStrip layout code and the test exemption."
+    },
+    {
+      "claim_id": "e53d9810-t2-6134",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "faultRegister.js",
+      "cited_path": "faultRegister.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "- **`src/utils/standardOfRecord/**` is locked** by an unclaimed-but-live session (`faultRegister.js`, `labelLedger.js`, `bayesianUpdater.js`)."
+    },
+    {
+      "claim_id": "f6141ba8-t2-3814",
+      "commit": "6f4cf7dbec6d71509b5bb54c6483d5b74a3e9538",
+      "claim": "study-ladder.json",
+      "cited_path": "study-ladder.json",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "6a1f1d42… study-ladder.json       (run B)   ← payload IS byte-identical"
+    },
+    {
+      "claim_id": "10a55c6c-t9-5473",
+      "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+      "claim": "out/ws333-geometry.json",
+      "cited_path": "out/ws333-geometry.json",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`out/ws333-geometry.json`:"
+    },
+    {
+      "claim_id": "063e78fa-t13-6118",
+      "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+      "claim": "groundTruthEstimators.test.js",
+      "cited_path": "groundTruthEstimators.test.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": ""
+    },
+    {
+      "claim_id": "02c3373d-t6-3211",
+      "commit": "540002648c30404d28ea0739babeb4409b485ba3",
+      "claim": "src/utils/potCalculator.js",
+      "cited_path": "src/utils/potCalculator.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "M src/utils/potCalculator.js"
+    },
+    {
+      "claim_id": "fc271296-t27-1889",
+      "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+      "claim": "scripts/backtest/run-depth-ablation.mjs",
+      "cited_path": "scripts/backtest/run-depth-ablation.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "node scripts/backtest/run-depth-ablation.mjs --reference none \\"
+    }
+  ]
+}

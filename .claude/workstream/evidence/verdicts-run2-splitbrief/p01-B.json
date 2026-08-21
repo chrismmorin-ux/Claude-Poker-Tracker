@@ -1,0 +1,10 @@
+{"packet":"p01","arm":"B","verdicts":[
+{"claim_id":"CTRL-1","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"d435e738-t13-4746","verdict":"HELD","why":"read it as navigation-ia.md governing HealthIndicator, not the jsx citing the md"},
+{"claim_id":"fc271296-t32-1942","verdict":"HELD"},{"claim_id":"e53d9810-t4-6155","verdict":"HELD"},
+{"claim_id":"fcb6029f-t2-2862","verdict":"HELD"},
+{"claim_id":"e53d9810-t2-6134","verdict":"HELD","why":"acknowledged bayesianUpdater.js is in rangeEngine but held because the cited path resolves"},
+{"claim_id":"f6141ba8-t2-3814","verdict":"HELD"},{"claim_id":"10a55c6c-t9-5473","verdict":"HELD"},
+{"claim_id":"063e78fa-t13-6118","verdict":"HELD"},{"claim_id":"02c3373d-t6-3211","verdict":"HELD"},
+{"claim_id":"fc271296-t27-1889","verdict":"HELD"}
+]}

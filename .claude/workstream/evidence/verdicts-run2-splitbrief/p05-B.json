@@ -1,0 +1,11 @@
+{"packet":"p05","arm":"B","verdicts":[
+{"claim_id":"f51c84ae-t4-327","verdict":"HELD"},
+{"claim_id":"CTRL-5","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"393476c9-t1-5900","verdict":"HELD"},{"claim_id":"454852a2-t5-3304","verdict":"HELD"},
+{"claim_id":"fc271296-t24-1849","verdict":"REFUTED","why":"quoted line is 102 not 101, and 'seven weeks' is false — written 3 days earlier"},
+{"claim_id":"21fc0d17-t12-1514","verdict":"HELD"},{"claim_id":"d435e738-t3-4627","verdict":"HELD"},
+{"claim_id":"d435e738-t5-4647","verdict":"HELD","why":"substance confirmed; cited line range imprecise"},
+{"claim_id":"393476c9-t1-5898","verdict":"HELD","why":"uncommitted at the commit; landed 75 min later with rehydrateStrategy at exactly line 200"},
+{"claim_id":"3acf26b5-t6-2445","verdict":"HELD","why":"untracked at that commit; the first commit 8h later confirms both numbers"},
+{"claim_id":"fc271296-t10-1718","verdict":"HELD"}
+]}

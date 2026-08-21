@@ -3,9 +3,37 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import os from 'node:os';
+
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const HOOK = path.join(REPO_ROOT, '.claude', 'hooks', 'context-barrier.cjs');
-const ACTIVE = path.join(REPO_ROOT, '.claude', 'context', 'active-bundle.json');
+
+/**
+ * THIS SUITE USED TO WRITE PRODUCTION STATE, AND IT WENT UNNOTICED FOR 15 DAYS.
+ *
+ * `ACTIVE` and the log both resolved from REPO_ROOT, and `invoke()` spawns the hook
+ * with `cwd: REPO_ROOT`, so running the tests created and deleted the live
+ * `active-bundle.json` -- a control file, on a tree that routinely carries several
+ * concurrent sessions -- and appended fixtures to the live audit log. Design-critique
+ * 2026-08-20 measured ~97% of that log's 1301 events as test residue with no field
+ * marking them, which made the mechanism's only telemetry unusable as evidence.
+ *
+ * State now lives in a tmpdir and every spawn carries the redirect. The production
+ * files are asserted untouched at the end of this file -- a test that guards the
+ * property rather than a comment asking for it.
+ */
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxbarrier-'));
+const ACTIVE = path.join(TMP, 'active-bundle.json');
+const LOG = path.join(TMP, 'context-barrier-log.yaml');
+
+const PROD_ACTIVE = path.join(REPO_ROOT, '.claude', 'context', 'active-bundle.json');
+const PROD_LOG = path.join(REPO_ROOT, '.claude', 'workstream', 'meta', 'context-barrier-log.yaml');
+
+const HOOK_ENV = {
+  CONTEXT_BARRIER_ACTIVE: ACTIVE,
+  CONTEXT_BARRIER_LOG: LOG,
+  CONTEXT_BARRIER_SOURCE: 'test',
+};
 
 const WITHHELD = '.claude/context/MEASUREMENT_OVERSIGHTS.md';
 
@@ -15,7 +43,7 @@ function invoke(payload, env = {}) {
     input: JSON.stringify(payload),
     encoding: 'utf8',
     cwd: REPO_ROOT,
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...HOOK_ENV, ...env },
   });
   return { code: res.status, stderr: res.stderr || '' };
 }
@@ -33,13 +61,8 @@ function declare(overrides = {}) {
 }
 
 describe('context barrier', () => {
-  let saved = null;
-  beforeEach(() => {
-    saved = fs.existsSync(ACTIVE) ? fs.readFileSync(ACTIVE, 'utf8') : null;
-  });
   afterEach(() => {
     try { fs.unlinkSync(ACTIVE); } catch { /* fine */ }
-    if (saved !== null) fs.writeFileSync(ACTIVE, saved, 'utf8');
   });
 
   describe('blocks a withheld read — the claim the shipped header said was impossible', () => {
@@ -92,6 +115,54 @@ describe('context barrier', () => {
     });
   });
 
+  describe('THE SECOND HOLE -- naming a container instead of the file', () => {
+    // Measured 2026-08-20 during design-critique. The leaf/substring check caught an
+    // input that NAMED the withheld file and missed every input that named a directory
+    // above it and let the tool enumerate. Five of six routes reached the content with
+    // no block and no record -- and `cat <dir>/*` is strictly easier to type than the
+    // `head -3 <file>` that motivated the v1 rewrite.
+    it('blocks a Grep rooted at the containing directory', () => {
+      declare();
+      expect(invoke({ tool_name: 'Grep', tool_input: { pattern: 'posterior', path: '.claude/context/' } }).code).toBe(BLOCKED);
+    });
+
+    it('blocks a Glob over the containing directory', () => {
+      declare();
+      expect(invoke({ tool_name: 'Glob', tool_input: { pattern: '.claude/context/*.md' } }).code).toBe(BLOCKED);
+    });
+
+    it('blocks a shell wildcard read of the directory', () => {
+      declare();
+      expect(invoke({ tool_name: 'Bash', tool_input: { command: 'cat .claude/context/*.md' } }).code).toBe(BLOCKED);
+    });
+
+    it('blocks a git grep pathspec-scoped to the directory', () => {
+      declare();
+      expect(invoke({ tool_name: 'Bash', tool_input: { command: 'git grep -n posterior -- .claude/context' } }).code).toBe(BLOCKED);
+    });
+
+    it('blocks delegating the enumeration to a subagent', () => {
+      declare();
+      expect(invoke({
+        tool_name: 'Task',
+        tool_input: { prompt: 'Read every file under .claude/context and summarize' },
+      }).code).toBe(BLOCKED);
+    });
+  });
+
+  describe('the directory rule has bounds -- over-blocking the rest is breakage', () => {
+    it('allows a SIBLING file the bundle does not withhold', () => {
+      declare();
+      expect(invoke({ tool_name: 'Read', tool_input: { file_path: '.claude/context/POKER_THEORY.md' } }).code).toBe(ALLOWED);
+      expect(invoke({ tool_name: 'Grep', tool_input: { pattern: 'x', path: '.claude/context/STATE_SCHEMA.md' } }).code).toBe(ALLOWED);
+    });
+
+    it('allows a ONE-SEGMENT ancestor -- a bare .claude must not blanket-block', () => {
+      declare();
+      expect(invoke({ tool_name: 'Bash', tool_input: { command: 'ls -la .claude' } }).code).toBe(ALLOWED);
+    });
+  });
+
   describe('does not over-block ordinary work', () => {
     it('allows unrelated Bash', () => {
       declare();
@@ -128,7 +199,10 @@ describe('context barrier', () => {
 
     it('allows on malformed stdin', () => {
       declare();
-      const res = spawnSync('node', [HOOK], { input: 'not json at all', encoding: 'utf8', cwd: REPO_ROOT });
+      const res = spawnSync('node', [HOOK], {
+        input: 'not json at all', encoding: 'utf8', cwd: REPO_ROOT,
+        env: { ...process.env, ...HOOK_ENV },
+      });
       expect(res.status).toBe(ALLOWED);
     });
   });
@@ -136,16 +210,16 @@ describe('context barrier', () => {
   describe('bypass is permitted and RECORDED, never silent', () => {
     it('allows the read under CONTEXT_BARRIER_BYPASS and writes a record', () => {
       declare();
-      const log = path.join(REPO_ROOT, '.claude', 'workstream', 'meta', 'context-barrier-log.yaml');
-      const before = fs.existsSync(log) ? fs.readFileSync(log, 'utf8') : '';
+      const before = fs.existsSync(LOG) ? fs.readFileSync(LOG, 'utf8') : '';
       const { code } = invoke(
         { tool_name: 'Read', tool_input: { file_path: WITHHELD } },
         { CONTEXT_BARRIER_BYPASS: '1' },
       );
       expect(code).toBe(ALLOWED);
-      const after = fs.readFileSync(log, 'utf8');
+      const after = fs.readFileSync(LOG, 'utf8');
       expect(after.length).toBeGreaterThan(before.length);
-      expect(after).toContain('kind: bypass');
+      expect(after).toContain('"kind": "bypass"'.replace('"kind"', 'kind'));
+      expect(after).toContain('"source": "test"'.replace('"source"', 'source'));
     });
   });
 
@@ -160,6 +234,65 @@ describe('context barrier', () => {
         tool_input: { file_path: 'USER_MEMORY/project_allin_side_pots.md' },
       });
       expect(code).toBe(ALLOWED);
+    });
+  });
+  describe('the log is an audit trail, which means something can read it', () => {
+    // A Windows absolute path is the exact shape that broke the old writer: it
+    // escaped only the double quote, so a backslash followed by U read as a malformed
+    // unicode escape and the file stopped parsing at event #3 of 1301.
+    const B = String.fromCharCode(92);
+    const WIN_PATH = 'C:' + B + 'Users' + B + 'chris' + B + 'MEASUREMENT_OVERSIGHTS.md';
+    const NL = String.fromCharCode(10);
+
+    function scalarsIn(text) {
+      return text.split(NL)
+        .map((l) => l.trim())
+        .filter((l) => l.indexOf(': ') > 0)
+        .map((l) => l.slice(l.indexOf(': ') + 2).trim())
+        .filter((v) => v.length > 0);
+    }
+
+    it('emits scalars a parser accepts -- the defect that made it unreadable', () => {
+      declare();
+      invoke(
+        { tool_name: 'Read', tool_input: { file_path: WIN_PATH } },
+        { CONTEXT_BARRIER_BYPASS: '1' },
+      );
+      const scalars = scalarsIn(fs.readFileSync(LOG, 'utf8'));
+      expect(scalars.length).toBeGreaterThan(0);
+      // Every value is a JSON scalar, which is also a valid YAML 1.2 double-quoted
+      // scalar. Asserting JSON.parse is strictly tighter than asserting YAML parses.
+      for (const v of scalars) expect(() => JSON.parse(v)).not.toThrow();
+    });
+
+    it('round-trips a Windows path rather than corrupting it', () => {
+      declare();
+      invoke(
+        { tool_name: 'Read', tool_input: { file_path: WIN_PATH } },
+        { CONTEXT_BARRIER_BYPASS: '1' },
+      );
+      const scalars = scalarsIn(fs.readFileSync(LOG, 'utf8')).map((v) => JSON.parse(v));
+      expect(scalars.some((v) => v.indexOf(B + 'Users' + B) !== -1)).toBe(true);
+    });
+
+    it('marks provenance, so no reader has to infer it from event counts', () => {
+      declare();
+      invoke({ tool_name: 'Read', tool_input: { file_path: WITHHELD } });
+      expect(fs.readFileSync(LOG, 'utf8')).toContain('source: "test"');
+    });
+  });
+
+  describe('THE REGRESSION THIS FILE EXISTS TO PREVENT', () => {
+    it('does not touch production control state', () => {
+      const activeBefore = fs.existsSync(PROD_ACTIVE);
+      const logBefore = fs.existsSync(PROD_LOG) ? fs.statSync(PROD_LOG).size : -1;
+
+      declare();
+      invoke({ tool_name: 'Read', tool_input: { file_path: WITHHELD } });
+      invoke({ tool_name: 'Read', tool_input: { file_path: WITHHELD } }, { CONTEXT_BARRIER_BYPASS: '1' });
+
+      expect(fs.existsSync(PROD_ACTIVE)).toBe(activeBefore);
+      expect(fs.existsSync(PROD_LOG) ? fs.statSync(PROD_LOG).size : -1).toBe(logBefore);
     });
   });
 });

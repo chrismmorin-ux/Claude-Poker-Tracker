@@ -1,0 +1,10 @@
+{"packet":"p04","arm":"B","verdicts":[
+{"claim_id":"119aa927-t7-5854","verdict":"HELD"},{"claim_id":"e53d9810-t3-6142","verdict":"HELD"},
+{"claim_id":"14719115-t6-26","verdict":"HELD"},{"claim_id":"4ddd5368-t3-1491","verdict":"HELD"},
+{"claim_id":"1eb06748-t1-1100","verdict":"HELD"},{"claim_id":"fc271296-t38-2010","verdict":"HELD"},
+{"claim_id":"0ff9f354-t3-3713","verdict":"HELD"},
+{"claim_id":"0f827d81-t2-4061","verdict":"REFUTED","why":"villain-strategy-inference-2026-08-17.md absent at 56ef590; added 2 days later"},
+{"claim_id":"8b91db30-t1-5308","verdict":"HELD"},
+{"claim_id":"CTRL-4","verdict":"REFUTED","why":"control: file 350 lines, 999999 beyond EOF"},
+{"claim_id":"09d1ac03-t2-3571","verdict":"UNRESOLVABLE","why":"sentence is prospective ('What I would write')"}
+]}

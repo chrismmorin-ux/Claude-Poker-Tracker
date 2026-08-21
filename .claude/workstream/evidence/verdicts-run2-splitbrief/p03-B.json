@@ -1,0 +1,9 @@
+{"packet":"p03","arm":"B","verdicts":[
+{"claim_id":"35418976-t1-685","verdict":"HELD"},
+{"claim_id":"8b91db30-t5-5335","verdict":"HELD","why":"absent from the commit but on disk with mtime 2026-08-19 22:54 — authored in the working tree that session, committed next day"},
+{"claim_id":"48e79e5e-t5-3686","verdict":"HELD"},{"claim_id":"454852a2-t3-3288","verdict":"HELD"},
+{"claim_id":"dabcbfdf-t7-2921","verdict":"HELD"},{"claim_id":"dcab5942-t4-1436","verdict":"HELD"},
+{"claim_id":"CTRL-3","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"74727ffa-t3-3862","verdict":"HELD"},{"claim_id":"a924eff4-t2-5344","verdict":"HELD"},
+{"claim_id":"ce918290-t3-6434","verdict":"HELD"},{"claim_id":"063e78fa-t2-6028","verdict":"HELD"}
+]}

@@ -1,0 +1,104 @@
+{
+  "packet_id": "p04",
+  "claims": [
+    {
+      "claim_id": "119aa927-t7-5854",
+      "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+      "claim": "run-calibration.mjs",
+      "cited_path": "run-calibration.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`run-calibration.mjs` must add it separately:"
+    },
+    {
+      "claim_id": "e53d9810-t3-6142",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "loadVillain.mjs",
+      "cited_path": "loadVillain.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "| 1 | WS-579 | Nine-handed subject selection — both existing cards are 6-max by selection artifact, while the founder's game is 9-handed | execute | S | weak model (one comparator in `loadVillain.mjs`) |"
+    },
+    {
+      "claim_id": "14719115-t6-26",
+      "commit": "a0543767a7e29c4c8752df5aa2b882be9ae462f5",
+      "claim": "POKER_THEORY.md",
+      "cited_path": "POKER_THEORY.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Now the mandatory doc updates — first POKER_THEORY.md §6.5a:"
+    },
+    {
+      "claim_id": "4ddd5368-t3-1491",
+      "commit": "b984dff50451f6a1a55b5eb52317fea91c3001d7",
+      "claim": "side-panel/side-panel.js",
+      "cited_path": "side-panel/side-panel.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Line 82–85 of `side-panel/side-panel.js`:"
+    },
+    {
+      "claim_id": "1eb06748-t1-1100",
+      "commit": "078f8f0967deb65afe37d4e9e8dd784585ccdcf7",
+      "claim": "behaviorPolicy.mjs",
+      "cited_path": "behaviorPolicy.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**The critical realization:** `behaviorPolicy.mjs` is already the population model Instrument II needs."
+    },
+    {
+      "claim_id": "fc271296-t38-2010",
+      "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+      "claim": "ROUNDTABLES.md",
+      "cited_path": "ROUNDTABLES.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Three stages meet ❌ on `ROUNDTABLES.md`'s **own written rubric** — Stage A's ❌ is defined as \"new core persona missing entirely\" (two are), and Stage B's ❌ is a missing JTBD domain, which is the remedy Gate 1 itself proposed."
+    },
+    {
+      "claim_id": "0ff9f354-t3-3713",
+      "commit": "6f4cf7dbec6d71509b5bb54c6483d5b74a3e9538",
+      "claim": "cwos-fleet-compute.js",
+      "cited_path": "cwos-fleet-compute.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`cwos-fleet-compute.js` now refuses to submit on unmet blockers."
+    },
+    {
+      "claim_id": "0f827d81-t2-4061",
+      "commit": "56ef59096f41b29980e74d7d13871b64cd1f1c17",
+      "claim": "villain-strategy-inference-2026-08-17.md",
+      "cited_path": "villain-strategy-inference-2026-08-17.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "It holds locks on `villain-strategy-inference-2026-08-17.md`, `VILLAIN-STRATEGY-CARD-50NL-ONLINE-2009.md`, the EM-recovery scripts, the rule-ladder spec, and as of 11:51 today `ws543-instrument-calibration-2026-08-18.md`."
+    },
+    {
+      "claim_id": "8b91db30-t1-5308",
+      "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+      "claim": "conductCard.js",
+      "cited_path": "conductCard.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`conductCard.js` takes `subjectId` and nothing else."
+    },
+    {
+      "claim_id": "CTRL-4",
+      "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+      "claim": "run-calibration.mjs:999999",
+      "cited_path": "run-calibration.mjs",
+      "cited_line": 999999,
+      "cited_line_end": null,
+      "sentence": "The relevant logic is at run-calibration.mjs:999999, which sets the ceiling."
+    },
+    {
+      "claim_id": "09d1ac03-t2-3571",
+      "commit": "f54e955735bd9310ba2f22bc9672fba9c150a820",
+      "claim": "docs/guides/GUIDE-STANDARD.md",
+      "cited_path": "docs/guides/GUIDE-STANDARD.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**What I'd write:** the program YAML, plus `docs/guides/GUIDE-STANDARD.md` — which is literally the maximally-general element of your lattice, every slot empty, i.e."
+    }
+  ]
+}

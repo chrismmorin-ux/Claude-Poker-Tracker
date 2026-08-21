@@ -1,0 +1,24 @@
+{
+  "experiment_id": "channel-composition-2026-08",
+  "mode": "off",
+  "_mode_values": {
+    "disabled": "hook returns immediately, writes nothing",
+    "off": "assign an arm and log it; inject NOTHING. Content identical for every session. THIS IS THE SHIPPING STATE.",
+    "live": "arm A receives the relocated rulings re-injected. Do NOT set until the stubs exist, or arm A gets them twice."
+  },
+  "salt": "ws-channel-20260821",
+  "_salt_note": "Pins the randomization. Changing it re-randomizes every session and is a NEW experiment, not a continuation.",
+  "relocated": [
+    "artifact-location",
+    "cold-read-regime",
+    "corpus-transfer-is-earned",
+    "founder-read-detects-site-not-direction",
+    "sparsity-refuse-or-shrink",
+    "surfaces-reach-the-table",
+    "unmeasured-constants"
+  ],
+  "_relocated_note": "The seven founder rulings of 2026-08-20. 21,687 B, 44.8% of the .claude/rules/ channel.",
+  "outcome_measure": "citation misplacement (CITE-WRONG / substance-holds), NOT substance refutation",
+  "_outcome_note": "Run 3 measured substance refutation at 1.7% -- a floor needing ~1,349 claims per arm to detect a doubling. Citation misplacement runs at 8.8% and needs ~232. See .claude/workstream/evidence/claim-survival-baseline-2026-08-20.md.",
+  "analysis": "permutation test, session as the unit; A-failopen sessions reported separately and never folded into A"
+}

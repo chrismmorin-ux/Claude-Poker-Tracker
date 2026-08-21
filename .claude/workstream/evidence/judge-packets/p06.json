@@ -1,0 +1,104 @@
+{
+  "packet_id": "p06",
+  "claims": [
+    {
+      "claim_id": "fc271296-t43-2071",
+      "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+      "claim": "CLAUDE.md:337",
+      "cited_path": "CLAUDE.md",
+      "cited_line": 337,
+      "cited_line_end": null,
+      "sentence": "- §7 — the most-cited section at **156**, and the *only* one that already has an always-loaded compressed form in `CLAUDE.md:337`"
+    },
+    {
+      "claim_id": "08103047-t1-3066",
+      "commit": "af3f7e162f4f6270c8297e422fa182fe3a0443c3",
+      "claim": "foldEquityCalculator.js:168",
+      "cited_path": "foldEquityCalculator.js",
+      "cited_line": 168,
+      "cited_line_end": null,
+      "sentence": "`POKER_THEORY` §11.3 and `potCalculator.js:460–463` state as doctrine that **rake never touches the fold branch** — \"no showdown, no drop\" — and `foldEquityCalculator.js:168` implements it (`foldEquity = foldPct * potSize`, untaxed)."
+    },
+    {
+      "claim_id": "a5dbb4b5-t25-2711",
+      "commit": "18f49f2234862d0b2e2a62caecb9ce9c66734076",
+      "claim": "ipsEstimator.mjs:24",
+      "cited_path": "ipsEstimator.mjs",
+      "cited_line": 24,
+      "cited_line_end": null,
+      "sentence": "Someone wrote it down as a **bias** statement — and it has propagated verbatim into four places: `ipsEstimator.mjs:24`, `docs/runbooks/baseline-ev-run.md:28`, the fault register at `:66`, and the spec at `:157`."
+    },
+    {
+      "claim_id": "fc271296-t16-1767",
+      "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+      "claim": "gameTreeEvaluator.js:814",
+      "cited_path": "gameTreeEvaluator.js",
+      "cited_line": 814,
+      "cited_line_end": null,
+      "sentence": "`refinementBudgetMs = 2000` (`gameTreeEvaluator.js:814`) is a **wall-clock control, not a poker-theory control**, and it silently decides the top action."
+    },
+    {
+      "claim_id": "CTRL-6",
+      "commit": "2d512330069ff6f2e33e35c8bf3d9b3a0d9a7a32",
+      "claim": "CLAUDE.md",
+      "cited_path": "CLAUDE.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "CLAUDE.md does not exist in this repository."
+    },
+    {
+      "claim_id": "f51c84ae-t3-311",
+      "commit": "dbfef755bf3e8668e9443efb92cb9299dcd55050",
+      "claim": "villainDecisionModel.js:148",
+      "cited_path": "villainDecisionModel.js",
+      "cited_line": 148,
+      "cited_line_end": null,
+      "sentence": "`villainDecisionModel.js:148` claims texture is preserved through L3 *\"because wet vs dry boards have the largest impact on villain action distribution after street context.\"* **The data does not support that.** Dropping texture first is a hair better, well inside noise."
+    },
+    {
+      "claim_id": "f6141ba8-t2-3812",
+      "commit": "6f4cf7dbec6d71509b5bb54c6483d5b74a3e9538",
+      "claim": "WS-293.yaml:96",
+      "cited_path": "WS-293.yaml",
+      "cited_line": 96,
+      "cited_line_end": null,
+      "sentence": "`WS-293.yaml:96` already sets `--max-old-space-size=12288`."
+    },
+    {
+      "claim_id": "07d8cdc4-t3-6302",
+      "commit": "b93b34526cb6a82f2ca8deee9e92ac7c524e8866",
+      "claim": "run-depth-ablation.mjs:79",
+      "cited_path": "run-depth-ablation.mjs",
+      "cited_line": 79,
+      "cited_line_end": null,
+      "sentence": "Two things are now wrong at `run-depth-ablation.mjs:79`: the production default is **20000** (not 2000), and `gameTreeEvaluator.js:701` is unrelated code."
+    },
+    {
+      "claim_id": "baf3c783-t1-4392",
+      "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+      "claim": "induceCore.mjs:110",
+      "cited_path": "induceCore.mjs",
+      "cited_line": 110,
+      "cited_line_end": null,
+      "sentence": "What blocks it is that `facing` has a third value with only 12 decisions, and `induceCore.mjs:110` drops the **entire feature** when any remainder falls under the floor."
+    },
+    {
+      "claim_id": "02c3373d-t5-3184",
+      "commit": "540002648c30404d28ea0739babeb4409b485ba3",
+      "claim": "build-equity-matrix.mjs:52-55",
+      "cited_path": "build-equity-matrix.mjs",
+      "cited_line": 52,
+      "cited_line_end": 55,
+      "sentence": "Also note: `build-equity-matrix.mjs:52-55` explicitly claims the CSV is **\"byte-reproducible\"**."
+    },
+    {
+      "claim_id": "119aa927-t4-5821",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "rangeCalibrationProbe.mjs:149-164",
+      "cited_path": "rangeCalibrationProbe.mjs",
+      "cited_line": 149,
+      "cited_line_end": 164,
+      "sentence": "`rangeCalibrationProbe.mjs:149-164` already records the problem, and it's directly on B's path:"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "packet": "p02",
+  "arm": "B",
+  "brief_sha256": "0d65be314f23c2addb2995a7b664aa2d7c3b8347012da09777a2e8fbeb02663c",
+  "verdicts": [
+    {
+      "claim_id": "e53d9810-t2-6136",
+      "substance": "HOLDS",
+      "citation": "MISPLACED",
+      "verdict": "CITE-WRONG",
+      "actual_location": "src/utils/rangeEngine/bayesianUpdater.js",
+      "route": "files_locked",
+      "note": "ses-20260820-1543-063e78fa locks all three, claimed_items empty; but bayesianUpdater is rangeEngine, not standardOfRecord."
+    },
+    {
+      "claim_id": "fc271296-t16-1770",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "Hook at src/hooks/useLiveActionAdvisor.js:206 passes useSyncBridge liveHandState to buildPostflopAdvice, which calls computeEffectiveStack."
+    },
+    {
+      "claim_id": "a5dbb4b5-t12-2618",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "scripts/backtest/strategyPosition.mjs:114-121 throws ScalarPositionError on number or string at the stated commit."
+    },
+    {
+      "claim_id": "CTRL-2",
+      "substance": "FALSE",
+      "citation": "NA",
+      "verdict": "REFUTED",
+      "actual_location": null,
+      "route": "none",
+      "note": "No such file in commit, working tree, git history, or any session files_locked list."
+    },
+    {
+      "claim_id": "666c2885-t1-351",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "preflopAdvisor.js:47 is a position-keyed literal table; POKER_THEORY.md §7.2 forbids label lookup keys for fold rates."
+    },
+    {
+      "claim_id": "b19c15d1-t11-6686",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "outside-repo",
+      "note": "MEMORY.md in ~/.claude/projects memory store has exactly 97 pointer entries; compact-tier.cjs is a UserPromptSubmit hook."
+    },
+    {
+      "claim_id": "436c0fcc-t10-2362",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "files_locked",
+      "note": "ses-20260806-1312 handoff records the CLAUDE.md rewrite, two dropped anchors (contradict, Improvement Default), 42/42 green after."
+    },
+    {
+      "claim_id": "d23acfbd-t2-1041",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "working-tree",
+      "note": "Landed 13h later in 7eeb7ae9 (WS-312) touching all named files incl. exploitEngine/CLAUDE.md anti-pattern; unit count 12 not 13."
+    },
+    {
+      "claim_id": "b19c15d1-t3-6549",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "CLAUDE.md:388, MEMORY.md:20, exploitEngine/CLAUDE.md:87 and assumptionEngine/CLAUDE.md:24 all carry it."
+    },
+    {
+      "claim_id": "e53d9810-t10-6210",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "534b6ee5 (42 min before the claim commit) committed exactly those four scripts/backtest files."
+    },
+    {
+      "claim_id": "036e7335-t3-3030",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "2dbfb013 extends standardOfRecord/__tests__/schemas.test.js (+20); sibling 132b8b91 extends standardOfRecord/index.js."
+    }
+  ]
+}

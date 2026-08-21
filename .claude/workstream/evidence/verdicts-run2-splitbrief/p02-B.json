@@ -1,0 +1,11 @@
+{"packet":"p02","arm":"B","verdicts":[
+{"claim_id":"e53d9810-t2-6136","verdict":"HELD","why":"session lock file lists all three files incl. bayesianUpdater.js in rangeEngine — the sentence was accurate"},
+{"claim_id":"fc271296-t16-1770","verdict":"HELD","why":"advisor reaches effective-stack via computeHelpers.js:242, not by a literal token in the hook"},
+{"claim_id":"a5dbb4b5-t12-2618","verdict":"HELD"},
+{"claim_id":"CTRL-2","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"666c2885-t1-351","verdict":"HELD"},
+{"claim_id":"b19c15d1-t11-6686","verdict":"HELD","why":"97 pointer entries, mtime 2026-08-20 14:18 precedes the 20:53 claim"},
+{"claim_id":"436c0fcc-t10-2362","verdict":"HELD"},{"claim_id":"d23acfbd-t2-1041","verdict":"HELD"},
+{"claim_id":"b19c15d1-t3-6549","verdict":"HELD"},{"claim_id":"e53d9810-t10-6210","verdict":"HELD"},
+{"claim_id":"036e7335-t3-3030","verdict":"HELD"}
+]}

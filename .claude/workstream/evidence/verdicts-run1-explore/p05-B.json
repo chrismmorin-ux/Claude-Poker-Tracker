@@ -1,0 +1,11 @@
+{"packet":"p05","arm":"B","verdicts":[
+{"claim_id":"f51c84ae-t4-327","verdict":"HELD"},
+{"claim_id":"CTRL-5","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"393476c9-t1-5900","verdict":"HELD"},{"claim_id":"454852a2-t5-3304","verdict":"HELD"},
+{"claim_id":"fc271296-t24-1849","verdict":"HELD"},{"claim_id":"21fc0d17-t12-1514","verdict":"HELD"},
+{"claim_id":"d435e738-t3-4627","verdict":"HELD"},
+{"claim_id":"d435e738-t5-4647","verdict":"REFUTED"},
+{"claim_id":"393476c9-t1-5898","verdict":"REFUTED"},
+{"claim_id":"3acf26b5-t6-2445","verdict":"UNRESOLVABLE","why":"pre-fix file exists in no commit"},
+{"claim_id":"fc271296-t10-1718","verdict":"HELD"}
+]}

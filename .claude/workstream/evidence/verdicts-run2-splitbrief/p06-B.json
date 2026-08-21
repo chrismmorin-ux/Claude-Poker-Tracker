@@ -1,0 +1,10 @@
+{"packet":"p06","arm":"B","verdicts":[
+{"claim_id":"fc271296-t43-2071","verdict":"HELD","why":"at the commit 84 min later in the same session the paragraph IS line 337 — cite matches the working tree it was made against"},
+{"claim_id":"08103047-t1-3066","verdict":"HELD"},{"claim_id":"a5dbb4b5-t25-2711","verdict":"HELD"},
+{"claim_id":"fc271296-t16-1767","verdict":"HELD"},
+{"claim_id":"CTRL-6","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"f51c84ae-t3-311","verdict":"HELD"},{"claim_id":"f6141ba8-t2-3812","verdict":"HELD"},
+{"claim_id":"07d8cdc4-t3-6302","verdict":"HELD","why":"claim describes the pre-fix state; exact at the parent commit"},
+{"claim_id":"baf3c783-t1-4392","verdict":"REFUTED","why":"induceCore.mjs:110 is a node return; the drop is at :103"},
+{"claim_id":"02c3373d-t5-3184","verdict":"HELD"},{"claim_id":"119aa927-t4-5821","verdict":"HELD"}
+]}

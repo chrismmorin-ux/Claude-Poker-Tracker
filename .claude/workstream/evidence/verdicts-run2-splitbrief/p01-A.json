@@ -1,0 +1,13 @@
+{"packet":"p01","arm":"A","verdicts":[
+{"claim_id":"CTRL-1","verdict":"REFUTED","why":"control caught: 116 lines"},
+{"claim_id":"d435e738-t13-4746","verdict":"REFUTED"},
+{"claim_id":"fc271296-t32-1942","verdict":"UNRESOLVABLE"},
+{"claim_id":"e53d9810-t4-6155","verdict":"HELD"},
+{"claim_id":"fcb6029f-t2-2862","verdict":"UNRESOLVABLE"},
+{"claim_id":"e53d9810-t2-6134","verdict":"REFUTED","why":"bayesianUpdater.js is in rangeEngine/, not standardOfRecord/"},
+{"claim_id":"f6141ba8-t2-3814","verdict":"UNRESOLVABLE"},
+{"claim_id":"10a55c6c-t9-5473","verdict":"HELD"},
+{"claim_id":"063e78fa-t13-6118","verdict":"UNRESOLVABLE","why":"empty sentence — no assertion to check"},
+{"claim_id":"02c3373d-t6-3211","verdict":"HELD"},
+{"claim_id":"fc271296-t27-1889","verdict":"HELD"}
+]}

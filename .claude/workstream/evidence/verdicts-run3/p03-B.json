@@ -1,0 +1,23 @@
+{"packet":"p03","arm":"B","brief_sha256":"0d65be314f23c2addb2995a7b664aa2d7c3b8347012da09777a2e8fbeb02663c","verdicts":[
+  {"claim_id":"35418976-t1-685","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"outside-repo","note":"memory feedback_kit_upgrade_sidecar_skew names this exact 2026-07-30 case; reconcile-core requires escapeYamlString from utils"},
+  {"claim_id":"8b91db30-t5-5335","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"working-tree",
+   "note":".claude/rules/corpus-transfer-is-earned.md says 'earned per quantity by test', '~31 open queue items'; landed 66fa7f31"},
+  {"claim_id":"48e79e5e-t5-3686","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit",
+   "note":"At f54e9557 walk() SKIP lacks 'worktrees'; current file adds it with a comment stating the suite went red"},
+  {"claim_id":"454852a2-t3-3288","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit",
+   "note":"a2757c5b's own message: 'With the bump (and a cleared Vite cache) the suite is green'; test passes now (121/121)"},
+  {"claim_id":"dabcbfdf-t7-2921","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"working-tree",
+   "note":"Next commit b2c326fa (26 min later) rewrites both files' per-style FOLD_CURVE_PARAMS assertions deleted by WS-436"},
+  {"claim_id":"dcab5942-t4-1436","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit",
+   "note":"system/state.md at 7b563919 has 'Vital Signs' (:13) and 'Recent Sessions' (:86); a 2026-08-04 row later archived"},
+  {"claim_id":"CTRL-3","substance":"FALSE","citation":"NA","verdict":"REFUTED","actual_location":null,"route":"commit",
+   "note":"git show b43efbd:kit/scripts/lib/cwos-reconcile-core.js succeeds; file present then and now. Bare-negative phrasing telegraphs a control"},
+  {"claim_id":"74727ffa-t3-3862","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit",
+   "note":"git show fab750e6:docs/research/player-archetypes-empirical-2026-07-26.md returns the k-means WS-273 doc"},
+  {"claim_id":"a924eff4-t2-5344","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"working-tree",
+   "note":"41dee26f record-builder.js header: 'DERIVED FROM THE FINISHED HAND, NOT ACCUMULATED AS FRAMES ARRIVE'"},
+  {"claim_id":"ce918290-t3-6434","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"outside-repo",
+   "note":"274c86e2 message states it verbatim; file is ai-personal/nodes/scripts/compute-runner.js, 9b10635 is its pre-fix commit"},
+  {"claim_id":"063e78fa-t2-6028","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit",
+   "note":"node1 at 446ab938; calibrationArms.mjs absent there, ipsEstimator pre-fix. Two commits behind HEAD, one behind b5e54400"}
+]}

@@ -44,9 +44,34 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const ACTIVE = path.join(REPO_ROOT, '.claude', 'context', 'active-bundle.json');
-const BUNDLE_DIR = path.join(REPO_ROOT, '.claude', 'context', 'bundles');
-const LOG = path.join(REPO_ROOT, '.claude', 'workstream', 'meta', 'context-barrier-log.yaml');
+/**
+ * STATE PATHS ARE OVERRIDABLE, AND THE REASON IS A MEASURED CONTAMINATION.
+ *
+ * `scripts/__tests__/contextBarrier.test.js` spawned this hook with `cwd: REPO_ROOT`,
+ * and these constants resolve from `__dirname`, so the suite wrote the PRODUCTION log
+ * and created and deleted the PRODUCTION declaration file. Design-critique 2026-08-20
+ * measured the result: of 1301 logged events, ~97% were test fixtures, and NO FIELD
+ * distinguished a fixture from a session. The only observability surface this mechanism
+ * has could not be used as evidence for anything -- and it was caught by noticing that
+ * the daily event counts were multiples of 11, which is not a method anyone should
+ * need twice.
+ *
+ * Two consequences, both load-bearing:
+ *   - a test must redirect BOTH files, or it mutates live control state on a tree that
+ *     routinely carries 3-7 concurrent sessions;
+ *   - every record carries `source:`, so provenance is data rather than inference.
+ */
+const ACTIVE = process.env.CONTEXT_BARRIER_ACTIVE
+  || path.join(REPO_ROOT, '.claude', 'context', 'active-bundle.json');
+const BUNDLE_DIR = process.env.CONTEXT_BARRIER_BUNDLE_DIR
+  || path.join(REPO_ROOT, '.claude', 'context', 'bundles');
+const LOG = process.env.CONTEXT_BARRIER_LOG
+  || path.join(REPO_ROOT, '.claude', 'workstream', 'meta', 'context-barrier-log.yaml');
+
+// Redirecting the log is itself evidence of a harness, so `source` defaults to `test`
+// even when a caller forgets to say so. Explicit beats inferred; inferred beats silent.
+const SOURCE = process.env.CONTEXT_BARRIER_SOURCE
+  || (process.env.CONTEXT_BARRIER_LOG ? 'test' : 'session');
 
 /** Minimal `excludes:` reader. Avoids a YAML dependency in a hot per-tool-call path. */
 function readExcludes(bundleId) {
@@ -127,16 +152,81 @@ function matches(target, pattern) {
   return false;
 }
 
+/**
+ * DOES THIS INPUT REACH A WITHHELD FILE BY NAMING A DIRECTORY ABOVE IT?
+ *
+ * The leaf/substring check catches an input that NAMES the file. It does not catch an
+ * input that names a container and lets the tool do the enumerating. Measured
+ * 2026-08-20, against `.claude/context/MEASUREMENT_OVERSIGHTS.md` withheld:
+ *
+ *     Read the exact file .................. BLOCKED
+ *     Grep rooted at .claude/context/ ...... ALLOWED
+ *     Glob .claude/context/*.md ............ ALLOWED
+ *     cat .claude/context/*.md ............. ALLOWED
+ *     git grep -- .claude/context .......... ALLOWED
+ *     Task "read every file under ..." ..... ALLOWED
+ *
+ * Five of six routes reached the content with no block and no record, which is the
+ * same shape as the v1 tool-enumeration hole and worse: `cat <dir>/*` is strictly
+ * easier to type than `head -3 <file>`, and the log still showed a clean run.
+ *
+ * THE RULE. A token is a directory reach if some withheld path starts with it plus a
+ * separator. Two deliberate bounds:
+ *
+ *   - MINIMUM TWO SEGMENTS. `.claude/context` reaches; a bare `.claude` does not.
+ *     One segment would blanket-block the session on `ls .claude`, and a control that
+ *     makes the repo unusable gets switched off, which is worse than none.
+ *   - A SPECIFIC FILE IS NOT A REACH. `.claude/context/POKER_THEORY.md` is a sibling,
+ *     not a container -- no withheld path starts with it -- so reading a file the
+ *     bundle does not withhold stays allowed. Over-blocking is the right error, but
+ *     over-blocking the rest of the directory is not over-blocking, it is breakage.
+ *
+ * A wildcard truncates to its directory: `.claude/context/*.md` reaches via
+ * `.claude/context`.
+ */
+function reachesByDirectory(hay, withheldPath) {
+  const target = String(withheldPath).replace(/^[.][/]/, '').toLowerCase();
+  if (target.startsWith('user_memory/')) return false;
+  // `hay` is already lowercased with separators normalised to '/'.
+  for (let tok of hay.split(/[^a-z0-9_.*/-]+/)) {
+    if (!tok || tok.indexOf('/') === -1) continue;
+    if (tok.indexOf('*') !== -1) tok = tok.slice(0, tok.indexOf('*'));   // glob -> its directory
+    tok = tok.replace(/[/]+$/, '').replace(/^[.][/]/, '');
+    if (tok.split('/').filter(Boolean).length < 2) continue;             // two-segment floor
+    if (target === tok) continue;                                        // the file itself: leaf check owns it
+    if (target.startsWith(tok + '/')) return true;                       // tok is a container
+  }
+  return false;
+}
+
 function recordBypass(entry) {
   try {
     fs.mkdirSync(path.dirname(LOG), { recursive: true });
     if (!fs.existsSync(LOG)) fs.writeFileSync(LOG, 'events:\n', 'utf8');
-    const line = `  - at: "${new Date().toISOString()}"\n` +
-      `    kind: ${entry.kind}\n` +
-      `    bundle: "${entry.bundle}"\n` +
-      `    path: "${String(entry.path).replace(/"/g, "'")}"\n` +
-      `    tool: ${entry.tool}\n` +
-      (entry.agent ? `    agent: "${entry.agent}"\n` : '');
+    // JSON.stringify, NOT hand-rolled quoting. A YAML 1.2 double-quoted scalar is
+    // JSON-compatible, so one call is both correct YAML and TOTAL: backslashes,
+    // newlines, quotes and control characters all escape in a single pass.
+    //
+    // The previous writer replaced `"` with `'` and did nothing else. On Windows that
+    // made every absolute path an invalid scalar -- a path beginning `C:` followed by a
+    // backslash and `U` reads as a malformed unicode escape -- and this log has been
+    // UNPARSEABLE SINCE EVENT #3 OF 1301. Nothing ever read it, so nothing surfaced it
+    // for 15 days. A writer whose output no parser accepts is not an audit trail.
+    const q = (v) => JSON.stringify(String(v));
+    const line = `  - at: ${q(new Date().toISOString())}
+` +
+      `    source: ${q(SOURCE)}
+` +
+      `    kind: ${q(entry.kind)}
+` +
+      `    bundle: ${q(entry.bundle)}
+` +
+      `    path: ${q(entry.path)}
+` +
+      `    tool: ${q(entry.tool)}
+` +
+      (entry.agent ? `    agent: ${q(entry.agent)}
+` : '');
     fs.appendFileSync(LOG, line, 'utf8');
   } catch { /* logging must never break the tool call */ }
 }
@@ -215,7 +305,9 @@ function main() {
     if (hay.includes(base)) return true;
     // Distinctive leaf names catch `cd .claude/context && cat MEASUREMENT_OVERSIGHTS.md`.
     // Length-gated so a generic leaf like `index.md` cannot blanket-block the session.
-    return Boolean(leaf && leaf.length > 8 && hay.includes(leaf));
+    if (leaf && leaf.length > 8 && hay.includes(leaf)) return true;
+    // ...and naming a directory ABOVE it reaches it just as surely. See above.
+    return reachesByDirectory(hay, base);
   });
 
   if (!hit) process.exit(0);
@@ -254,7 +346,7 @@ function main() {
   process.exit(2);
 }
 
-module.exports = { readExcludes, activeDeclaration, matches };
+module.exports = { readExcludes, activeDeclaration, matches, reachesByDirectory };
 
 if (require.main === module) {
   try { main(); } catch { process.exit(0); }  // fail open on ANY internal error

@@ -1,0 +1,104 @@
+{
+  "packet_id": "p05",
+  "claims": [
+    {
+      "claim_id": "f51c84ae-t4-327",
+      "commit": "dbfef755bf3e8668e9443efb92cb9299dcd55050",
+      "claim": "run.mjs",
+      "cited_path": "run.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`run.mjs` builds a scorecard and throws the records away — the data exists in-process but is never persisted."
+    },
+    {
+      "claim_id": "CTRL-5",
+      "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+      "claim": "thisFileDoesNotExist_ctrl.js:12",
+      "cited_path": "thisFileDoesNotExist_ctrl.js",
+      "cited_line": 12,
+      "cited_line_end": null,
+      "sentence": "This is implemented in thisFileDoesNotExist_ctrl.js:12 and nothing else reads it."
+    },
+    {
+      "claim_id": "393476c9-t1-5900",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "atomStore.mjs",
+      "cited_path": "atomStore.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`atomStore.mjs` already exists (32KB), so the substrate for persisting the decision set is in place."
+    },
+    {
+      "claim_id": "454852a2-t5-3304",
+      "commit": "a2757c5beda246e7b3612c6a4bff6f871c822e48",
+      "claim": "dealBook.mjs",
+      "cited_path": "dealBook.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`dealBook.mjs` already *is* \"the resolved file list hash\" — sorted, relativized, content-hashed."
+    },
+    {
+      "claim_id": "fc271296-t24-1849",
+      "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+      "claim": "schemas.js:101",
+      "cited_path": "schemas.js",
+      "cited_line": 101,
+      "cited_line_end": null,
+      "sentence": "Every hour of run time so far has produced an aggregate and thrown away the record — while `schemas.js:101` has said *\"Aggregates are VIEWS over atoms, never the record\"* for seven weeks."
+    },
+    {
+      "claim_id": "21fc0d17-t12-1514",
+      "commit": "cb0820333b39e428995464c70c0a8d6e71883be3",
+      "claim": "exportUtils.js:226-232",
+      "cited_path": "exportUtils.js",
+      "cited_line": 226,
+      "cited_line_end": 232,
+      "sentence": "Contamination isn't hypothetical — `exportUtils.js:226-232` routes imports through `saveHand`, which stamps nothing, so it's already shipping."
+    },
+    {
+      "claim_id": "d435e738-t3-4627",
+      "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+      "claim": "SYSTEM_MODEL.md:252",
+      "cited_path": "SYSTEM_MODEL.md",
+      "cited_line": 252,
+      "cited_line_end": null,
+      "sentence": "Also: `SYSTEM_MODEL.md:252` claims a \"backup before destructive ops\" mitigation for migrations."
+    },
+    {
+      "claim_id": "d435e738-t5-4647",
+      "commit": "32d968a43ba796188deb7480685b95d31d0b9d93",
+      "claim": "findings-index.yaml:726-778",
+      "cited_path": "findings-index.yaml",
+      "cited_line": 726,
+      "cited_line_end": 778,
+      "sentence": "The **2026-08-07 sweep produced all six of the security program's open findings** — `findings-index.yaml:726-778` tags them `program: security` from `run-launch-sweep-2026-08-07`."
+    },
+    {
+      "claim_id": "393476c9-t1-5898",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "strategyArm.mjs:200",
+      "cited_path": "strategyArm.mjs",
+      "cited_line": 200,
+      "cited_line_end": null,
+      "sentence": "WS-540 reads *\"Strategy arms cannot run in workers.\"* **That is already fixed.** I checked the code rather than the ticket body: the `not yet transportable` throw is gone (`heroEvRunner.mjs:249`), `rehydrateStrategy` ships with a re-derived content-hash assertion (`strategyArm.mjs:200`), and the tampered-card test exists (`strategyArmWorkerTransport.test.js:67`)."
+    },
+    {
+      "claim_id": "3acf26b5-t6-2445",
+      "commit": "228c6af9d2ab34a23a4ff52487d17267aab0e691",
+      "claim": "compact-tier.cjs:85",
+      "cited_path": "compact-tier.cjs",
+      "cited_line": 85,
+      "cited_line_end": null,
+      "sentence": "**The file carries a stale measurement of itself, in itself:** `compact-tier.cjs:85` says \"the full 16-rule tier is 1,912 B.\" It is 18 rules / 2,304 B."
+    },
+    {
+      "claim_id": "fc271296-t10-1718",
+      "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+      "claim": "gameTreeSizingHelpers.js:162-180",
+      "cited_path": "gameTreeSizingHelpers.js",
+      "cited_line": 162,
+      "cited_line_end": 180,
+      "sentence": "**One genuine poker-math defect, not a wiring gap.** `tightenRatesForContinuation` (`gameTreeSizingHelpers.js:162-180`) is a second, **bucket-label-keyed** narrowing channel — a direct AP-RL-01 violation — applied **twice in sequence** on the flop depth-3 line (`gameTreeDepth2.js:1073-1078`)."
+    }
+  ]
+}

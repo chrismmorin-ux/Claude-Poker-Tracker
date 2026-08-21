@@ -1,0 +1,104 @@
+{
+  "packet_id": "p02",
+  "claims": [
+    {
+      "claim_id": "e53d9810-t2-6136",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "bayesianUpdater.js",
+      "cited_path": "bayesianUpdater.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "- **`src/utils/standardOfRecord/**` is locked** by an unclaimed-but-live session (`faultRegister.js`, `labelLedger.js`, `bayesianUpdater.js`)."
+    },
+    {
+      "claim_id": "fc271296-t16-1770",
+      "commit": "fe716f591fe82521903ee676495aa9611795d9ad",
+      "claim": "useLiveActionAdvisor.js",
+      "cited_path": "useLiveActionAdvisor.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Which is its new HIGH finding — all effective-stack awareness in the app runs through one narrow thread, so any refactor of `useLiveActionAdvisor.js` or `useSyncBridge.js` silently orphans it app-wide."
+    },
+    {
+      "claim_id": "a5dbb4b5-t12-2618",
+      "commit": "18f49f2234862d0b2e2a62caecb9ce9c66734076",
+      "claim": "strategyPosition.mjs",
+      "cited_path": "strategyPosition.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Also: `strategyPosition.mjs` already *throws* on a bare scalar, so the pairing is enforced in code."
+    },
+    {
+      "claim_id": "CTRL-2",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "thisFileDoesNotExist_ctrl.js:12",
+      "cited_path": "thisFileDoesNotExist_ctrl.js",
+      "cited_line": 12,
+      "cited_line_end": null,
+      "sentence": "This is implemented in thisFileDoesNotExist_ctrl.js:12 and nothing else reads it."
+    },
+    {
+      "claim_id": "666c2885-t1-351",
+      "commit": "dbfef755bf3e8668e9443efb92cb9299dcd55050",
+      "claim": "POKER_THEORY.md",
+      "cited_path": "POKER_THEORY.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "25 for the runner-up), and it's a direct hit on the repo's most binding domain rule: **labels are outputs of the decision process, never inputs.** `POSITIONAL_FOLD_TO_3BET` is a hardcoded lookup keyed on a position label — exactly the anti-pattern `POKER_THEORY.md §7` and `exploitEngine/CLAUDE.md` prohibit."
+    },
+    {
+      "claim_id": "b19c15d1-t11-6686",
+      "commit": "274c86e20dee58935944814f49e3b3bcf9eaa522",
+      "claim": "MEMORY.md",
+      "cited_path": "MEMORY.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**Net token-negative at every observed session length, while buying retrieval that today does not fit at all.** Nothing is deleted — `MEMORY.md` keeps all 97 pointer entries, the rules files stay on disk, `compact-tier.cjs` keeps re-emitting their operative imperatives every turn."
+    },
+    {
+      "claim_id": "436c0fcc-t10-2362",
+      "commit": "228c6af9d2ab34a23a4ff52487d17267aab0e691",
+      "claim": "CLAUDE.md",
+      "cited_path": "CLAUDE.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**The verification earned its keep.** It caught two of my tests going red *after* I'd reported 42/42 — a concurrent session rewrote `CLAUDE.md`, and two compact-tier anchors stopped resolving."
+    },
+    {
+      "claim_id": "d23acfbd-t2-1041",
+      "commit": "f4fa0fe63e1f6831998aaab3dc902012353a4800",
+      "claim": "exploitEngine/CLAUDE.md",
+      "cited_path": "exploitEngine/CLAUDE.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**Files:** `gameTreeEquity.js` (new `heroAheadNow` + `computeFilteredShowdownValue`), `gameTreeEvaluator.js` (threaded on bet **and** check-raise paths), `actionClassifier.js` (realised-fraction veto), `POKER_THEORY.md` §3.4.3, `exploitEngine/CLAUDE.md` anti-pattern, plus a new behavioural suite and 13 unit tests."
+    },
+    {
+      "claim_id": "b19c15d1-t3-6549",
+      "commit": "274c86e20dee58935944814f49e3b3bcf9eaa522",
+      "claim": "CLAUDE.md",
+      "cited_path": "CLAUDE.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**The one poker rule that *is* always-loaded is the repo's clearest proof that always-loaded doesn't bind.** \"Labels are outputs, never inputs\" sits in `CLAUDE.md`, in `MEMORY.md`, and in two engine files."
+    },
+    {
+      "claim_id": "e53d9810-t10-6210",
+      "commit": "17f1c42169c0e55cae87db8f27b43756582d8aa8",
+      "claim": "strategyArm.mjs",
+      "cited_path": "strategyArm.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Movement on the gate: **WS-540's session has committed** — `heroEvRunner.mjs`, `heroEvTask.mjs`, `heroEvWorker.mjs` and `strategyArm.mjs` are clean now."
+    },
+    {
+      "claim_id": "036e7335-t3-3030",
+      "commit": "2dbfb01326510f1efee5d290e508a9094bca43a6",
+      "claim": "schemas.test.js",
+      "cited_path": "schemas.test.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Extending `index.js` and `schemas.test.js`."
+    }
+  ]
+}

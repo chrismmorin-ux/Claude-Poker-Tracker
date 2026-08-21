@@ -1,0 +1,104 @@
+{
+  "packet_id": "p03",
+  "claims": [
+    {
+      "claim_id": "35418976-t1-685",
+      "commit": "b43efbd12db14329d3c155ff7ffcf049ca04d990",
+      "claim": "cwos-reconcile-core.js",
+      "cited_path": "cwos-reconcile-core.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "That splits dependencies apart: your locally-patched `cwos-utils.js` was preserved, while `cwos-reconcile-core.js` was replaced with a version calling a function only the *new* utils provides."
+    },
+    {
+      "claim_id": "8b91db30-t5-5335",
+      "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+      "claim": "corpus-transfer-is-earned.md",
+      "cited_path": "corpus-transfer-is-earned.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "| Transfer is earned per quantity, by test | `corpus-transfer-is-earned.md` | ~31 items |"
+    },
+    {
+      "claim_id": "48e79e5e-t5-3686",
+      "commit": "f54e955735bd9310ba2f22bc9672fba9c150a820",
+      "claim": "compactTier.test.js",
+      "cited_path": "compactTier.test.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "- `compactTier.test.js` walked `.claude/worktrees/`, going red for anyone with a worktree."
+    },
+    {
+      "claim_id": "454852a2-t3-3288",
+      "commit": "a2757c5beda246e7b3612c6a4bff6f871c822e48",
+      "claim": "schemas.test.js",
+      "cited_path": "schemas.test.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "| `schemas.test.js` failure I flagged | ✅ Resolved — stale Vite transform, passes with cache cleared |"
+    },
+    {
+      "claim_id": "dabcbfdf-t7-2921",
+      "commit": "cc6291453e48bdfc5ff926e87f2afeae2e2796b2",
+      "claim": "foldCurveShape.test.js",
+      "cited_path": "foldCurveShape.test.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Now the `foldCurveShape.test.js` and `foldEquityCalculator.test.js` failures:"
+    },
+    {
+      "claim_id": "dcab5942-t4-1436",
+      "commit": "7b5639197132e1b5ab27b52166fa3994927b35b3",
+      "claim": "system/state.md",
+      "cited_path": "system/state.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "Now updating `system/state.md` — vital signs and a Recent Sessions row:"
+    },
+    {
+      "claim_id": "CTRL-3",
+      "commit": "b43efbd12db14329d3c155ff7ffcf049ca04d990",
+      "claim": "cwos-reconcile-core.js",
+      "cited_path": "cwos-reconcile-core.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "cwos-reconcile-core.js does not exist in this repository."
+    },
+    {
+      "claim_id": "74727ffa-t3-3862",
+      "commit": "fab750e62093ef3fd00455250e83134607827d4c",
+      "claim": "docs/research/player-archetypes-empirical-2026-07-26.md",
+      "cited_path": "docs/research/player-archetypes-empirical-2026-07-26.md",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "`docs/research/player-archetypes-empirical-2026-07-26.md`:"
+    },
+    {
+      "claim_id": "a924eff4-t2-5344",
+      "commit": "9c5d24635c5c0027749626bf94fbc174196178a5",
+      "claim": "record-builder.js",
+      "cited_path": "record-builder.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "So I moved it to `record-builder.js`, derived from the finished hand."
+    },
+    {
+      "claim_id": "ce918290-t3-6434",
+      "commit": "274c86e20dee58935944814f49e3b3bcf9eaa522",
+      "claim": "compute-runner.js",
+      "cited_path": "compute-runner.js",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**`compute-runner.js` was untracked in node1's checkout** — a hand-placed copy byte-identical to the pre-fix commit `9b10635`."
+    },
+    {
+      "claim_id": "063e78fa-t2-6028",
+      "commit": "5b5a81015ad560d20337a27c63de0cd25271ba62",
+      "claim": "ipsEstimator.mjs",
+      "cited_path": "ipsEstimator.mjs",
+      "cited_line": null,
+      "cited_line_end": null,
+      "sentence": "**node1 is a commit behind.** `ipsEstimator.mjs`, `calibrationArms.mjs` and `calibrationPrereg.json` are not live there, so a calibration re-run on the compute node would execute pre-fix code."
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+ "packet": "p01",
+ "arm": "A",
+ "brief_sha256": "0d65be314f23c2addb2995a7b664aa2d7c3b8347012da09777a2e8fbeb02663c",
+ "verdicts": [
+  {
+   "claim_id": "CTRL-1",
+   "substance": "FALSE",
+   "citation": "NA",
+   "verdict": "REFUTED",
+   "actual_location": null,
+   "route": "commit",
+   "note": "src/components/ui/HealthIndicator.jsx is 116 lines at 32d968a (126 now); line 999999 does not exist."
+  },
+  {
+   "claim_id": "d435e738-t13-4746",
+   "substance": "HOLDS",
+   "citation": "MISPLACED",
+   "verdict": "CITE-WRONG",
+   "actual_location": "docs/design/navigation-ia.md:75",
+   "route": "working-tree",
+   "note": "Doctrine 'health signal -> extend HealthIndicator, not per-view widget' is in navigation-ia.md; HealthIndicator.jsx never cites it, direction reversed."
+  },
+  {
+   "claim_id": "fc271296-t32-1942",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "working-tree",
+   "note": "Hole-map toolchain untracked at 2d51233; added af8b9815 6h later; gameTreeDepth2.js committed +270 lines in c51fddf3 same night."
+  },
+  {
+   "claim_id": "e53d9810-t4-6155",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "commit",
+   "note": "SCORED-READOUT-SPEC.md:559 is '## 9. View 6 - The per-branch change ledger'; git grep changeLedger at 5b5a810 returns nothing."
+  },
+  {
+   "claim_id": "fcb6029f-t2-2862",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "commit",
+   "note": "docs/design/surfaces/layout-doctrine.md exists on orphan bc4b6d0f, not ancestor of 52d0cae4 - exactly the open question stated; explorer dispatch confirmed in reply."
+  },
+  {
+   "claim_id": "e53d9810-t2-6134",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "files_locked",
+   "note": "ses-20260820-1543-063e78fa locks standardOfRecord/faultRegister.js + labelLedger.js, claimed_items empty, heartbeat live; bayesianUpdater is rangeEngine/."
+  },
+  {
+   "claim_id": "f6141ba8-t2-3814",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "working-tree",
+   "note": "WS-497.yaml:27 and WS-505.yaml:93 record out/study-ladder.json sha256 6a1f1d425db8 byte-identical across the two harvested runs."
+  },
+  {
+   "claim_id": "10a55c6c-t9-5473",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "gitignored",
+   "note": "out/ is ignored (.gitignore:100); out/ws333-geometry.json present, 9368 bytes, mtime 2026-08-02, long before the claim."
+  },
+  {
+   "claim_id": "063e78fa-t13-6118",
+   "substance": "UNKNOWN",
+   "citation": "NA",
+   "verdict": "UNRESOLVABLE",
+   "actual_location": null,
+   "route": "none",
+   "note": "Sentence field is empty; no assertion to adjudicate, only a bare filename."
+  },
+  {
+   "claim_id": "02c3373d-t6-3211",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "working-tree",
+   "note": "src/utils/potCalculator.js exists; uncommitted edits at claim time landed same day in 5f48ae27 (rake gate is the flop)."
+  },
+  {
+   "claim_id": "fc271296-t27-1889",
+   "substance": "HOLDS",
+   "citation": "RESOLVES",
+   "verdict": "HELD",
+   "actual_location": null,
+   "route": "commit",
+   "note": "scripts/backtest/run-depth-ablation.mjs tracked at fe716f59; its own usage header line 13 reads '--reference none'."
+  }
+ ]
+}

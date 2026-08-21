@@ -1,0 +1,83 @@
+{
+  "generated_for": "retrospective claim-survival baseline (rank 2)",
+  "corpus_sha256": "3f00a0dfc3112bccd706030004afd7439d71a317e589606c2bd7e84444b6d9ca",
+  "corpus_claims": 6786,
+  "adjudicable_claims": 2156,
+  "excluded_no_cited_path": 4630,
+  "seed": 20260820,
+  "n_requested": 60,
+  "n_drawn": 60,
+  "artifacts": 37,
+  "gate": {
+    "min_claims": 60,
+    "min_artifacts": 8,
+    "source": "docs/context-shift-prereg.md:150"
+  },
+  "strata": {
+    "file-bare|neither": {
+      "available": 513,
+      "drawn": 14
+    },
+    "file-bare|push": {
+      "available": 135,
+      "drawn": 4
+    },
+    "file-bare|read": {
+      "available": 941,
+      "drawn": 25
+    },
+    "file-line|neither": {
+      "available": 235,
+      "drawn": 7
+    },
+    "file-line|push": {
+      "available": 1,
+      "drawn": 1
+    },
+    "file-line|read": {
+      "available": 331,
+      "drawn": 9
+    }
+  },
+  "packets": 6,
+  "batch": 10,
+  "seeded_controls": [
+    {
+      "packet": "p01",
+      "claim_id": "CTRL-1",
+      "control": "line far beyond end of file",
+      "truth": "REFUTED"
+    },
+    {
+      "packet": "p02",
+      "claim_id": "CTRL-2",
+      "control": "cited file does not exist at that commit",
+      "truth": "REFUTED"
+    },
+    {
+      "packet": "p03",
+      "claim_id": "CTRL-3",
+      "control": "false absence claim about a file that does exist",
+      "truth": "REFUTED"
+    },
+    {
+      "packet": "p04",
+      "claim_id": "CTRL-4",
+      "control": "line far beyond end of file",
+      "truth": "REFUTED"
+    },
+    {
+      "packet": "p05",
+      "claim_id": "CTRL-5",
+      "control": "cited file does not exist at that commit",
+      "truth": "REFUTED"
+    },
+    {
+      "packet": "p06",
+      "claim_id": "CTRL-6",
+      "control": "false absence claim about a file that does exist",
+      "truth": "REFUTED"
+    }
+  ],
+  "control_note": "Every control is REFUTED by construction. A judge arm that does not catch them is not measuring anything."
+}

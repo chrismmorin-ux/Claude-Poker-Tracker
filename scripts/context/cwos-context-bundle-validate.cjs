@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * cwos-bundle-validate.js — context-bundle structural validator
+ * cwos-context-bundle-validate.cjs — context-bundle structural validator
  *
  * WHAT A BUNDLE IS. A scoped context manifest in `.claude/context/bundles/*.yaml`:
  * a list of files (optionally section-scoped) a task should load, a list of files it
@@ -64,9 +64,9 @@
  * one directory apart. Renamed and moved repo-local, which resolves both.
  *
  * Usage:
- *   node scripts/context/cwos-context-bundle-validate.js            # human-readable
- *   node scripts/context/cwos-context-bundle-validate.js --json     # machine-readable
- *   node scripts/context/cwos-context-bundle-validate.js --rehash   # rewrite sha256s
+ *   node scripts/context/cwos-context-bundle-validate.cjs            # human-readable
+ *   node scripts/context/cwos-context-bundle-validate.cjs --json     # machine-readable
+ *   node scripts/context/cwos-context-bundle-validate.cjs --rehash   # rewrite sha256s
  *
  * Exit code is 0 whenever the validator itself ran. Findings are reported, never fatal.
  */
@@ -250,7 +250,7 @@ function validate(repoRoot, opts = {}) {
           `${b.file} pins ${inc.path}${inc.section ? ` § "${inc.section}"` : ''} at sha256 `
           + `${inc.sha256.trim().slice(0, 12)}…, but it now hashes to ${actual.slice(0, 12)}…. `
           + `The pointer is still correct — the REVIEW is stale. Re-read the changed source, confirm the `
-          + `bundle still scopes what it claims, then: node kit/scripts/cwos-bundle-validate.js --rehash`);
+          + `bundle still scopes what it claims, then: node scripts/context/cwos-context-bundle-validate.cjs --rehash`);
       } else if (!inc.sha256) {
         add(id, 'unpinned-include', inc.path,
           `${b.file} includes ${inc.path} with no sha256. An unpinned include cannot report drift, `

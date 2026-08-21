@@ -1,0 +1,13 @@
+{"packet":"p04","arm":"A","brief_sha256":"0d65be314f23c2addb2995a7b664aa2d7c3b8347012da09777a2e8fbeb02663c","verdicts":[
+ {"claim_id":"119aa927-t7-5854","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"scripts/backtest/run-calibration.mjs:76-86 loads ALWAYS_FOLD and appends it to the loadCalibrationArms() set."},
+ {"claim_id":"e53d9810-t3-6142","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"scripts/villainArchetype/loadVillain.mjs:47 is the single ranking comparator selecting the subject."},
+ {"claim_id":"14719115-t6-26","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"Section 6.5a present at .claude/context/POKER_THEORY.md:390 at that commit; basename unique."},
+ {"claim_id":"4ddd5368-t3-1491","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"ignition-poker-tracker/side-panel/side-panel.js:82-85 is exactly the getAppUrl/update_url block quoted."},
+ {"claim_id":"1eb06748-t1-1100","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"behaviorPolicy.mjs header defines it as pi_pool, the mined shrunk field model; no holding conditioning."},
+ {"claim_id":"fc271296-t38-2010","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"docs/design/ROUNDTABLES.md:52 and :73 carry both Stage A and Stage B failure definitions verbatim."},
+ {"claim_id":"0ff9f354-t3-3713","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"working-tree","note":"Absent at that commit; blockersNotDone landed 2026-08-19 carrying a comment dating it 'Found 2026-08-17'."},
+ {"claim_id":"0f827d81-t2-4061","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"files_locked","note":"ses-20260817-2024-74727ffa.yaml locks all five; ws543 doc mtime is 2026-08-18 11:51:52."},
+ {"claim_id":"8b91db30-t1-5308","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"commit","note":"buildConductCard has no opponent/hero param; literally it destructures 16 fields, so 'nothing else' is loose."},
+ {"claim_id":"CTRL-4","substance":"FALSE","citation":"NA","verdict":"REFUTED","actual_location":null,"route":"commit","note":"run-calibration.mjs is 350 lines at that commit; line 999999 does not exist."},
+ {"claim_id":"09d1ac03-t2-3571","substance":"HOLDS","citation":"RESOLVES","verdict":"HELD","actual_location":null,"route":"mtime","note":"File mtime 2026-08-16 21:36, 13 min after the claim; opens 'Guide to: empty, every slot empty'."}
+]}

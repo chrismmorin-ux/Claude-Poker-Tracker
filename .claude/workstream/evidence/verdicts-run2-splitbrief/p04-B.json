@@ -1,0 +1,10 @@
+{"packet":"p04","arm":"B","verdicts":[
+{"claim_id":"119aa927-t7-5854","verdict":"HELD"},{"claim_id":"e53d9810-t3-6142","verdict":"HELD"},
+{"claim_id":"14719115-t6-26","verdict":"HELD"},{"claim_id":"4ddd5368-t3-1491","verdict":"HELD"},
+{"claim_id":"1eb06748-t1-1100","verdict":"HELD"},{"claim_id":"fc271296-t38-2010","verdict":"HELD"},
+{"claim_id":"0ff9f354-t3-3713","verdict":"HELD","why":"gate was authored uncommitted in the very session that made the claim; session yaml records it"},
+{"claim_id":"0f827d81-t2-4061","verdict":"HELD","why":"on disk with mtime predating the claim; a concurrent session locks it"},
+{"claim_id":"8b91db30-t1-5308","verdict":"UNRESOLVABLE","why":"'and nothing else' is ambiguous — false read literally, true as 'no table-shape qualifier'"},
+{"claim_id":"CTRL-4","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"09d1ac03-t2-3571","verdict":"HELD","why":"written inside the claim's own session per its files_locked"}
+]}

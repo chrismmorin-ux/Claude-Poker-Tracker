@@ -1,0 +1,11 @@
+{"packet":"p02","arm":"A","verdicts":[
+{"claim_id":"e53d9810-t2-6136","verdict":"REFUTED","why":"bayesianUpdater.js is in rangeEngine/, not standardOfRecord/"},
+{"claim_id":"fc271296-t16-1770","verdict":"REFUTED","why":"neither hook contains any occurrence of 'stack'"},
+{"claim_id":"a5dbb4b5-t12-2618","verdict":"HELD"},
+{"claim_id":"CTRL-2","verdict":"REFUTED","why":"control caught"},
+{"claim_id":"666c2885-t1-351","verdict":"HELD"},
+{"claim_id":"b19c15d1-t11-6686","verdict":"HELD","why":"MEMORY.md has exactly 97 pointer entries; mtime predates the commit"},
+{"claim_id":"436c0fcc-t10-2362","verdict":"HELD"},{"claim_id":"d23acfbd-t2-1041","verdict":"HELD"},
+{"claim_id":"b19c15d1-t3-6549","verdict":"HELD"},{"claim_id":"e53d9810-t10-6210","verdict":"HELD"},
+{"claim_id":"036e7335-t3-3030","verdict":"HELD"}
+]}

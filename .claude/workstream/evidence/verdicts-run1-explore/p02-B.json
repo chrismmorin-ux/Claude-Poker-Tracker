@@ -1,0 +1,10 @@
+{"packet":"p02","arm":"B","verdicts":[
+{"claim_id":"e53d9810-t2-6136","verdict":"HELD"},{"claim_id":"fc271296-t16-1770","verdict":"HELD"},
+{"claim_id":"a5dbb4b5-t12-2618","verdict":"HELD"},
+{"claim_id":"CTRL-2","verdict":"REFUTED","why":"control caught: path absent"},
+{"claim_id":"666c2885-t1-351","verdict":"HELD"},
+{"claim_id":"b19c15d1-t11-6686","verdict":"REFUTED","why":"MEMORY.md is not in the git tree at all; judge could not see the out-of-repo memory store"},
+{"claim_id":"436c0fcc-t10-2362","verdict":"HELD"},{"claim_id":"d23acfbd-t2-1041","verdict":"HELD"},
+{"claim_id":"b19c15d1-t3-6549","verdict":"HELD"},{"claim_id":"e53d9810-t10-6210","verdict":"HELD"},
+{"claim_id":"036e7335-t3-3030","verdict":"HELD"}
+]}

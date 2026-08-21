@@ -1,0 +1,14 @@
+{
+  "max_bytes": 108200,
+  "set_on": "2026-08-21",
+  "previous_max_bytes": null,
+  "direction": "initial",
+  "why": "Ratchet at the 2026-08-21 high-water mark. The channel grew +117% in 15 days, unbounded and ungated (design pressure-test 2026-08-20 rank 4). This stops growth without deciding the right size, which is a founder call. Lowering it is the P6 relocation decision, gated on the rank-5 seeded-coin experiment.",
+  "components": {
+    "CLAUDE.md": 37054,
+    ".claude/rules/* (all)": 48362,
+    "~/.claude/CLAUDE.md (global)": 1375,
+    "MEMORY.md (index only)": 21409
+  },
+  "note": "Enforced on BYTES. The token figure anywhere in this repo is an estimate at 4 bytes/token and is never the thing checked."
+}

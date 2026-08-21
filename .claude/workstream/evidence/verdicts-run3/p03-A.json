@@ -1,0 +1,106 @@
+{
+  "packet": "p03",
+  "arm": "A",
+  "brief_sha256": "0d65be314f23c2addb2995a7b664aa2d7c3b8347012da09777a2e8fbeb02663c",
+  "verdicts": [
+    {
+      "claim_id": "35418976-t1-685",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "outside-repo",
+      "note": "memory feedback_kit_upgrade_sidecar_skew.md records the exact 2026-07-30 3.8.0->3.8.1 escapeYamlString skew; file at kit/scripts/lib/"
+    },
+    {
+      "claim_id": "8b91db30-t5-5335",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "mtime",
+      "note": ".claude/rules/corpus-transfer-is-earned.md mtime Aug 19 22:54 (uncommitted then); says 'Resolves ~31 open queue items'"
+    },
+    {
+      "claim_id": "48e79e5e-t5-3686",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "At f54e9557 SKIP set lacks 'worktrees'; worktree copies carry HEADER_MARKER and are not allowlisted. Fixed later in ec677c4b"
+    },
+    {
+      "claim_id": "454852a2-t3-3288",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "working-tree",
+      "note": "Ran it: 121 tests pass. Reported line 243:45 is not an assertion; assertion is at 256 - stale-transform signature"
+    },
+    {
+      "claim_id": "dabcbfdf-t7-2921",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "Both files exist and were edited in b2c326fa same session, after the style tables they used were deleted"
+    },
+    {
+      "claim_id": "dcab5942-t4-1436",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "system/state.md at 7b563919 has '## Vital Signs' (:13) and '## Recent Sessions' (:86)"
+    },
+    {
+      "claim_id": "CTRL-3",
+      "substance": "FALSE",
+      "citation": "NA",
+      "verdict": "REFUTED",
+      "actual_location": null,
+      "route": "commit",
+      "note": "kit/scripts/lib/cwos-reconcile-core.js exists at b43efbd and in the working tree; also in 3 worktrees and snapshots"
+    },
+    {
+      "claim_id": "74727ffa-t3-3862",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "git show fab750e6:docs/research/player-archetypes-empirical-2026-07-26.md returns the k-means write-up; added ad8b2a12"
+    },
+    {
+      "claim_id": "a924eff4-t2-5344",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "working-tree",
+      "note": "deriveStartStacks now lives in ignition-poker-tracker/shared/record-builder.js, reconstructed from the finished hand (41dee26f)"
+    },
+    {
+      "claim_id": "ce918290-t3-6434",
+      "substance": "HOLDS",
+      "citation": "MISPLACED",
+      "verdict": "CITE-WRONG",
+      "actual_location": "C:/Users/chris/repos/ai-personal/nodes/scripts/compute-runner.js",
+      "route": "outside-repo",
+      "note": "No such file in this repo. On node1, pre-pull HEAD b6d0525 tree lacks it and 9b10635 is not an ancestor - untracked confirmed"
+    },
+    {
+      "claim_id": "063e78fa-t2-6028",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "outside-repo",
+      "note": "node1 reflog: HEAD 446ab938 until 12:19:59; claim at 12:14. b5e54400 (11:13) added all three files"
+    }
+  ]
+}

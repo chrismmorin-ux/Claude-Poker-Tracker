@@ -1,0 +1,106 @@
+{
+  "packet": "p02",
+  "arm": "A",
+  "brief_sha256": "0d65be314f23c2addb2995a7b664aa2d7c3b8347012da09777a2e8fbeb02663c",
+  "verdicts": [
+    {
+      "claim_id": "e53d9810-t2-6136",
+      "substance": "HOLDS",
+      "citation": "MISPLACED",
+      "verdict": "CITE-WRONG",
+      "actual_location": "src/utils/rangeEngine/bayesianUpdater.js",
+      "route": "files_locked",
+      "note": "ses-20260820-1543-063e78fa (claimed_items empty, live) locks the file, but under rangeEngine not standardOfRecord."
+    },
+    {
+      "claim_id": "fc271296-t16-1770",
+      "substance": "FALSE",
+      "citation": "NA",
+      "verdict": "REFUTED",
+      "actual_location": null,
+      "route": "commit",
+      "note": "Counterexample: heroStateReplayUtils.js:100 deriveEffStackAt derives eff stack independently of both hooks."
+    },
+    {
+      "claim_id": "a5dbb4b5-t12-2618",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "scripts/backtest/strategyPosition.mjs:115-117 throws ScalarPositionError on number or string."
+    },
+    {
+      "claim_id": "CTRL-2",
+      "substance": "FALSE",
+      "citation": "NA",
+      "verdict": "REFUTED",
+      "actual_location": null,
+      "route": "none",
+      "note": "No such path at the commit, in the working tree, or in any commit across all refs."
+    },
+    {
+      "claim_id": "666c2885-t1-351",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "POKER_THEORY.md 7.2 bans label lookup keys; POSITIONAL_FOLD_TO_3BET is one at preflopAdvisor.js:47."
+    },
+    {
+      "claim_id": "b19c15d1-t11-6686",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "outside-repo",
+      "note": "Memory store MEMORY.md has exactly 97 pointer entries; mtime Aug 20 14:18, before the claim."
+    },
+    {
+      "claim_id": "436c0fcc-t10-2362",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "working-tree",
+      "note": "compact-tier.cjs:130 comment: 'CLAUDE.md was rewritten mid-session and both this anchor...'; CLAUDE.md touched 2026-08-05/06."
+    },
+    {
+      "claim_id": "d23acfbd-t2-1041",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "working-tree",
+      "note": "Landed hours later in 7eeb7ae9 (WS-312); it adds 31 lines of anti-pattern to exploitEngine/CLAUDE.md."
+    },
+    {
+      "claim_id": "b19c15d1-t3-6549",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "CLAUDE.md:388 states it; MEMORY.md:20 mirrors it; POKER_THEORY 7 and exploitEngine/CLAUDE.md carry it."
+    },
+    {
+      "claim_id": "e53d9810-t10-6210",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "534b6ee5 (WS-540, 2026-08-20 13:28) committed all four files and is an ancestor of the claim commit."
+    },
+    {
+      "claim_id": "036e7335-t3-3030",
+      "substance": "HOLDS",
+      "citation": "RESOLVES",
+      "verdict": "HELD",
+      "actual_location": null,
+      "route": "commit",
+      "note": "The claim commit itself extends standardOfRecord/__tests__/schemas.test.js; index.js extended in 132b8b91."
+    }
+  ]
+}
