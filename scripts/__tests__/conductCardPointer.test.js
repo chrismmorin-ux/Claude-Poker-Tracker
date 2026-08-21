@@ -337,10 +337,17 @@ describe('a card cannot be written without its pointer', () => {
 describe('the seven registered cards', () => {
   const dir = path.join(REPO_ROOT, 'docs', 'standard-of-record', 'pointers');
 
-  it('are all registered, all resolve, and none is falsely marked current', () => {
-    if (!fs.existsSync(dir)) return;                    // registrar not yet run
+  // SPLIT 2026-08-20. This was one test asserting pointer integrity AND artifact
+  // resolution, and it could only ever pass on a machine that happens to hold the artifact
+  // store. It went red on CI the first time it ran there — `.tmp-arch/profiles-6max/` is
+  // not in the repo and never will be: `.claude/rules/artifact-location.md` puts heavy
+  // artifacts outside it by design. The pointer half is repo-verifiable everywhere; only
+  // the resolution half needs the store.
+  it('are all registered, and none is falsely marked current', () => {
+    // No silent early-return on a missing dir. The pointers are COMMITTED, so their absence
+    // is a real regression, and "a gate passing on an empty set is not a gate".
+    expect(fs.existsSync(dir)).toBe(true);
     const entries = listPointers(dir).filter((e) => e.pointer.provenanceMode === 'retroactive');
-    if (!entries.length) return;
     expect(entries).toHaveLength(7);
     for (const { pointer } of entries) {
       expect(pointer.identity.rulesetHash).toBe(UNRECOVERABLE);
@@ -348,10 +355,55 @@ describe('the seven registered cards', () => {
       expect(pointer.location.role).toBe('not-yet-canonical');
       expect(pointer.location.migrationObligation.requiredNode).toBe(NODES.NODE1);
       expect(pointer.manifest.engineCommitIdentifiesCode).toBe(false);
-      // Resolving verifies the recorded fileSha256 against the bytes on disk.
-      const card = resolveCard(pointer, { node: pointer.location.node });
-      expect(card.cardId).toBe(pointer.cardId);
     }
+  });
+
+  it('each resolves against the artifact store, where the store is reachable', (ctx) => {
+    // Resolving verifies the recorded fileSha256 against the bytes on disk, so it needs the
+    // artifacts — which live outside the repo. Where they are absent this SKIPS VISIBLY
+    // rather than returning silently: a skip shows in the run summary, a bare `return`
+    // reports as a pass and is indistinguishable from a real verification.
+    //
+    // The two error classes are NOT collapsed. UnreachableArtifactError means the store is
+    // not on this machine — environmental. CardIntegrityError means the bytes are present
+    // and WRONG, which is the thing this test exists to catch, and it fails everywhere.
+    expect(fs.existsSync(dir)).toBe(true);
+    const entries = listPointers(dir).filter((e) => e.pointer.provenanceMode === 'retroactive');
+    expect(entries).toHaveLength(7);
+
+    // ALL-OR-NOTHING, deliberately. The seven pointers span three directories
+    // (.tmp-arch/profiles-6max, .tmp-arch/ws551, .tmp-arch/profiles-v2), so a PARTIAL
+    // resolution is possible — and it must not pass. Some-present-some-missing means the
+    // store is inconsistent, which is precisely what "a missing artifact fails loudly
+    // rather than silently resolving to something else" is about. Only a WHOLLY absent
+    // store is environmental.
+    const unreachable = [];
+    let resolved = 0;
+    for (const { pointer } of entries) {
+      let card;
+      try {
+        card = resolveCard(pointer, { node: pointer.location.node });
+      } catch (err) {
+        if (err instanceof ptr.UnreachableArtifactError) { unreachable.push(pointer.cardId); continue; }
+        throw err;                       // integrity failure — never swallowed
+      }
+      expect(card.cardId).toBe(pointer.cardId);
+      resolved += 1;
+    }
+
+    if (unreachable.length === entries.length) {
+      ctx.skip(`artifact store wholly unreachable on this machine — 0 of ${entries.length} `
+        + 'cards resolvable. Pointer integrity is asserted by the sibling test; resolution '
+        + 'needs the store (see .claude/rules/artifact-location.md).');
+      return;
+    }
+    // Partial store: fail, and name the missing ones.
+    expect(
+      unreachable,
+      `${resolved} of ${entries.length} cards resolved but ${unreachable.length} are missing `
+      + `(${unreachable.join(', ')}). A partially-present store is not a reachable store — `
+      + 'it verifies a subset while reporting as a complete check.',
+    ).toEqual([]);
   });
 
   it('has a generated index carrying a do-not-edit header', () => {
