@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 421
+total_items: 436
 by_status:
   decomposed: 1
   done: 78
   in_progress: 4
   deferred: 46
-  backlog: 267
+  backlog: 282
   dismissed: 5
   completed: 7
   review: 1
@@ -19,7 +19,7 @@ by_category:
   architecture: 16
   compliance: 1
   correctness: 20
-  data-integrity: 22
+  data-integrity: 33
   data-isolation: 1
   data-quality: 5
   design: 7
@@ -62,7 +62,7 @@ by_category:
   table-view: 1
   test-reliability: 1
   testing: 3
-  ux: 8
+  ux: 12
 
 items:
   - id: "WS-008"
@@ -4609,5 +4609,155 @@ items:
     effort: S
     type: "bug"
     program: infrastructure
+    capability: core
+
+  - id: "WS-619"
+    title: "Every session aggregate sums branch-exclusive decisions - naive on-trajectory summation where backward induction is required"
+    status: backlog
+    priority_score: 92
+    category: data-integrity
+    effort: L
+    type: "manual"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-620"
+    title: "heroPolicyAt defaults to villainSource = NULL, biasing every big-pot verdict toward you-should-have-called"
+    status: backlog
+    priority_score: 90
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-621"
+    title: "Preflop is 54% of hero decisions and is entirely unpriced - where a tight live player leaves money"
+    status: backlog
+    priority_score: 86
+    category: data-integrity
+    effort: L
+    type: "manual"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-622"
+    title: "The Decision Docket - every hero decision renders a state, and silence stops reading as approval"
+    status: backlog
+    priority_score: 89
+    category: ux
+    effort: M
+    type: "manual"
+    program: design
+    capability: core
+
+  - id: "WS-623"
+    title: "The money column refuses BOTH arms when the corpus arm could run today - measured shortfall is 1646 opponent decisions, about 66 more sessions"
+    status: backlog
+    priority_score: 91
+    category: data-integrity
+    effort: L
+    type: "manual"
+    program: data-quality
+    capability: core
+
+  - id: "WS-624"
+    title: "71 hand dossiers are computed and none is rendered - the hand study the founder asked for is built and discarded"
+    status: backlog
+    priority_score: 84
+    category: ux
+    effort: S
+    type: "manual"
+    program: design
+    capability: core
+
+  - id: "WS-625"
+    title: "The n=1 analytic yardsticks - criticism that never refuses for thin data"
+    status: backlog
+    priority_score: 90
+    category: data-integrity
+    effort: L
+    type: "manual"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-626"
+    title: "Run evaluateGameTree over each recorded hero decision as a review yardstick"
+    status: backlog
+    priority_score: 82
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-627"
+    title: "hand-class-99-TT-JJ was computed at engine v123 and HEAD is v129 - WS-607 records that v129 changed every postflop recommendation"
+    status: backlog
+    priority_score: 87
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: guide-authority
+    capability: core
+
+  - id: "WS-628"
+    title: "check-figure-currency passes a six-version-stale figure all-green - it checks that a stamp EXISTS, never that the number is current"
+    status: backlog
+    priority_score: 85
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: guide-authority
+    capability: core
+
+  - id: "WS-629"
+    title: "Missed opportunity needs a second instrument - the pricer cannot price a spot hero was never in"
+    status: backlog
+    priority_score: 83
+    category: ux
+    effort: L
+    type: "manual"
+    program: design
+    capability: core
+
+  - id: "WS-630"
+    title: "The table as a unit of analysis - confirmed market whitespace, and the atlas has no unit above the hand"
+    status: backlog
+    priority_score: 81
+    category: ux
+    effort: L
+    type: "manual"
+    program: design
+    capability: core
+
+  - id: "WS-631"
+    title: "The solver baselines are 12 hardcoded constants unvalidated since 2026-05-03 - the exact thing the roundtable attacked GTO Wizard for"
+    status: backlog
+    priority_score: 88
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-632"
+    title: "An empty contributingSessions is read as measured-on-this-field, so a 2009 corpus policy prices a live session and stamps transferStatus: measured - the top fault-register entry, produced automatically"
+    status: backlog
+    priority_score: 96
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-633"
+    title: "Re-mine the corpus behaviour policy on node1 so its provenance comes from the miner, not a backfill - the G16 re-mine died with a V8 heap OOM"
+    status: backlog
+    priority_score: 80
+    category: data-integrity
+    effort: M
+    type: "manual"
+    program: data-quality
     capability: core
 

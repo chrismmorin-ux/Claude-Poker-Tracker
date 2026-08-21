@@ -295,15 +295,15 @@ last_run_by_protocol:
     result: null
 created_at: "2026-08-02T00:00:00Z"
 created_by: founder-directive
-work_items_open: 39
+work_items_open: 40
 findings_open: 10
 
 
 cap_breach:
   active: true
-  work_items_open: 39
+  work_items_open: 40
   findings_open: 10
   max_open_items: 10
   priority_floor: 20
-  ratio: 3.9
+  ratio: 4
   since: "2026-08-04"

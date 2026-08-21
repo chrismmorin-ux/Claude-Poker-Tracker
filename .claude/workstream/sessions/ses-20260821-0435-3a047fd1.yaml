@@ -4,9 +4,9 @@ revived_at: "2026-08-21T15:48:23.971Z"
 started_at: "2026-08-21T04:35:18.383Z"
 ended_at: null
 mode: auto
-last_heartbeat: "2026-08-21T21:19:41.621Z"
+last_heartbeat: "2026-08-21T23:01:49.937Z"
 pid: 43312
-pid_recorded_at: "2026-08-21T21:19:41.621Z"
+pid_recorded_at: "2026-08-21T23:01:49.937Z"
 host: MorinComputer
 agent_session_id: "3a047fd1-14e5-481e-9742-1c09e00a0a51"
 
@@ -52,6 +52,12 @@ files_locked:
   - "ignition-poker-tracker/shared/storage-writer.js"
   - "ignition-poker-tracker/shared/hand-state-machine.js"
   - ".claude/workstream/queue/WS-618.yaml"
+  - "ignition-poker-tracker/background/service-worker.js"
+  - "ignition-poker-tracker/shared/table-manager.js"
+  - "ignition-poker-tracker/shared/__tests__/table-manager.test.js"
+  - "scripts/sessionSink/backfillFromCapture.mjs"
+  - "ignition-poker-tracker/side-panel/render-orchestrator.js"
+  - ".claude/workstream/sessions/ses-20260821-2207-41c87715.yaml"
 handoff_notes: |
   Session auto-recovered by cwos-session-recovery on 2026-08-21.
   Original start: 2026-08-21T04:35:18.383Z.

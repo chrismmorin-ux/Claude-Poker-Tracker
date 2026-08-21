@@ -1,0 +1,168 @@
+id: "ses-20260821-2207-41c87715"
+status: completed
+started_at: "2026-08-21T22:07:00.000Z"
+ended_at: "2026-08-21T23:20:00.000Z"
+mode: auto
+host: MorinComputer
+claimed_items: []
+files_locked: []
+
+branch: "fix/compute-supply-chain-ws572"
+pushed_to: "origin/main @ b76deb47"
+
+handoff_notes: |
+  LIVE SESSION AT A REAL TABLE. The founder played Ignition throughout and
+  reported symptoms as they happened. Everything below was found because of
+  that, not from fixtures.
+
+  THE CORRECTION THAT MATTERS MOST — READ THIS FIRST.
+
+  Earlier today I told the founder the panel-flapping was fixed, and cited a
+  13 -> 9 session-fragmentation improvement as evidence. He tested on the
+  correct build (stamp confirmed) and IT STILL FLAPPED.
+
+  The measurement was taken on `scripts/sessionSink/backfillFromCapture.mjs`,
+  which replayed only `kind:'msg'` frames and DROPPED `kind:'conn'` entirely.
+  TableManager was therefore never told a socket opened or closed — and
+  reconnect handling is driven ENTIRELY by those events. The harness could not
+  measure the thing it was being used to measure. The captures had carried the
+  lifecycle frames all along (`event:'closed'`, code 1005); only the wiring was
+  missing.
+
+  Re-measured with lifecycle wired, controlled by swapping ONLY table-manager.js:
+
+      pre-change   10 sessions   110 hands    99 hero   7 partials
+      with fix     10 sessions   108 hands   101 hero   4 partials
+
+  SESSIONS UNCHANGED. The 13 -> 9 was an artifact. The fix is real but its
+  benefit is different from what I reported: fewer junk `reconnectInterrupted`
+  partials (7 -> 4, one of them had ZERO actions) and +2 hero attributions.
+  NOT less fragmentation.
+
+  Both this session and the review session had been treating that harness as
+  their strongest instrument. Anything either of us concluded from it about
+  reconnects before this fix should be re-derived.
+
+  WHAT THE FLAPPING ACTUALLY WAS
+
+  `content/ignition-capture.js` is injected `all_frames: true`. Ignition's
+  client is heavily iframed, so EVERY frame runs its own pipeline host with its
+  own TableManager, and every non-game frame (lobby/chrome/ads) holds zero
+  tables and publishes `tables: {}` on the 30s interval.
+  `background/service-worker.js` kept `lastPipelineStatus = msg.status` — one
+  global, last-writer-wins, no frame identity.
+
+  Game frame publishes the table -> seatmap. Lobby frame publishes emptiness ->
+  5s grace -> clearForTableSwitch() -> "No active table detected" over a live
+  hand. Next game push -> table back minus the advice the wipe discarded ->
+  "Analyzing…". Forever, ~30s period.
+
+  THE CADENCE WAS THE TELL AND I READ PAST IT. The founder's first words were
+  "shuffles in and out" — rhythmic. A reconnect-driven fault is sporadic. The
+  ~30s period matched the status interval exactly and would have pointed here
+  on day one.
+
+  Fixed: the SW aggregates per capture port (it is the only component that sees
+  all frames, so it is the only one that can answer "is a table present in this
+  tab"). Ports release their contribution on disconnect and the panel is
+  re-pushed immediately rather than waiting out an interval.
+
+  A BUG I INTRODUCED, CAUGHT BEFORE IT REACHED HIM
+
+  The game WS URL carries NO table identifier — measured, one URL is shared by
+  up to FIVE connIds across the four captures. My earlier reconnect stitch
+  migrated a machine on URL match alone, so opening a SECOND table would have
+  had its first message steal the first table's machine and merge two tables'
+  hands into one record stream. Only 0 overlapping same-URL pairs (the founder
+  was not multi-tabling) kept it harmless.
+
+  A reconnect now requires what a reconnect actually has: a preceding CLOSE.
+  Same URL + old socket closed = reconnect. Same URL + old socket live =
+  concurrent table. Chose this failure mode deliberately: a missed stitch
+  fragments (visible, recoverable); a wrong merge corrupts.
+
+  ADVICE OUTLIVED ITS DECISION (founder-reported, live)
+
+  "giving me action advice after I've already folded, when the different streets
+  progress" and "the action set it reflects is stale" — one root cause.
+  `lastGoodAdvice` was only ever REPLACED (next push / new hand / table switch)
+  and never INVALIDATED, so a recommendation outlived the decision it was
+  computed for.
+
+  `classifyDecisionState` already returned OBSERVING/REFLECTION on a hero fold,
+  and invariant R3 already detected advice trailing the live street. BOTH
+  EXISTED; NEITHER WAS CONSULTED by the function that draws the recommendation.
+  Same knowledge-present-but-unwired shape as GET_JOURNAL_HANDS shipping with
+  zero handlers, and the seat-arc builder that handled null stats at a call site
+  that refused to call it. That is three instances of one pattern in one day.
+
+  LIVE EVIDENCE FOR THE RECONNECT FIX — first of the day, and it is inference
+
+  One session accumulated 21 hands over ~25 minutes on a SINGLE hero seat with
+  3 `carried` hands and NO fragmentation. `carried` is the mid-hand-reconnect
+  signature (Ignition's reconnect snapshot omits hero's own `pcard`), so
+  reconnects were being absorbed rather than splitting the table. Consistent
+  with the fix working. NOT proof — the close events were not directly observed,
+  only their downstream signature.
+
+  ITEMS COMPLETED: none marked done. WS-515/516/517 remain code-complete and
+  unclosed for the same reason as before — each carries an accept criterion
+  needing verification the tooling cannot do.
+
+  NEXT ACTION, in order:
+  1. FOUNDER: answer the one open question — is the slow panel load on OPENING
+     the panel, on PAGE REFRESH, or mid-session, and roughly how long? My
+     hypothesis (unverified, stated as a hypothesis): the per-port merge only
+     contains frames that have pushed since the SW woke, and MV3 suspends
+     aggressively, so the panel may wait out a 30s interval after a wake. If
+     that is right the fix is for the SW to request an immediate push from every
+     capture port on panel open.
+  2. Verify the reconnect path DIRECTLY rather than by signature — the harness
+     now replays lifecycle, so a targeted replay of a capture containing a
+     close/reopen can assert the table does not fragment.
+  3. The sidebar visual/layout revamp the founder originally asked for. It is
+     now on solid ground: the panel no longer lies about its own state.
+
+  Autopilot eligible: not assessed — no items claimed or completed.
+
+context_notes: |
+  PUSHED. origin/main is at b76deb47; node1 is unblocked and WS-594 (depth-2
+  budget sweep, priority 92) can run. Working tree clean apart from hook churn.
+
+  BUILD PROVENANCE IS NOW VISIBLE IN THREE PLACES and it earned itself twice
+  today — once when the founder tested a stale build for a full cycle, and again
+  when it let him confirm in five seconds that he was on the right one:
+    - chrome://extensions shows `version_name`
+    - the panel footer (always visible, click to copy)
+    - dist/BUILD_INFO.txt
+  `sourceDir` is the load-bearing field. A dev/unbundled artifact reads
+  "UNBUILT ARTIFACT — not a real build" in red.
+
+  THE INSTRUMENT TO TRUST ON THE CAPTURE PATH:
+      node scripts/sessionSink/backfillFromCapture.mjs \
+        ignition-poker-tracker/spike-data/captures/*.jsonl --dry-run
+  It now replays connection lifecycle, so it finally models reconnects. Current
+  expected output: 10 sessions / 108 hands / 101 with hero. It has caught three
+  things no unit suite could see. Re-run it before believing anything downstream
+  of TableManager.
+
+  FALSIFY YOUR OWN TESTS. Every fix this session was checked by swapping the
+  pre-fix file back in and confirming the new tests FAIL. That caught a test
+  that would otherwise have been decoration. The pattern to watch: today three
+  separate instruments (the visual harness, the reconnect tests, a cards-known
+  test in the review session) each carried the same assumption as the code they
+  were verifying.
+
+  DO NOT DELETE `.claude/worktrees/ws-445-ledger` — it holds 7 dirty files of
+  real uncommitted code (faultRegister.js, run-hero-ev.mjs,
+  mine-behavior-policy.mjs, an untracked FIND-140). Same shape as the orphans
+  landed earlier today; it deserves the same assess-and-land treatment.
+
+  OPEN TICKETS FILED TODAY: WS-615 (the 5000-hand premise is false — measured
+  4,965 B/record mean, quota binds at ~2,100), WS-618 (session recovery builds
+  its release list from the wrong side of the claim relationship).
+
+  THREE RULE CANDIDATES with the founder, none written by an agent:
+    - a derived quantity is only as measured as its LEAST measured input
+    - an error carrying structured diagnosis must not be narrowed to its message
+    - a test that has never been seen to fail is a decoration

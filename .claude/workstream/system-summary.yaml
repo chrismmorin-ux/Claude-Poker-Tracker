@@ -9,7 +9,7 @@
 # the invariant suite. They are carried forward from the last writer that did,
 # with vitals_observed_at naming when that was. Check that date before
 # trusting them, and run /verify if it is old.
-last_updated: "2026-08-21T21:50:22Z"
+last_updated: "2026-08-21T23:19:06Z"
 generated_by: cwos-reconcile
 vital_signs_ok: true
 red_vitals: []
@@ -21,13 +21,18 @@ queue_counts:
   done: 78
   in_progress: 4
   deferred: 46
-  backlog: 267
+  backlog: 282
   dismissed: 5
   completed: 7
   review: 1
   blocked: 10
   active: 2
 top_3_unclaimed:
+  - id: WS-632
+    title: "An empty contributingSessions is read as measured-on-this-field, so a 2009 corpus policy prices a l…"
+    score: 96
+    category: data-integrity
+
   - id: WS-575
     title: "Completing depth-2 pushes hero to raise 98% of the time — the truncation was MASKING an aggression…"
     score: 95
@@ -37,11 +42,6 @@ top_3_unclaimed:
     title: Exploit card prices a 2bb open with a fold rate measured against 3-4bb raises - condition every sea…
     score: 94
     category: domain-correctness
-
-  - id: WS-596
-    title: "The estimator's bias is a function of ESS, not of the policy — r = -0.95 across 8 arms"
-    score: 94
-    category: methodology-integrity
 
 stale_programs:
   - id: anti-hallucination

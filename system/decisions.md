@@ -1495,3 +1495,53 @@ assumptions:
 **Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
 **Decision:** Gate 2 blind-spot roundtables are executed by spawning the declared agents; briefs state the prior verdict as the thing to refute
 **Reasoning:** ROUNDTABLES.md declares the engine; engine-execution-fidelity.md makes inline simulation invalid output. Briefing to refute rather than ratify is what let the agents overturn three of my claims.
+
+### DEC-163: Criticism is not pressure - hero play quality gets thorough unhedged criticism; autonomy…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Criticism is not pressure - hero play quality gets thorough unhedged criticism; autonomy red lines 5/7 forbid engagement pressure, not evaluation
+**Reasoning:** Conflating the two produced an instrument that criticised nothing: leak channel fired 0 times across 14 sessions, and CI tests in 7+ components ban the words wrong|missed|score|grade. Ruled into .claude/rules/criticism-is-not-pressure.md
+
+### DEC-164: Session review yardsticks run as two arms - corpus-derived and Ignition-mined - with the…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Session review yardsticks run as two arms - corpus-derived and Ignition-mined - with the delta reported as a first-class result
+**Reasoning:** Founder ruling 2026-08-21 applying .claude/rules/unmeasured-constants.md to the field policy question rather than choosing one population
+
+### DEC-165: Replace the hardcoded solver-baseline table with baselines computed from our own engine
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Replace the hardcoded solver-baseline table with baselines computed from our own engine
+**Reasoning:** The 12 constants were unvalidated since 2026-05-03 and are the same pattern the Gate 2 roundtable attacked GTO Wizard for. Accepted cost: removes the last externally-sourced number, so DEC-053 then rests entirely on the n=1 analytic yardsticks (WS-625)
+
+### DEC-166: Keep the n>=30 floor for rate claims and add n=1 yardsticks alongside it, rather than low…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Keep the n>=30 floor for rate claims and add n=1 yardsticks alongside it, rather than lowering the floor
+**Reasoning:** Rate-based instruments structurally cannot fire at session sizes the cold-read regime produces (49 decisions max across all buckets). Adding an instrument class rather than weakening an existing one
+
+### DEC-167: Post-session review surfaces passively and auto-opens after cashout, skippable, no notifi…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Post-session review surfaces passively and auto-opens after cashout, skippable, no notification
+**Reasoning:** Founder posture ruling 2026-08-21; shares the route already owned by session-review-anchor-rollup rather than duplicating it
+
+### DEC-168: The service worker AGGREGATES pipeline status per capture port instead of keeping one las…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The service worker AGGREGATES pipeline status per capture port instead of keeping one last-writer-wins global
+**Reasoning:** content/ignition-capture.js is injected with all_frames:true, so every frame on the Ignition page runs its own TableManager and every non-game frame publishes tables:{} on the 30s interval. A single global meant a lobby frame erased the game frame's table, the panel ran out its 5s grace and rendered 'No active table detected' over a live hand -- the founder's rhythmic ~30s flapping. The SW is the only component that sees all frames, so it is the only one that can answer 'is a table present in this tab'.
+
+### DEC-169: A reconnect requires a preceding CLOSE
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** A reconnect requires a preceding CLOSE — same URL plus a live old socket is a concurrent table, not a reconnect
+**Reasoning:** The game WS URL carries no table identifier; measured across the four real captures one URL is shared by up to five connIds. My earlier stitch migrated on URL match alone, so opening a second table would have had its first message steal the first table's machine and merge two tables' hands into one record stream. Only the founder not multi-tabling kept it harmless (0 overlapping same-URL pairs in the captures). Corruption is worse than fragmentation, so the safer failure mode is required.
+
+### DEC-170: Advice is scoped to a decision and expires
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Advice is scoped to a decision and expires — suppressed when hero folds or the street advances
+**Reasoning:** lastGoodAdvice was only ever REPLACED, never INVALIDATED, so a recommendation outlived the decision it was computed for. Founder live at the table: advice showed after he folded and across later streets. classifyDecisionState already returned OBSERVING/REFLECTION on a fold and invariant R3 already detected advice trailing the street -- both existed, neither was consulted by the function that draws the recommendation. Advice on a decision hero cannot take is worse than a blank bar and is money-relevant.
+
+### DEC-171: The capture replay harness feeds connection LIFECYCLE, not just messages
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** The capture replay harness feeds connection LIFECYCLE, not just messages
+**Reasoning:** backfillFromCapture.mjs replayed only kind:'msg' and dropped kind:'conn' entirely, so TableManager was never told a socket opened or closed -- and reconnect handling is driven ENTIRELY by those events. The captures carried them all along. This invalidated a measurement I had reported as evidence (a claimed 13->9 session-fragmentation improvement); re-measured with lifecycle wired and only table-manager.js swapped, sessions were 10 vs 10, no change. Both this session and the review session had been treating that harness as their strongest instrument.
+
+### DEC-172: Orphan claims are released by scanning the QUEUE for claimed_by, not the session record's…
+**Date:** 2026-08-21 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Orphan claims are released by scanning the QUEUE for claimed_by, not the session record's claimed_items
+**Reasoning:** cwos-session-recovery builds its release list from session.claimed_items, but ownership is recorded on the queue item. A session that died without writing its claim fences that item forever: WS-492 sat claimed by a 6-day-dead session while recovery printed 'none abandoned'. Fourteen orphan claims were found this way, the oldest from May. Filed as WS-618 for the kit fix (HomeBase).
