@@ -11,6 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # scripts/__tests__/computeCodeDigest.test.js (WS-572) resolves real commits —
+          # digestAt('a60d4084'), digestAt('48bd185e75'), and a `^` parent — to assert that
+          # the code digest re-opens exactly the jobs a change invalidated. checkout@v4
+          # defaults to fetch-depth: 1, so those commits were absent and digestAt returned
+          # null: the test read as an assertion failure ("expected null to be truthy") when
+          # the real cause was a shallow clone. Full history is what the test actually needs.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
