@@ -38,11 +38,13 @@ import {
   buildModelAuditHTML,
   buildStreetProgressHTML,
   buildStatusBar,
+  buildStorageWarning,
   HAND_STALE_MS,
   buildTournamentBarHTML,
   buildTournamentDetailHTML,
 } from './render-orchestrator.js';
 import { RenderCoordinator, PRIORITY } from './render-coordinator.js';
+import { getJournalStorageHealth } from '../shared/storage-writer.js';
 import {
   installAffordanceListener,
 } from '../shared/render-affordance.js';
@@ -863,6 +865,47 @@ injectTokens();
   // canonical-writer skip-when-same-tier guard.
   let lastPipelineDetailHtml = null;
   let lastPipelineCounterText = null;
+
+  /**
+   * WS-515 — sole writer for #storage-warning.
+   *
+   * Permanent hand loss is the one state in this panel meaning data the founder
+   * cannot get back, and before this it was reported only to `errors.report`,
+   * which nobody reads. The quota throw was swallowed entirely, so the founder's
+   * first evidence that hands were missing would have been a short session in
+   * the corpus months later.
+   */
+  const renderStorageWarning = (snap) => {
+    const el = $('storage-warning');
+    if (!el) return;
+    // Decision lives in buildStorageWarning (pure, tested); this does the DOM
+    // write only.
+    const text = buildStorageWarning(snap?.journalHealth ?? coordinator.get('journalHealth'));
+    if (!text) { hideEl(el); return; }
+    if (el.textContent !== text) el.textContent = text;
+    showEl(el);
+  };
+
+  /**
+   * Poll durable-journal health. Cheap (two storage reads) and slow-cadence —
+   * this is a capacity signal, not a hot path.
+   */
+  const refreshJournalHealth = async () => {
+    try {
+      const health = await getJournalStorageHealth();
+      const prev = coordinator.get('journalHealth');
+      if (prev
+        && prev.quotaFailures === health.quotaFailures
+        && prev.dropped === health.dropped
+        && prev.estRemainingHands === health.estRemainingHands) {
+        return; // nothing changed — don't churn a render
+      }
+      coordinator.set('journalHealth', health);
+      scheduleRender('journal_health');
+    } catch (e) {
+      console.warn('[Side Panel] journal health read failed:', e?.message);
+    }
+  };
 
   const renderPipelineHealth = (snap) => {
     const healthEl = $('pipeline-health');
@@ -1914,6 +1957,9 @@ injectTokens();
     // --- App connection status ---
     updateAppStatus(snap.appConnected);
 
+    // --- Permanent hand loss (WS-515) ---
+    renderStorageWarning(snap);
+
     // --- Pipeline health + PID summary ---
     renderPipelineHealth(snap);
     renderPidSummary(snap.cachedDiag?.pidCounts);
@@ -2106,6 +2152,13 @@ injectTokens();
   // both keys immediately after this IIFE returns.
   coordinator.scheduleTimer('staleContext', _staleContextTick, 10_000, 'interval');
   coordinator.scheduleTimer('adviceAgeBadge', _adviceAgeBadgeTick, 1000, 'interval');
+
+  // WS-515: durable-journal capacity + permanent-loss counters. Registered
+  // through scheduleTimer for the same RT-60 reason as the two above. Slow
+  // cadence — this is a capacity signal, not a hot path — and read once at boot
+  // so an existing loss is surfaced immediately rather than 60s later.
+  coordinator.scheduleTimer('journalHealth', refreshJournalHealth, 60_000, 'interval');
+  refreshJournalHealth();
 
   // RT-73: reset refreshHandStats in-flight flags on table switch so a
   // storage read that was awaiting at the moment of the switch doesn't

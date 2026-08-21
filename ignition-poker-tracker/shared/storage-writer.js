@@ -55,6 +55,7 @@ const QUEUE_LOCK = 'poker_hand_queue_lock';
 // money-hand data is the right side of the bet.
 const JOURNAL_KEY = STORAGE_KEYS.HAND_JOURNAL;
 const DROPPED_KEY = STORAGE_KEYS.HAND_JOURNAL_DROPPED;
+const QUOTA_FAIL_KEY = STORAGE_KEYS.HAND_JOURNAL_QUOTA_FAILURES;
 const JOURNAL_LOCK = 'poker_hand_journal_lock';
 export const MAX_JOURNAL = 5000;
 
@@ -68,18 +69,28 @@ const _checkLocal = () => {
  * @param {Object} handRecord - Already stamped with captureId by enqueueHand
  */
 const journalAppend = (handRecord) => {
-  if (!_checkLocal()) return Promise.resolve();
+  if (!_checkLocal()) return Promise.resolve({ journalled: false, reason: 'unavailable' });
   return navigator.locks.request(JOURNAL_LOCK, async () => {
     try {
       const result = await chrome.storage.local.get([JOURNAL_KEY, DROPPED_KEY]);
       const journal = result[JOURNAL_KEY] || [];
       let dropped = result[DROPPED_KEY] || 0;
 
-      if (journal.some(h => h.captureId === handRecord.captureId)) return;
+      if (journal.some(h => h.captureId === handRecord.captureId)) {
+        return { journalled: true, duplicate: true };
+      }
       journal.push(handRecord);
 
       // Cap breach here IS permanent loss — count it so it can be surfaced
-      // instead of vanishing. 5000 hands is many sessions of headroom.
+      // instead of vanishing.
+      //
+      // WS-515: MAX_JOURNAL is NOT the binding ceiling and this branch is
+      // effectively dead. chrome.storage.local's default quota is 10MB, and a
+      // measured 9-handed record averages ~4,965 bytes (p95 ~9,185) — so the
+      // quota arrives at roughly 2,100 hands, well before 5,000, and holding
+      // 5,000 would need ~44MB at p95. The extension now requests
+      // `unlimitedStorage`, which removes the ceiling rather than budgeting
+      // under it; the cap and this counter stay as the backstop.
       if (journal.length > MAX_JOURNAL) {
         const overflow = journal.length - MAX_JOURNAL;
         journal.splice(0, overflow);
@@ -90,10 +101,41 @@ const journalAppend = (handRecord) => {
       }
 
       await chrome.storage.local.set({ [JOURNAL_KEY]: journal, [DROPPED_KEY]: dropped });
+      return { journalled: true };
     } catch (e) {
-      errors.report('storage', e, { op: 'journalAppend' });
+      // WS-515: the failure that actually happens is a quota throw from
+      // `set`, and it used to land here and be swallowed — reported to
+      // `errors` and nowhere else. `HAND_JOURNAL_DROPPED`, the entire
+      // mechanism built so loss "can be surfaced instead of vanishing", lives
+      // in the eviction branch above, which never runs. So the one failure
+      // that occurs was the one failure the counter could not see, and
+      // `enqueueHand` went on to report `success: true` for a hand with no
+      // durable copy.
+      const quota = isQuotaError(e);
+      if (quota) {
+        await _bumpQuotaFailureCount();
+      }
+      errors.report('storage', e, { op: 'journalAppend', quota });
+      return { journalled: false, reason: quota ? 'quota' : 'error', error: e?.message };
     }
   });
+};
+
+/** Does this storage error mean we ran out of room? */
+export const isQuotaError = (e) => {
+  const msg = String(e?.message || e || '');
+  return /quota|QUOTA_BYTES|exceeded the quota|storage quota/i.test(msg);
+};
+
+/** Bump the durable quota-failure counter. Best-effort; never throws. */
+const _bumpQuotaFailureCount = async () => {
+  try {
+    const r = await chrome.storage.local.get(QUOTA_FAIL_KEY);
+    await chrome.storage.local.set({ [QUOTA_FAIL_KEY]: (r[QUOTA_FAIL_KEY] || 0) + 1 });
+  } catch (_) {
+    // If we cannot even record the failure, the surface below still reports
+    // headroom, and enqueueHand still returns journalled:false.
+  }
 };
 
 /**
@@ -211,12 +253,26 @@ export const enqueueHand = (handRecord) => {
       await chrome.storage.session.set({ [QUEUE_KEY]: queue, [SEQ_KEY]: seq });
 
       // Write-through to the durable journal. Awaited so a hand is never
-      // reported enqueued while its only durable copy is still in flight,
-      // but failures inside journalAppend are swallowed there — the live
-      // delivery path must not be blocked by a journal problem.
-      await journalAppend(handRecord);
+      // reported enqueued while its only durable copy is still in flight.
+      // A journal failure still does NOT block the live delivery path — that
+      // reasoning was and remains correct.
+      //
+      // WS-515: what was wrong is what we then TOLD the caller. The failure
+      // was swallowed and this returned `success: true` for a hand whose only
+      // durable copy had just been lost to a full quota. "Do not block on a
+      // journal problem" and "report success for a hand with no durable copy"
+      // are separate decisions, and only the first is right. `journalled`
+      // distinguishes "queued and journalled" from "queued only".
+      const journalResult = await journalAppend(handRecord);
 
-      return { success: true, queueLength: queue.length };
+      return {
+        success: true,
+        queueLength: queue.length,
+        journalled: journalResult?.journalled !== false,
+        ...(journalResult?.journalled === false
+          ? { journalFailure: journalResult.reason || 'error' }
+          : {}),
+      };
     } catch (e) {
       if (!_storageDead) errors.report('storage', e, { op: 'enqueue' });
       return { success: false, queueLength: -1 };
@@ -538,6 +594,72 @@ export const getCaptureGaps = async () => {
   } catch (_) {
     return [];
   }
+};
+
+// ===========================================================================
+// JOURNAL STORAGE HEALTH — WS-515
+// ===========================================================================
+//
+// The ceiling that actually binds is chrome.storage.local's quota, not
+// MAX_JOURNAL. With `unlimitedStorage` granted the quota is lifted, but a limit
+// nobody can observe approaching is the same defect one layer up — so the bytes
+// in use and the failure count are readable rather than inferred.
+
+/** Default chrome.storage.local quota WITHOUT `unlimitedStorage`. */
+export const DEFAULT_LOCAL_QUOTA_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Measured size of a real 9-handed hand record, from 500 records built through
+ * HandStateMachine and serialized as chrome.storage stores them:
+ *
+ *     mean 4,965 B   p50 4,382 B   p95 9,185 B   max 9,961 B
+ *
+ * Which puts the 10MB quota at ~2,100 hands (mean) or ~1,140 (p95) — and ~650
+ * when frame capture reserves its 4.5MB. MAX_JOURNAL = 5000 would need ~44MB at
+ * p95, so it was never the binding limit.
+ *
+ * Caveat, because the number is load-bearing: record size is dominated by
+ * action-sequence length, and this distribution is synthetic (real hands, real
+ * builder, chosen action spread). The direction is robust — the quota binds
+ * long before MAX_JOURNAL — but the exact figure should be re-derived from real
+ * captures. WS-224 is the raw-capture ticket that would supply them.
+ */
+export const MEASURED_RECORD_BYTES = Object.freeze({
+  mean: 4965, p50: 4382, p95: 9185, max: 9961, n: 500,
+});
+
+/**
+ * Journal storage health, for a founder-visible surface.
+ * @returns {Promise<{bytesInUse:number|null, entries:number, dropped:number,
+ *   quotaFailures:number, estRemainingHands:number|null, unlimited:boolean}>}
+ */
+export const getJournalStorageHealth = async () => {
+  const out = {
+    bytesInUse: null, entries: 0, dropped: 0, quotaFailures: 0,
+    estRemainingHands: null, unlimited: false,
+  };
+  if (!_checkLocal()) return out;
+  try {
+    const r = await chrome.storage.local.get([JOURNAL_KEY, DROPPED_KEY, QUOTA_FAIL_KEY]);
+    out.entries = (r[JOURNAL_KEY] || []).length;
+    out.dropped = r[DROPPED_KEY] || 0;
+    out.quotaFailures = r[QUOTA_FAIL_KEY] || 0;
+
+    try {
+      out.unlimited = !!chrome?.runtime?.getManifest?.()?.permissions?.includes('unlimitedStorage');
+    } catch (_) { /* manifest unavailable in some test contexts */ }
+
+    if (typeof chrome.storage.local.getBytesInUse === 'function') {
+      out.bytesInUse = await chrome.storage.local.getBytesInUse(null);
+      if (!out.unlimited && Number.isFinite(out.bytesInUse)) {
+        const remaining = DEFAULT_LOCAL_QUOTA_BYTES - out.bytesInUse;
+        out.estRemainingHands = Math.max(0, Math.floor(remaining / MEASURED_RECORD_BYTES.mean));
+      }
+    }
+  } catch (e) {
+    errors.report('storage', e, { op: 'getJournalStorageHealth' });
+  }
+  return out;
 };
 
 /** Clear the ledger. Test/maintenance only — never called on the live path. */

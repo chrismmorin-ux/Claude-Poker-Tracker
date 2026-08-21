@@ -151,6 +151,10 @@ export class RenderCoordinator {
       staleContext: false,
       // Has-hands flag for no-table visibility (Fix 2)
       hasTableHands: true,
+      // WS-515: durable-journal capacity + permanent-loss counters. Null until
+      // the first read; renderStorageWarning shows nothing while unknown,
+      // because unknown is not evidence of loss.
+      journalHealth: null,
       // Fix 6c: Pipeline event log (capped at 50, NOT in renderKey)
       pipelineEvents: [],
       // RT-66 + STP-1: invariant-violation surfacing.
@@ -307,6 +311,7 @@ export class RenderCoordinator {
       appSeatDataVersion: s.appSeatDataVersion,
       staleContext: s.staleContext,
       hasTableHands: s.hasTableHands,
+      journalHealth: s.journalHealth,
       planPanelOpen: s.planPanelOpen,
       modeAExpired: s.modeAExpired,
       // V-status §I INV-STATUS-4: surface the timeout flag so renderers can

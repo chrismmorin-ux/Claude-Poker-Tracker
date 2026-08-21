@@ -148,6 +148,14 @@ A close does **not** destroy the table. It starts a `RECONNECT_GRACE_MS` (15s) w
   (`currentTableState`/`currentLiveContext`). Both were gated on stored-hand state, so the panel
   showed "No active table detected" — then an empty seat area — over a live hand for the whole
   first hand at every table. Stats are decoration on top of these, never their precondition.
+- **Never let a caught error turn into a success return.** `journalAppend` swallowed the quota
+  throw, so `enqueueHand` reported `success: true` for a hand whose only durable copy had just
+  been lost. "Do not block the live path on a journal problem" and "report success for a hand
+  with no durable copy" are separate decisions; only the first is right.
+- **The binding limit is rarely the one in the constant.** `MAX_JOURNAL = 5000` was never
+  reachable — `chrome.storage.local`'s 10MB quota arrives at ~2,100 hands (measured mean 4,965
+  B/record, p95 9,185). Check the real ceiling before trusting a cap, and prefer removing the
+  ceiling (`unlimitedStorage`) over budgeting under it when the data IS the product.
 - **Never claim a healthy status from a cumulative count.** `handCount` only ever grows, so
   `handCount > 0 ⇒ LIVE` made a dead capture visually identical to a live one forever. Any status
   claim needs a recency term, and a degraded state states its age ("no hand for 12 min") rather

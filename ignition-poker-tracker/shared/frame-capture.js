@@ -26,7 +26,19 @@ export const FRAME_CAPTURE_FLAG = 'capture.rawFrames';
 export const FRAME_CAPTURE_PREFIX = 'capture.frames::';
 
 const DEFAULT_MAX_RECORDS = 4000;
-const DEFAULT_MAX_BYTES = 4_500_000; // ~4.5MB per context; chrome.storage.local default quota is 10MB
+// ~4.5MB per context.
+//
+// WS-515 correction: this used to read "chrome.storage.local default quota is
+// 10MB", and that framing had this buffer silently budgeting against the hand
+// journal in the SAME 10MB — two writers, no coordination, whoever hit the wall
+// first lost. With frame capture on in one context the journal's usable share
+// fell to ~5.5MB, which at a measured ~4,965 B/hand is barely 1,100 hands.
+//
+// The extension now requests `unlimitedStorage`, so the 10MB default no longer
+// applies and this is NOT a contention any more. The cap stays as a
+// per-context sanity bound on a debug buffer — not as a share of a fixed
+// budget. Do not reason from a 10MB ceiling here again.
+const DEFAULT_MAX_BYTES = 4_500_000;
 const DEFAULT_FLUSH_DELAY_MS = 1500;
 
 // ---------------------------------------------------------------------------

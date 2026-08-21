@@ -5,6 +5,7 @@
   "description": "Personal poker session note-taking assistant",
   "permissions": [
     "storage",
+    "unlimitedStorage",
     "sidePanel"
   ],
   "host_permissions": [

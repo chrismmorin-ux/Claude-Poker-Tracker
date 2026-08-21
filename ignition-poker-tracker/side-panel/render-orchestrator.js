@@ -1445,6 +1445,42 @@ export const buildModelAuditHTML = (advice) => {
 // =========================================================================
 
 /**
+ * WS-515 — warn while there is still time to act, not only after loss.
+ * ~200 hands is a couple of sessions of headroom at a measured ~4,965 B/hand.
+ */
+export const JOURNAL_LOW_HEADROOM_HANDS = 200;
+
+/**
+ * Build the permanent-hand-loss warning. Pure, so the decision can be tested;
+ * `renderStorageWarning` in side-panel.js does only the DOM write.
+ *
+ * Returns '' when there is nothing to say — including when health is unknown.
+ * Unknown is NOT evidence of loss, and claiming loss from missing data is the
+ * same class of false statement as the defects this ticket cluster fixes.
+ *
+ * @param {Object|null} health - from getJournalStorageHealth()
+ * @returns {string} warning text, or '' to hide
+ */
+export const buildStorageWarning = (health) => {
+  if (!health) return '';
+  const parts = [];
+  const { quotaFailures = 0, dropped = 0, estRemainingHands = null } = health;
+
+  if (quotaFailures > 0) {
+    parts.push(`Storage full — ${quotaFailures} hand${quotaFailures === 1 ? '' : 's'} have NO durable copy.`);
+  }
+  if (dropped > 0) {
+    parts.push(`${dropped} hand${dropped === 1 ? '' : 's'} permanently dropped from the journal.`);
+  }
+  if (!parts.length
+      && Number.isFinite(estRemainingHands)
+      && estRemainingHands < JOURNAL_LOW_HEADROOM_HANDS) {
+    parts.push(`Storage nearly full — room for about ${estRemainingHands} more hands.`);
+  }
+  return parts.join(' ');
+};
+
+/**
  * WS-517 hand-recency thresholds.
  *
  * A live 9-handed table produces a hand every minute or two, so several minutes

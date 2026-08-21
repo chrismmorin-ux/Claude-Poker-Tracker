@@ -61,6 +61,12 @@ export const STORAGE_KEYS = {
   // Monotonic count of journal entries evicted by the cap without ever being
   // ACKed by the app — i.e. actual, permanent hand loss. Surfaced, not silent.
   HAND_JOURNAL_DROPPED: 'ignition_hand_journal_dropped',
+  // Monotonic count of journal writes that failed because storage was FULL.
+  // Distinct from HAND_JOURNAL_DROPPED, which counts cap eviction: the cap is
+  // a policy we chose, the quota is a wall we hit. Before WS-515 the quota
+  // throw was caught and reported to `errors` only, so the failure that
+  // actually happens was the one the loss counter could not see.
+  HAND_JOURNAL_QUOTA_FAILURES: 'ignition_hand_journal_quota_failures',
   // Durable record of intervals during which capture was DEAD (chrome.storage.local).
   //
   // A capture that dies mid-session does not leave a visible gap — it leaves a
