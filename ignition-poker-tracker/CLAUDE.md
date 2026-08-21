@@ -34,7 +34,7 @@ npm run harness            # Build + serve harness on localhost:3333
 > bundle doesn't match the local `dist/`, but in parallel sessions just set the port:
 > `HARNESS_PORT=3401 npm run harness:verify`.
 
-### Scenarios to check (17 fixtures in `__tests__/fixtures.js`)
+### Scenarios to check (18 fixtures in `__tests__/fixtures.js`)
 - `flopWithAdvice` — full happy path (action badge, villain, cards, fold%, blocker, range, hand plan)
 - `preflopNoAdvice` — "Analyzing..." header, hero cards only
 - `preflopWithAdvice` — hand plan tree, flop archetype breakdown
@@ -44,6 +44,8 @@ npm run harness            # Build + serve harness on localhost:3333
 - `betweenHandsTournament` — tournament bar with M-ratio, ICM, blinds
 - `heroFolded` — "Observing" label, dimmed cards
 - `noTable` — pipeline health strip, "No active table detected"
+- `deadCapture` — **hands banked, capture dead.** 105 hands, table still seated, nothing
+  captured for 22 min. Must NOT look like a live session: red dot, "STOPPED — no hand for 22 min".
 - `firstHandAtTable` — **live hand, zero stored hands.** Seated, cards dealt, nothing in
   session storage yet. Occurs at session start, after every table switch, and after every
   socket reconnect. The HUD and the seat roster must render; only stats degrade.
@@ -146,6 +148,11 @@ A close does **not** destroy the table. It starts a `RECONNECT_GRACE_MS` (15s) w
   (`currentTableState`/`currentLiveContext`). Both were gated on stored-hand state, so the panel
   showed "No active table detected" — then an empty seat area — over a live hand for the whole
   first hand at every table. Stats are decoration on top of these, never their precondition.
+- **Never claim a healthy status from a cumulative count.** `handCount` only ever grows, so
+  `handCount > 0 ⇒ LIVE` made a dead capture visually identical to a live one forever. Any status
+  claim needs a recency term, and a degraded state states its age ("no hand for 12 min") rather
+  than downgrading silently. Unknown recency is NOT dead — inventing a dead state from missing
+  data is its own false claim.
 - **Never gate liveness on a cumulative counter.** "How many messages have we seen" is a
   lifetime flag; "is capture alive" is a recency question (`now - lastWsMessageAt`). The silence
   detector conflated them and early-returned on `gameWsMessageCount > 0` — a counter never reset

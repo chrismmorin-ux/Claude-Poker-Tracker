@@ -571,6 +571,39 @@ export const noTable = {
 };
 
 // =========================================================================
+// DEAD CAPTURE — WS-517. Hands were captured, then capture died.
+//
+// The state the status bar could not express: 40 hands banked, a table still
+// seated, and nothing captured for 22 minutes. Keyed on the cumulative hand
+// count alone the bar read "Tracking · 40 hands" — indistinguishable from a
+// healthy session at a glance, which is the whole defect.
+//
+// `diagData.lastHandCompletedAt` is what makes it distinguishable, so it is the
+// load-bearing field of this fixture.
+// =========================================================================
+
+export const deadCapture = {
+  cachedSeatStats: {
+    2: makeStats(2, 35, 10, 0.8, 'Fish', 20),
+    5: makeStats(5, 25, 20, 1.5, 'Hero', 50),
+    8: makeStats(8, 18, 15, 2.5, 'TAG', 35),
+  },
+  currentTableState: { heroSeat: 5, state: 'ACTIVE', activeSeats: [2, 5, 8] },
+  currentLiveContext: null,
+  lastGoodAdvice: null,
+  appSeatData: {
+    2: makeAppSeat('Fish', 20, 'Loose passive fish'),
+    8: makeAppSeat('TAG', 35, 'Tight aggressive reg'),
+  },
+  pinnedVillainSeat: null,
+  lastGoodExploits: { seats: [], appConnected: true },
+  lastGoodTournament: null,
+  cachedSeatMap: null,
+  // 22 minutes since the last captured hand — past HAND_DEAD_MS.
+  diagData: { lastHandCompletedAt: Date.now() - 22 * 60_000 },
+};
+
+// =========================================================================
 // FIRST HAND AT A TABLE — a live hand with NOTHING in session storage yet.
 //
 // The state the founder actually reported and that no fixture covered: seated,
@@ -1702,6 +1735,7 @@ export const ALL_FIXTURES = {
   heroFolded,
   noTable,
   firstHandAtTable,
+  deadCapture,
   pinnedVillainOverride,
   fullNineHanded,
   nullEdges,

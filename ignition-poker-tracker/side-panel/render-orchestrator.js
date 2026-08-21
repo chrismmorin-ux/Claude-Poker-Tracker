@@ -1445,6 +1445,52 @@ export const buildModelAuditHTML = (advice) => {
 // =========================================================================
 
 /**
+ * WS-517 hand-recency thresholds.
+ *
+ * A live 9-handed table produces a hand every minute or two, so several minutes
+ * with none is already notable and a quarter of an hour is not a slow table.
+ * These are deliberately generous — the failure being prevented is claiming
+ * LIVE over a dead capture, not nagging during a break.
+ */
+export const HAND_STALE_MS = 300_000;   // 5 min  -> degraded, age stated
+export const HAND_DEAD_MS = 900_000;    // 15 min -> disconnected, age stated
+
+/** Compact age for a status line: "45s", "12 min", "1h 5m". */
+export const formatAge = (ms) => {
+  if (!Number.isFinite(ms) || ms < 0) return '?';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m`;
+};
+
+/**
+ * Is the hand flow stale enough that claiming LIVE would be a lie?
+ *
+ * Returns `{ tier: null }` when freshness cannot be judged. That case is
+ * deliberate: with no `lastHandCompletedAt` we do not know capture is dead, and
+ * inventing a dead state from missing data is its own false claim. It is also
+ * why this is not a silent downgrade — when we do judge it stale, we say so and
+ * state the age.
+ *
+ * @returns {{ tier: string|null, age: string, ms: number }}
+ */
+export const classifyHandRecency = (recency = {}, handCount = 0) => {
+  const { lastHandCompletedAt = null } = recency;
+  const now = Number.isFinite(recency.now) ? recency.now : Date.now();
+  if (handCount <= 0) return { tier: null, age: '', ms: 0 };
+  if (!Number.isFinite(lastHandCompletedAt) || lastHandCompletedAt <= 0) {
+    return { tier: null, age: '', ms: 0 };
+  }
+  const ms = now - lastHandCompletedAt;
+  if (ms >= HAND_DEAD_MS) return { tier: STATUS_TIERS.DISCONNECTED, age: formatAge(ms), ms };
+  if (ms >= HAND_STALE_MS) return { tier: STATUS_TIERS.DEGRADED, age: formatAge(ms), ms };
+  return { tier: null, age: formatAge(ms), ms };
+};
+
+/**
  * Build status bar tier and text.
  *
  * Returns a V-status \u00A7I axis-1 tier value (per shared/render-status.js
@@ -1460,9 +1506,12 @@ export const buildModelAuditHTML = (advice) => {
  *   when true, the connected-waiting timer has fired (table present but
  *   no hands for 30s); the text escalates to suggest a reload while the
  *   tier remains DEGRADED yellow per spec.
+ * @param {Object} [recency] - WS-517 freshness inputs.
+ * @param {number|null} [recency.lastHandCompletedAt] - epoch ms of the last captured hand
+ * @param {number} [recency.now] - injectable clock for tests
  * @returns {{ tier: string, text: string }}
  */
-export const buildStatusBar = (pipeline, handCount, connectedWaitingExpired = false) => {
+export const buildStatusBar = (pipeline, handCount, connectedWaitingExpired = false, recency = {}) => {
   if (!pipeline) {
     return { tier: STATUS_TIERS.DEGRADED, text: 'Service worker not responding' };
   }
@@ -1471,6 +1520,22 @@ export const buildStatusBar = (pipeline, handCount, connectedWaitingExpired = fa
   const tables = pipeline?.tables || {};
   const tableIds = Object.keys(tables);
   const tableLabel = tableIds.length > 0 ? ` (id:${tableIds[0]})` : '';
+
+  // WS-517. `handCount` is CUMULATIVE. Keying LIVE on it alone meant that once
+  // a single hand had ever been captured the bar read "Tracking - 40 hands"
+  // forever, including an hour after capture died: a dead capture was visually
+  // identical to a live one on the panel's most-glanced-at surface. Freshness
+  // is now part of the tier, and the age is stated rather than silently
+  // downgraded, so "stopped 12 min ago" is legible at a glance on a phone.
+  const staleness = classifyHandRecency(recency, handCount);
+
+  if (handCount > 0 && staleness.tier !== null) {
+    const scope = tableCount > 0 ? `Tracking${tableLabel}` : 'Capture';
+    return {
+      tier: staleness.tier,
+      text: `${scope} STOPPED \u2014 no hand for ${staleness.age} \u00B7 ${handCount} hands`,
+    };
+  }
 
   if (tableCount > 0 && handCount > 0) {
     return { tier: STATUS_TIERS.LIVE, text: `Tracking${tableLabel} \u00B7 ${handCount} hands` };

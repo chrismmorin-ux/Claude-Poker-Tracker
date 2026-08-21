@@ -38,6 +38,7 @@ import {
   buildModelAuditHTML,
   buildStreetProgressHTML,
   buildStatusBar,
+  HAND_STALE_MS,
   buildTournamentBarHTML,
   buildTournamentDetailHTML,
 } from './render-orchestrator.js';
@@ -243,10 +244,17 @@ injectTokens();
     const tables = pipeline?.tables || {};
     const tableCount = pipeline?.tableCount ?? Object.keys(tables).length;
     const handCount = coordinator.get('lastHandCount');
+    // WS-517: hand-flow staleness re-arms the escalation after the first hand.
+    // Gated on `handCount === 0` alone, it could only fire before a session's
+    // first hand and never again — so a capture that died after 40 hands had no
+    // escalation path at all.
+    const lastHandAt = coordinator.get('cachedDiag')?.lastHandCompletedAt ?? null;
     coordinator.evaluateConnectedWaitingTimer({
       connected: !!c.connected,
       tableCount,
       handCount,
+      handAgeMs: Number.isFinite(lastHandAt) && lastHandAt > 0 ? Date.now() - lastHandAt : null,
+      handStaleMs: HAND_STALE_MS,
     });
   };
 
@@ -808,7 +816,13 @@ injectTokens();
     // SR-6.10 (Z0 0.2): R-4.2 unknown placeholder. null = boot-race, no data yet.
     $('hand-count').textContent = handCount == null ? '\u2014' : handCount;
 
-    const result = buildStatusBar(pipeline, handCount, connectedWaitingExpired);
+    // WS-517: freshness is part of the tier. `lastHandCompletedAt` rides in on
+    // the pipeline diagnostics payload (buildDiagPayload in ignition-capture.js).
+    // Without it buildStatusBar cannot tell a live capture from a dead one and
+    // reports LIVE off a cumulative hand count forever.
+    const result = buildStatusBar(pipeline, handCount, connectedWaitingExpired, {
+      lastHandCompletedAt: diagData?.lastHandCompletedAt ?? null,
+    });
     // V-status \u00a7I writer #2 (Gate 5 PR-6): routes through applyMonotonicTier
     // so updateStatusBar can never silently downgrade a more-severe tier
     // set earlier in the same render frame by renderConnectionStatus
@@ -1870,6 +1884,17 @@ injectTokens();
     // hand at any table, and after every table switch (clearForTableSwitch
     // resets it). The panel rendered "No active table detected" over a live
     // hand as a result. Hands gate the stats that need hands, nothing more.
+    //
+    // WS-517 asked whether this gate should stop hiding `#pipeline-health`,
+    // which holds the panel's only freshness readout, exactly when a table is
+    // seated and freshness starts to matter. It offered two ways out; this is
+    // the second, stated as the ticket requires: THE READOUT IT HIDES IS NO
+    // LONGER THE ONLY ONE. Hand age now appears in the status bar
+    // ("Tracking (id:1) STOPPED — no hand for 12 min"), which is always
+    // visible and is what a founder actually glances at on a phone mid-hand.
+    // Un-hiding the strip instead would have moved the defect rather than
+    // removed it — it is diagnostic chrome nobody watches — and shell-spec
+    // §I.3 #9 forbids it co-occurring with HUD content regardless.
     const tablePresent = !!snap.currentActiveTableId;
     if (!tablePresent) {
       showEl($('no-table'));

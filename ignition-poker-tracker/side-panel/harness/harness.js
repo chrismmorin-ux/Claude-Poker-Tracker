@@ -97,7 +97,12 @@ function applyState(state) {
   const handCount = state.cachedSeatStats
     ? Object.values(state.cachedSeatStats).reduce((s, v) => s + (v?.sampleSize || 0), 0)
     : 0;
-  const status = buildStatusBar(pipeline, hasHands ? handCount : 0);
+  // WS-517: freshness is part of the tier, so the harness must thread it or the
+  // dead-capture scenario renders identically to a live one — which is exactly
+  // the defect being verified.
+  const status = buildStatusBar(pipeline, hasHands ? handCount : 0, false, {
+    lastHandCompletedAt: state.diagData?.lastHandCompletedAt ?? null,
+  });
   const dot = $('status-dot');
   const text = $('status-text');
   // V-status §I writer #5 (Gate 5 PR-6): harness uses writeStatusDot
