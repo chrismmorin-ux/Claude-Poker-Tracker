@@ -1,0 +1,98 @@
+id: "WS-609"
+title: "nToResolve is anchored on whatever slice called it, and a small slice overstates by ~5x"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 74
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  MEASURED 2026-08-21, on two engine-free ladder slices differing only in size.
+
+  `scripts/backtest/rescore-rungs.mjs:83-87`:
+
+      export const nToResolve = (n, mdeBB, targetBB) => {
+        ...
+        return Math.ceil(n * (mdeBB / targetBB) ** 2);
+      };
+
+  THE FORMULA IS CORRECT. MDE = Z_DETECT * sd and sd falls as 1/sqrt(n), so the n for a target
+  MDE scales with the square of the ratio. Nothing here is wrong as algebra.
+
+  THE INPUT IS THE PROBLEM, and it is not a rounding issue. The cluster-bootstrap sd is itself
+  an estimate, and at small n it is INFLATED -- so `mdeBB` comes in too large and the
+  extrapolation overshoots. This ticket exists because the overshoot is large enough to change
+  what compute gets booked.
+
+  PRE-REGISTERED FALSIFIER, then the result. "deltaMdeDetectBB falls as 1/sqrt(n), so a 3.80x
+  larger n drops it 1.95x." Measured:
+
+      rung                     MDE n=70   MDE n=266   observed drop   fitted exponent
+      r1-flat-continue           8.3956      2.3675       3.55x            0.948
+      r2-price-the-continue      1.2857      0.6607       1.95x            0.499
+      r3-respect-aggression      1.7256      0.6766       2.55x            0.701
+      r4-spr-gate                0.5566      0.1291       4.31x            1.095
+
+  Only r2 matched theory. The other three fell FASTER than 1/sqrt(n), every deviation in the
+  same direction -- the signature of an inflated small-n sd, not of a wrong exponent.
+
+  WHAT THAT COSTS IN PRACTICE. Using nToResolve's own formula to predict, from the n=70 slice,
+  the n needed to reach the MDE actually OBSERVED at n=266 (so the right answer is 266 by
+  construction):
+
+      r1   predicted   881   actual 266   overstated 3.3x
+      r2   predicted   266   actual 266   overstated 1.0x
+      r3   predicted   456   actual 266   overstated 1.7x
+      r4   predicted  1302   actual 266   overstated 4.9x
+
+  WHY THIS MATTERS RATHER THAN BEING A CURIOSITY. `run-rule-ladder.mjs` prints this number on
+  every run under "UNRESOLVED -- needs ~N discordant decisions", and it is the natural figure a
+  human sizes a cm-node1 `compute_job` from. Booking 5x the compute a run needs is the visible
+  cost; the invisible one is an operator reading "needs ~550,000" and concluding the
+  measurement is out of reach when it is not. WS-540's own ticket text made a version of this
+  mistake already, against the edge MDE rather than the paired one.
+
+  THE LIMITATION IS THE UNSTABLE SD, AND REMOVING IT IS THE POINT. Options, none of which is
+  "print a caveat":
+    - Anchor on the largest n available rather than the calling slice, and refuse to answer
+      below a stated cluster count.
+    - Carry the sd's own uncertainty through: the bootstrap already resamples, so the
+      DISTRIBUTION of sd is available and an interval on n is computable rather than a point.
+    - Report n as an interval or an upper bound with the anchor n stated on its face, so the
+      figure cannot be read as a measurement when it is an extrapolation.
+
+  CAVEAT ON THIS TICKET'S OWN EVIDENCE, stated because it is the same class of error: two
+  points, one slice, and the quantity claimed unstable is the quantity used to claim it. This
+  bounds the direction and rough size of the error, not its value. The 100k node1 run queued on
+  WS-540 will supply the large-n anchor that settles it.
+accept_criteria: |
+  - `nToResolve` either takes the anchor n explicitly or refuses below a stated cluster count,
+    rather than silently trusting whatever slice called it.
+  - Its output is reported as a bound or an interval with the anchor n on its face. A caller
+    cannot read it as a measurement.
+  - The projection is checked against the WS-540 100k run: predict from a small slice, compare
+    to the observed MDE at 100k, and record the ratio. Recorded unhedged whichever way it goes.
+  - A test asserts that the same (mde, target) pair anchored at two different n does not
+    silently return two different answers without saying which anchor produced it.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/rescore-rungs.mjs"
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement-refuted-prediction"
+  detail: "2026-08-21 — pre-registered 1/sqrt(n) falsifier; 3 of 4 rungs fell faster, overstating n by up to 4.9x"
+created_at: "2026-08-21T03:42:00.000Z"
