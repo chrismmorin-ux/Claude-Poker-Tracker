@@ -1,0 +1,84 @@
+id: "WS-610"
+title: "The estimator's bootstrap runs outside every clock this pipeline has — the fourth unmeasured cost model"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 76
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND 2026-08-21 while reading the WS-540 cost instrument.
+
+  `scripts/backtest/run-rule-ladder.mjs` takes `started = Date.now()` immediately BEFORE
+  `runHeroEv` and `runtimeMs = Date.now() - started` immediately AFTER it. Every
+  `estimateEdge` and `pairedDelta` call runs after that clock has stopped. Separately,
+  `run.cost.accountedNs` (heroEvRunner.mjs:710-737) sums only the phases inside
+  `scoreHeroEvPlayer`. So the estimator is outside BOTH instruments.
+
+  IT IS NOT A ROUNDING TERM. `clusterBootstrapCI` (ipsEstimator.mjs:218-228) is
+  O(resamples x n) with `resamples = DEFAULT_BOOTSTRAP_RESAMPLES = 2000`, each resample copying
+  ~n rows. `estimateEdge` calls it TWICE (:422, :434). A five-rung ladder run therefore pays
+  roughly 5 x 2 bootstraps for the edges plus 4 for the paired deltas -- ~14 passes of
+  2000 x n element copies, every one of them invisible.
+
+  WHY IT MATTERS RIGHT NOW, and not as a tidiness point. `rescore-rungs.mjs`'s header rests its
+  whole case on a measured share:
+
+      "DECOUPLEABLE (corpus walk) 99.5%   arms 0.5%"
+      "So this script pays the 0.5% and skips the 99.5%."
+
+  That 0.5% is `armShare`, computed inside the phase block. It structurally cannot see the
+  estimator. If the bootstrap is a meaningful fraction of a REPLAY's wall clock -- and a replay
+  skips the corpus walk, which is exactly the term that used to dominate -- then "score a rung
+  in seconds" is overstated by an unmeasured factor, and the interactive rung-authoring loop
+  WS-540 exists to create is slower than advertised for a reason nobody has looked at.
+
+  The suspicion is specifically that decoupling INVERTS which term dominates: production was
+  ~99% of a live run, so removing it can leave the estimator as the largest remaining cost.
+  That is a claim to measure, not to assert -- which is the entire point of this ticket.
+
+  THE PATTERN THIS IS THE FOURTH INSTANCE OF. `run-rule-ladder.mjs`'s header keeps two refuted
+  cost predictions on purpose, and states the lesson: "every cost claim about this pipeline that
+  was reasoned about rather than measured has been wrong, and each one was wrong in a way that
+  sent the next piece of work at the wrong term." The three so far:
+    1. "drop the engine arm and it runs in minutes" -- refuted, 4.9 s/decision unchanged.
+    2. "the cost is the per-player corpus walk" -- refuted, it was comboSample at 98.2%.
+    3. `decoupleableShare` measured only at n=70 and n=266, where the one-time corpusReadNs
+       sits in both numerator and denominator and inflates it by amortisation.
+  This is the fourth, and it is the first one nobody has looked at at all.
+accept_criteria: |
+  - `estimateEdge` / `pairedDelta` wall time is measured and reported separately from
+    `runtimeMs`, in both `run-rule-ladder.mjs` and `rescore-rungs.mjs`.
+  - The figure is persisted in the run artifact, not only printed, so it can be compared across
+    runs after the fact.
+  - The estimator's share of a REPLAY's wall clock is measured at the WS-540 100k scale and
+    recorded. If it dominates, `rescore-rungs.mjs`'s header claim is corrected in the same
+    change rather than left standing.
+  - `decoupleableShare` is re-measured at n >= 25,000 so the amortisation inflation at small n
+    is removed from the number the decoupling argument rests on. Pre-registered: >= 0.90.
+  - Whatever the numbers say, they are recorded unhedged in the file header beside the three
+    refuted predictions already there. A cost claim that turns out right for the wrong reason
+    is still recorded as such.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/run-rule-ladder.mjs"
+  - "scripts/backtest/rescore-rungs.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "unmeasured-cost-model"
+  detail: "2026-08-21 — the fourth in this file's history; the first three were all refuted by the first measurement that met them"
+created_at: "2026-08-21T03:44:00.000Z"

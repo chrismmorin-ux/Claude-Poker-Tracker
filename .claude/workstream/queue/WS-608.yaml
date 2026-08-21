@@ -1,0 +1,77 @@
+id: "WS-608"
+title: "VOCABULARY.md's disk headroom is stale by 34.7 GB, and node1 planning reads it"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 62
+priority_label: "P2"
+category: "documentation"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+description: |
+  MEASURED 2026-08-21 while sizing WS-540's persisted decision set.
+
+  `docs/standard-of-record/VOCABULARY.md` (§ atom store operations, ~:323-330) records, dated
+  2026-08-07:
+
+      C: 48.8 GB free (89% used)
+      G: is a Google Drive virtual mount and is "not a suitable home"
+      "There is no relocation target today."
+
+  MEASURED TODAY via statfs on C:/Users/chris/data:
+
+      C: 14.1 GB free of 487.2 GB  (97% used)
+
+  A 34.7 GB drop in two weeks. Anything sized against the documented figure is wrong by 3.5x,
+  and it is wrong in the direction that lets a preflight pass on a disk the run then fills.
+
+  WHY THIS IS NOT A COSMETIC DOC FIX. Three live consumers read that number to make decisions:
+
+    - `.claude/rules/artifact-location.md` planning -- what is "heavy" enough to belong on
+      cm-node1 rather than G16 is answered against local headroom.
+    - `atomStore.mjs:141-158` `diskPreflight` refuses a run that cannot finish. Its whole
+      purpose is preventing the two multi-hour deaths named in its own error string
+      (out/hero-ev-KILLED-3players-inadmissible.json,
+      out/hero-ev-44players-PARTIAL-650dec.json). A human reasoning from the doc instead of
+      from statfs re-introduces exactly that failure.
+    - WS-540's decision sets: 5,072 B/row measured, so 100k decisions is ~507 MB and larger
+      runs scale linearly. Several such sets on a 97%-full disk is a real ceiling.
+
+  A SECOND, SMALLER DRIFT IN THE SAME SECTION: VOCABULARY.md:317 cites
+  `scripts/backtest/atomStore.mjs:55` for `DEFAULT_ATOM_STORE_ROOT`. It is at :90-91. A
+  line-number citation that has rotted is worse than none, because it is followed.
+
+  THE STANDING FAILURE THIS IS AN INSTANCE OF. A hand-written measurement in prose has no
+  expiry and nothing re-checks it. The fix is not only to update the number -- it is to make
+  the number carry its measurement date at the point of use, or to have it measured rather
+  than quoted.
+accept_criteria: |
+  - The C: headroom figure in VOCABULARY.md is re-measured and updated, and carries the date
+    and the command that produced it, so the next reader can re-run it rather than trust it.
+  - VOCABULARY.md:317's `atomStore.mjs:55` reference is corrected to the real location.
+  - The section states plainly that a consumer must call `diskPreflight` / statfs rather than
+    read the documented figure -- the doc number is orientation, never an input to a sizing
+    decision.
+  - A check exists that fails when the documented figure and the measured one diverge beyond
+    a stated tolerance, OR the figure is removed from prose entirely in favour of the measured
+    call. A number nothing re-checks will rot again; this ticket exists because it did.
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "scripts/backtest/atomStore.mjs"
+  - ".claude/rules/artifact-location.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "measurement-contradicted-doc"
+  detail: "2026-08-21 — found while sizing WS-540's decision set; doc said 48.8 GB free, statfs said 14.1 GB"
+created_at: "2026-08-21T03:40:00.000Z"
