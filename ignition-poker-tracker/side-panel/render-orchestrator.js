@@ -1082,10 +1082,41 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
 
   const heroSeat = tableState?.heroSeat || currentLiveContext?.heroSeat;
   const activeSeatSet = new Set(currentLiveContext?.activeSeatNumbers || []);
+  const foldedSeats = new Set(currentLiveContext?.foldedSeats || []);
+
+  /**
+   * The DEALT-IN roster: everyone who was in this hand, folded or not.
+   *
+   * The wire splits the roster in two. `hand-state-machine.js` keeps dealt-in
+   * semantics internally (`this.activeSeats`, folded ⊆ active) and subtracts the
+   * folded seats only at the boundary, so `activeSeatNumbers` means "still
+   * contesting the pot" and is DISJOINT from `foldedSeats` (WS-217/STP-1 R-10.1).
+   * Their union is the roster; neither half is.
+   *
+   * This renderer was written against the pre-subtraction meaning and never
+   * updated, which produced both live symptoms at once:
+   *
+   *   1. Seats MOVED mid-hand. The roster shrank on every fold, and
+   *      buildSeatArcPositions distributes opponents by index over the count it
+   *      is given (`i / (count - 1)`) — so 7→6→5 opponents re-placed every
+   *      remaining player at a new angle. Players slid around the table as the
+   *      action went by, then snapped back at the next deal.
+   *   2. Folded players rendered as VACANT. `isVacant` below tested
+   *      `!activeSeatSet.has(seat)`, which is true for a folded seat by
+   *      construction — so `if (isVacant) ... else if (isFolded)` could never
+   *      reach its second branch during a live hand. The `folded` class was dead
+   *      code, and a player who folded lost their style colour, sample band, and
+   *      focus/pin eligibility the instant they folded.
+   *
+   * Measured on the live wire 2026-08-21: active ∪ folded held invariant at 9
+   * across a full preflop fold sequence (8+1, 7+2, 6+3, 5+4, 4+5, 3+6) while
+   * `activeSeatNumbers` alone fell 8→3.
+   */
+  const dealtInSet = new Set([...activeSeatSet, ...foldedSeats]);
 
   // Discover seats
   const seatSet = new Set();
-  for (const s of activeSeatSet) seatSet.add(s);
+  for (const s of dealtInSet) seatSet.add(s);
   if (heroSeat) seatSet.add(heroSeat);
   if (physicalStats) {
     for (const k of Object.keys(physicalStats)) seatSet.add(Number(k));
@@ -1098,7 +1129,6 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
 
   if (seats.length === 0) return '';
 
-  const foldedSeats = new Set(currentLiveContext?.foldedSeats || []);
   const isTournament = !!seatMap;
   const dealerSeat = currentLiveContext?.dealerSeat || tableState?.dealerButtonSeat;
   const pfAggressor = currentLiveContext?.pfAggressor;
@@ -1140,11 +1170,15 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
     const regSeatNo = seatMap?.[seat];
     const sampleSize = s?.sampleSize || app?.sampleSize || 0;
 
-    // Between hands (no live context / empty activeSeatSet), treat all stats-known
-    // seats as present — they were at the table recently. Only mark vacant when we
-    // have an active hand's seat list to compare against.
-    const hasLiveHand = activeSeatSet.size > 0;
-    const isVacant = !isHero && hasLiveHand && !activeSeatSet.has(seat);
+    // Between hands (no live context / empty roster), treat all stats-known seats
+    // as present — they were at the table recently. Only mark vacant when we have
+    // a dealt-in roster to compare against.
+    //
+    // Vacant means NOT DEALT IN — an empty chair. A player who folded is still in
+    // that chair, so they must test against the dealt-in roster, not the
+    // still-contesting subset; otherwise every fold reads as a player vanishing.
+    const hasLiveHand = dealtInSet.size > 0;
+    const isVacant = !isHero && hasLiveHand && !dealtInSet.has(seat);
 
     // SR-6.11 §1.1: logarithmic hands-count ring band + R-4.2 `—` placeholder.
     // SR-6.11 §1.11: Rule V range-selection ring — distinct visual channel

@@ -343,14 +343,78 @@ describe('buildSeatArcHTML', () => {
     expect(html).toContain('pinned');
   });
 
-  it('renders vacant seats with .vacant class', () => {
-    const f = fullNineHanded;
+  // A folded player is NOT a vacant chair. This pair of tests replaces a single
+  // older one that asserted `toContain('vacant')` on the fullNineHanded fixture
+  // while its own comment read "Seats 4, 6, 8 are folded" — it had encoded the
+  // defect as the contract. `activeSeatNumbers` is the still-contesting subset and
+  // is disjoint from `foldedSeats` (WS-217/STP-1 R-10.1); the roster is the union.
+  // Testing vacancy against the subset made every fold render as an empty seat.
+  it('renders folded (not vacant) seats when the whole table is dealt in', () => {
+    const f = fullNineHanded; // active [1,2,3,5,7,9] + folded [4,6,8] = all nine
     const html = buildSeatArcHTML(f.cachedSeatStats, f.currentTableState, null, {
       currentLiveContext: f.currentLiveContext,
       appSeatData: f.appSeatData,
     });
-    // Seats 4, 6, 8 are folded (not in activeSeatNumbers)
-    expect(html).toContain('vacant');
+    expect(html).not.toContain('vacant');
+    for (const seat of [4, 6, 8]) {
+      expect(html).toMatch(new RegExp(`class="seat-circle folded[^"]*"[^>]*data-seat="${seat}"`));
+    }
+    // A folded player keeps their read — style survives the fold.
+    expect(html).toMatch(/class="seat-circle folded style-nit"[^>]*data-seat="4"/);
+  });
+
+  it('renders .vacant only for a seat that was never dealt in', () => {
+    const f = fullNineHanded;
+    const html = buildSeatArcHTML(f.cachedSeatStats, f.currentTableState, null, {
+      currentLiveContext: {
+        ...f.currentLiveContext,
+        activeSeatNumbers: [1, 2, 3],
+        foldedSeats: [4],
+      },
+      appSeatData: f.appSeatData,
+    });
+    // Seats 5..9 carry stats but are outside active ∪ folded — empty chairs.
+    expect(html).toMatch(/class="seat-circle vacant"[^>]*data-seat="9"/);
+    // Seat 4 folded this hand, so it is occupied, not vacant.
+    expect(html).toMatch(/class="seat-circle folded[^"]*"[^>]*data-seat="4"/);
+  });
+
+  it('keeps the seat roster and arc positions fixed as players fold', () => {
+    // The live-wire regression (measured 2026-08-21): activeSeatNumbers fell 8→3
+    // across a preflop fold sequence while active ∪ folded held invariant at 9.
+    // buildSeatArcPositions spreads opponents by index over the count it is given,
+    // so a shrinking roster re-placed every remaining player on every fold —
+    // players slid around the table mid-hand.
+    const f = fullNineHanded;
+    const all = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const frames = [[], [2], [2, 4], [2, 4, 6], [2, 4, 6, 8], [2, 4, 6, 8, 1]];
+
+    const positionsFor = (folded) => {
+      const html = buildSeatArcHTML(f.cachedSeatStats, f.currentTableState, null, {
+        currentLiveContext: {
+          ...f.currentLiveContext,
+          activeSeatNumbers: all.filter((s) => !folded.includes(s)),
+          foldedSeats: folded,
+        },
+        appSeatData: f.appSeatData,
+      });
+      const seen = new Map();
+      for (const m of html.matchAll(/style="left:(\d+)px;top:(\d+)px"[^>]*data-seat="(\d+)"/g)) {
+        seen.set(Number(m[3]), `${m[1]},${m[2]}`);
+      }
+      return seen;
+    };
+
+    const baseline = positionsFor(frames[0]);
+    expect([...baseline.keys()].sort((a, b) => a - b)).toEqual(all);
+
+    for (const folded of frames.slice(1)) {
+      const next = positionsFor(folded);
+      expect([...next.keys()].sort((a, b) => a - b)).toEqual(all);
+      for (const seat of all) {
+        expect(next.get(seat)).toBe(baseline.get(seat));
+      }
+    }
   });
 
   it('renders style classes for villains', () => {
