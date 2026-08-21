@@ -31,8 +31,36 @@
  *
  * A session the founder played has his cards on EVERY decision, folds included. So the combo
  * priced here is not a sample: it is one combo, the real one, weight 1. That is why this
- * runner can price a FOLD, which is where a tight player's money actually goes and which no
- * corpus arm and no commercial tracker will ever show him.
+ * runner can price a FOLD, which is where a tight player's money actually goes.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ * A FALSE CLAIM STOOD HERE. RECORDED RATHER THAN QUIETLY DELETED.
+ * ═══════════════════════════════════════════════════════════════════════════════════════
+ *
+ * This block used to end "...which no corpus arm and NO COMMERCIAL TRACKER will ever show
+ * him." The second half is FALSE and was refuted by a Gate 2 roundtable on 2026-08-21 in one
+ * click: GTO Wizard's Hand History Analyzer prices folds explicitly — its own documentation
+ * reads "SB should have called the river. Instead, they folded, losing 7.65 bb."
+ *
+ * The error was a CATEGORY ERROR, and it is worth naming because it is easy to repeat. The
+ * HandHQ corpus masks hole cards because it is THIRD-PARTY DATAMINED history. A player's own
+ * hand history has never masked that player's own cards — PokerStars writes
+ * `Dealt to Hero [Xx Yy]` in the HOLE CARDS block before any action, folds included. A
+ * property of one corpus was generalised into a property of every tool. Pricing a fold also
+ * never required the masked information: a fold is the zero point at the node, and what gets
+ * priced is the EV of the ALTERNATIVES under some model of villain's range.
+ *
+ * WHAT SURVIVES, AND IT IS STILL A REAL DIFFERENTIATOR:
+ *
+ *   1. Everyone who prices a fold prices it against a SOLVER's model of villain's range. This
+ *      runner prices it against the field's MEASURED behaviour. No counterexample was found.
+ *   2. GTO Wizard skips what it has no solution for — "such as multiway postflop spots." At
+ *      9-handed live 1/2 that is a large share of the hands that matter, and this runner has
+ *      no such hole.
+ *
+ * The narrow corpus claim — that the corpus's only cards-known slice is showdowns and contains
+ * zero folds — is CORRECT and is what `renderSessionReview.mjs` says to the founder's face.
+ * That user-facing text never made the wider claim and needed no correction.
  *
  * ═══════════════════════════════════════════════════════════════════════════════════════
  * WHY THE VALUE FUNCTION AND THE FOLD RATES ARE IMPORTED, NEVER RESTATED

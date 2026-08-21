@@ -149,27 +149,56 @@ const heroDecisions = (adapted) => {
   let heroHands = 0;
   let observedHands = 0;
   let cardsKnownRows = 0;
+  let unknowableRows = 0;
+  let carriedHands = 0;
 
-  for (const { hand } of adapted) {
+  for (const { hand, source } of adapted) {
     const seat = hand?.gameState?.mySeat;
     if (seat == null) { observedHands += 1; continue; }
     heroHands += 1;
+
+    /**
+     * `carried` MEANS HERO'S CARDS ARE UNKNOWABLE, NOT THAT WE FAILED TO CAPTURE THEM.
+     *
+     * Traced to the protocol on 2026-08-21, after my own hypothesis ("capture attached after
+     * the deal") was wrong: on a socket reconnect Ignition sends a CO_TABLE_INFO snapshot that
+     * lists every OTHER seat face-down (`pcard1:[32896,32896]`, `pcard3..9` likewise) and
+     * OMITS hero's own seat entirely. For a hand already in progress, hero's hole cards are
+     * never re-sent. No amount of better capture recovers them.
+     *
+     * That makes these decisions `unexamined` in this repo's refusal vocabulary — we never
+     * could look — and NOT `dropped`. The distinction is load-bearing: counting them as
+     * cards-unknown failures made the instrument look broken, and silently excluding them
+     * would inflate the cards-known claim. They are excluded from the claim's DENOMINATOR and
+     * reported as their own quantity, so the coverage stays visible either way.
+     */
+    const unknowable = source?.ignitionMeta?.heroSeatConfidence === 'carried';
+    if (unknowable) carriedHands += 1;
+
     const labelled = labelDecisions(hand, seat);
     for (const r of labelled) {
-      if (r.handKnown) cardsKnownRows += 1;
-      rows.push(r);
+      if (unknowable) unknowableRows += 1;
+      else if (r.handKnown) cardsKnownRows += 1;
+      rows.push({ ...r, cardsUnknowable: unknowable });
     }
   }
+
+  // The denominator is decisions whose cards COULD be known. A protocol-unknowable hand is not
+  // a miss against that claim; it is outside it, and is reported beside it.
+  const knowableRows = rows.length - unknowableRows;
 
   return {
     rows,
     heroHands,
     observedHands,
     cardsKnownRows,
+    unknowableRows,
+    carriedHands,
+    knowableRows,
     // The headline claim of this instrument, stated as a measured fraction rather than an
     // assertion. If it is not ~1.0 the cards-known framing is WRONG for this session and the
     // report must not claim it.
-    cardsKnownFraction: rows.length ? cardsKnownRows / rows.length : 0,
+    cardsKnownFraction: knowableRows ? cardsKnownRows / knowableRows : 0,
   };
 };
 
@@ -217,7 +246,29 @@ const buildCard = async ({ subjectId, rows, sessionId, population, sourcePaths, 
     });
     problems = conductCardProblems(card);
   } catch (e) {
-    return { card: null, refusal: refuse('emit-failed', e.message, 'fix the emitter or the rows') };
+    /**
+     * `e.problems` IS THE DIAGNOSIS AND IT WAS BEING THROWN AWAY.
+     *
+     * `buildConductCard` raises `StandardOfRecordError('conduct card is not valid', {cardId,
+     * problems})` — the problems array names every field that failed and why. Keeping only
+     * `e.message` reduced all of that to the string "conduct card is not valid", which is
+     * `.claude/rules/error-handling.md`'s named anti-pattern verbatim: "'Error occurred' is
+     * never acceptable."
+     *
+     * It cost real coverage before anyone noticed. MEASURED 2026-08-21: 13 of 120 subjects
+     * refused with `emit-failed` and not one of the refusals said what was wrong, so a
+     * fixable emitter bug read identically to a subject that legitimately had nothing to say.
+     */
+    const problemList = Array.isArray(e?.problems) ? e.problems : null;
+    return {
+      card: null,
+      refusal: refuse(
+        'emit-failed',
+        problemList ? `${e.message}: ${problemList.slice(0, 5).join('; ')}` : e.message,
+        'fix the emitter or the rows',
+      ),
+      problems: problemList,
+    };
   }
   if (problems?.length) {
     return { card: null, refusal: refuse('card-invalid', problems.slice(0, 5).join('; '), 'fix the listed problems') };
@@ -659,15 +710,39 @@ export const reviewSession = async ({ sessionDir, fieldPolicyPath = null, topHan
   const heroSeat = [...seatCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
   const sourcePaths = [sessionDir];
-  const gates = [
+  /**
+   * GATES ARE SCOPED TO THE CARD THEY GUARD. They were not, and it cost 11 cards at once.
+   *
+   * `conductCard.js` is deliberately absolute — "a card whose gates did not pass is not a
+   * thinner card, it is an unverified one" — so a card is refused outright if any gate it
+   * carries failed. That doctrine is right. What was wrong was WHICH gates each card carried:
+   * every card, hero's and every opponent's, was handed the same array.
+   *
+   * MEASURED 2026-08-21 on sess-20260619-025941: ONE hero decision out of 38 lacked hole cards
+   * (97.4% < the 99% floor), and that single row refused hero's card AND all ten opponent
+   * cards in the session. An opponent's Conduct Card is a record of what THAT SEAT did facing
+   * what — it has no dependence whatsoever on whether hero's hole cards were captured.
+   *
+   * So: capture-integrity gates bind every card, because a torn or unsealed file makes every
+   * row in it suspect. The cards-known gate binds HERO'S card only, because it is a claim
+   * about hero's rows.
+   */
+  const captureGates = [
     { name: 'session sealed', ok: Boolean(read.manifest), detail: read.manifest?.hash ?? 'provisional' },
     { name: 'no corrupt tail', ok: read.corruptTail === false, detail: read.corruptTail ? 'TORN TAIL' : 'clean' },
-    {
-      name: 'cards-known on hero decisions',
-      ok: hero.cardsKnownFraction > 0.99,
-      detail: `${(hero.cardsKnownFraction * 100).toFixed(1)}% of ${hero.rows.length} rows`,
-    },
   ];
+  const heroCardsKnownGate = {
+    name: 'cards-known on hero decisions',
+    ok: hero.cardsKnownFraction > 0.99,
+    detail: `${(hero.cardsKnownFraction * 100).toFixed(1)}% of ${hero.knowableRows} knowable row(s)`
+      + (hero.unknowableRows
+        ? `; ${hero.unknowableRows} row(s) across ${hero.carriedHands} hand(s) are UNKNOWABLE `
+          + "(reconnect snapshot omits hero's own seat), excluded from the denominator"
+        : ''),
+  };
+  // The review-level report still shows all three — the reader should see the cards-known
+  // result whether or not it gated anything.
+  const gates = [...captureGates, heroCardsKnownGate];
 
   const stakes = [...new Set(adapted.map((a) => a.stakeLabel).filter(Boolean))];
   const population =
@@ -684,7 +759,7 @@ export const reviewSession = async ({ sessionDir, fieldPolicyPath = null, topHan
       rows: hero.rows,
       population,
       sourcePaths,
-      gates,
+      gates: [...captureGates, heroCardsKnownGate],
     });
 
   // A card per OPPONENT SUBJECT — a seat-occupancy segment when the source carries no player
@@ -699,7 +774,8 @@ export const reviewSession = async ({ sessionDir, fieldPolicyPath = null, topHan
       rows: s.rows,
       population: subjectPopulation,
       sourcePaths,
-      gates,
+      // Capture integrity only. Hero's cards-known fraction says nothing about this seat.
+      gates: captureGates,
     });
     opponents.push({
       subjectId: s.subjectId,
@@ -751,6 +827,15 @@ export const reviewSession = async ({ sessionDir, fieldPolicyPath = null, topHan
       decisions: hero.rows.length,
       cardsKnownRows: hero.cardsKnownRows,
       cardsKnownFraction: hero.cardsKnownFraction,
+      // Reported, never folded into the fraction. A zero here and a zero in `cardsKnownRows`
+      // mean opposite things.
+      knowableDecisions: hero.knowableRows,
+      unknowableDecisions: hero.unknowableRows,
+      unknowableHands: hero.carriedHands,
+      unknowableReason: hero.unknowableRows
+        ? "reconnect: Ignition's CO_TABLE_INFO snapshot omits hero's own seat, so hole cards "
+          + 'for a hand already in progress are never re-sent'
+        : null,
       cardsKnownClaim: hero.cardsKnownFraction > 0.99
         ? 'UNBIASED CARDS-KNOWN: hero\'s hole cards are present on every decision including '
           + 'folds, with no showdown conditioning. The corpus cannot produce this arm.'

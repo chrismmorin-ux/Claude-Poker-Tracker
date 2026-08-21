@@ -65,21 +65,79 @@ afterAll(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-describe('claim 1 — the unbiased cards-known arm', () => {
-  it('knows hero\'s hole cards on EVERY decision, folds included', () => {
+describe('claim 1 — the cards-known arm, and the claim tracking the measurement', () => {
+  /**
+   * THIS ASSERTED `cardsKnownFraction === 1` AND IT WAS THE WRONG INVARIANT.
+   *
+   * It held while the capture only ever produced hero hands that included the deal frame. On
+   * 2026-08-21 the extension's observed-hands work landed, hero became seated on hands where
+   * the capture attached AFTER the deal, and the fraction fell to 0.940 on this very fixture.
+   * Pinning it to 1 then forces one of two bad moves: relax the number until it passes
+   * (accommodation), or treat a genuine capture improvement as a regression.
+   *
+   * The invariant worth holding is not that the fraction is 1. It is that THE PROSE CLAIM
+   * NEVER OUTRUNS THE MEASUREMENT — a card saying "UNBIASED CARDS-KNOWN" must be backed by a
+   * fraction that earns it, and one that is not must say so on its face. That property is what
+   * a reader depends on, and it is checkable at any fraction.
+   *
+   * The ~6% of hero decisions with no hole cards is a DEFECT TO REMOVE, owned by the capture
+   * side. It is not this test's job to hide it.
+   */
+  it('states the cards-known fraction as a measurement, never as an assumption', () => {
     expect(review.hero.decisions).toBeGreaterThan(20);
-    // The whole reason this instrument beats the corpus arm. Anything below 1.0 means the
-    // adapter stopped injecting hero's cards and the prose claim has become false.
-    expect(review.hero.cardsKnownFraction).toBe(1);
-    expect(review.hero.cardsKnownClaim).toMatch(/UNBIASED CARDS-KNOWN/);
+    expect(review.hero.cardsKnownFraction).toBeGreaterThan(0);
+    expect(review.hero.cardsKnownFraction).toBeLessThanOrEqual(1);
+    // Derived from the rows rather than asserted independently — and the denominator is
+    // KNOWABLE decisions, not all of them. Dividing by `decisions` is what this assertion did
+    // first, and it is the arithmetic that makes a protocol-unknowable hand look like a
+    // capture miss.
+    expect(review.hero.knowableDecisions + review.hero.unknowableDecisions)
+      .toBe(review.hero.decisions);
+    expect(review.hero.cardsKnownRows / review.hero.knowableDecisions)
+      .toBeCloseTo(review.hero.cardsKnownFraction, 10);
+  });
+
+  it('reports unknowable decisions as their own quantity, never folded into the fraction', () => {
+    // A bare exclusion would INFLATE the claim: 20 unknowable hands plus 5 clean ones would
+    // report 100% cards-known and outrank a session with 25 clean hands. The count and the
+    // reason therefore travel beside the fraction as data.
+    expect(review.hero.unknowableDecisions).toBeGreaterThanOrEqual(0);
+    if (review.hero.unknowableDecisions > 0) {
+      expect(review.hero.unknowableHands).toBeGreaterThan(0);
+      expect(review.hero.unknowableReason).toMatch(/reconnect/);
+      const gate = review.gates.find((g) => g.name === 'cards-known on hero decisions');
+      expect(gate.detail).toMatch(/UNKNOWABLE/);
+    } else {
+      expect(review.hero.unknowableReason).toBeNull();
+    }
+  });
+
+  it('never lets the prose claim outrun the measured fraction', () => {
+    const earned = review.hero.cardsKnownFraction > 0.99;
+    if (earned) {
+      expect(review.hero.cardsKnownClaim).toMatch(/UNBIASED CARDS-KNOWN/);
+    } else {
+      expect(review.hero.cardsKnownClaim).toMatch(/NOT SUPPORTED/);
+    }
+    // Gate and claim report the same fact — one measurement, one verdict.
+    const gate = review.gates.find((g) => g.name === 'cards-known on hero decisions');
+    expect(gate.ok).toBe(earned);
   });
 
   it('includes fold decisions — the ones a showdown-conditioned corpus arm can never see', () => {
     // A showdown-only subset contains zero folds by construction; this one must not.
     expect(review.hero.decisions).toBeGreaterThan(0);
     expect(review.hero.handsSeated).toBeGreaterThan(0);
-    const gate = review.gates.find((g) => g.name === 'cards-known on hero decisions');
-    expect(gate.ok).toBe(true);
+  });
+
+  it('scopes the cards-known gate to hero, never to an opponent card', () => {
+    // MEASURED 2026-08-21: one hero decision without hole cards (97.4% of 38 rows) refused
+    // hero's card AND all ten opponent cards in that session. An opponent card records what
+    // THAT seat did facing what, and has no dependence on hero's holding.
+    for (const s of review.opponents.subjects) {
+      const names = (s.card?.gates ?? []).map((g) => g.name);
+      expect(names).not.toContain('cards-known on hero decisions');
+    }
   });
 });
 

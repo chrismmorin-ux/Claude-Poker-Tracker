@@ -77,7 +77,19 @@ export const CARDS_FILE = 'cards.ndjson';
  * and ten cards from two sessions is not a sample of how big one can get.
  */
 export const MEASURED_CARD_BYTES = Object.freeze({ measuredMax: 32236, max: 65536 });
-export const EXPECTED_CARDS = 20000;
+/**
+ * NO `EXPECTED_CARDS` CONSTANT — DELIBERATELY, and this is the second half of the note above.
+ *
+ * There was one, set to 20000, and it was a GUESS sitting next to a measurement. After the
+ * set-per-batch restructure `appendCards` passes `admit.length` to the writer's disk preflight
+ * — the exact count, measured by construction — so the constant was exported, unused, and
+ * still authoritative-looking. That is the WS-615 shape exactly: the sibling session measured a
+ * 9-handed record at 4,965 B mean against a comment claiming "5000 hands / ~9MB", and the wrong
+ * number had already been used to tune something else.
+ *
+ * An unmeasured constant nothing reads is worse than no constant, because the next person sizes
+ * against it. If a future caller needs an expected count, it should pass a measured one.
+ */
 
 /**
  * Add cards to the store as one new sealed set.
