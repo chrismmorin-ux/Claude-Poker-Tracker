@@ -160,7 +160,22 @@ function doneJobIds() {
   for (const line of r.stdout.split('\n')) {
     const l = line.trim();
     if (!l || /^\*\*|post-quantum|store now|upgraded/.test(l)) continue;
-    const [id, wsId, fingerprint] = l.split('|');
+    const [id, wsId, fingerprint, outcome, , started] = l.split('|');
+    // WS-594: a job that died BEFORE running a step is not 'work that already ran'.
+    // The dedup below exists so the machine does not burn every two hours on a
+    // known-broken spec, and its stated premise is that the runner already retried
+    // maxAttempts times. That premise does not hold for a setup failure: ws-594 died in
+    // ensureWorktree with attempts=[], stepResults=0, having executed nothing, and was
+    // then permanently unresubmittable while node1 idled. A stale worktree is an
+    // environment condition; clearing it is exactly the human intervention the dedup
+    // asks for, and after it the job must be able to run.
+    //
+    // Scoped hard: ONLY non-succeeded AND never-started. A job that ran and failed still
+    // blocks, because that is a real spec or code defect. `started` is absent on records
+    // written by an older done-summary, and absent must NOT mean retryable — an unknown
+    // history is treated as 'started', so the conservative behaviour is the default.
+    const neverStarted = started === 'never-started' && outcome && outcome !== 'succeeded';
+    if (neverStarted) continue;
     if (id) ids.add(id);
     // Fingerprints of every terminal job, regardless of which item they came from. The
     // fingerprint identifies the WORK, so this needs no ws_id -- which is just as well,

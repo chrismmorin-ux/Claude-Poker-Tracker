@@ -78,5 +78,21 @@ for (const f of files) {
     // held the exact cause. A failure that looks undiagnosable is worse than a loud one: it
     // reads as bad luck, and nobody goes looking for a mechanism behind bad luck.
     Buffer.from(String(j.detail || ''), 'utf8').toString('base64'),
+    // WS-594 (2026-08-20): did this job ever RUN a step, or die before starting?
+    //
+    // The feeder refuses to resubmit any terminal job, reasoning that the runner already
+    // retried it maxAttempts times so a human is needed. That premise is false for a job
+    // that never STARTED. ws-594 died in ensureWorktree with attempts=[], stepResults=0,
+    // no startedAt — a stale worktree pinned to an older commit, which is an environment
+    // condition, not a spec or code defect. It was then unresubmittable, and node1 idled.
+    // ws-503-17172f8726ce died the same way (see the note above), so this is a class, not
+    // an incident.
+    //
+    // Emitted as a distinct field rather than sniffed from `detail`, because a prose match
+    // on an error string is exactly the kind of classifier that breaks when the message is
+    // reworded.
+    (Array.isArray(j.attempts) && j.attempts.length > 0)
+      || (Array.isArray(j.stepResults) && j.stepResults.length > 0)
+      || Boolean(j.startedAt) ? 'started' : 'never-started',
   ].join('|') + '\n');
 }
