@@ -149,17 +149,49 @@ const renderCapturedHands = (hands) => {
 // ===========================================================================
 // EXPORT
 // ===========================================================================
+/**
+ * Export the hands the extension is actually holding.
+ *
+ * THIS BUTTON WAS DEAD, AND IT WAS DEAD IN THE WORST WAY. It asked the service worker for
+ * `GET_CAPTURED_HANDS`, which has been a legacy no-op returning `{ hands: [] }` since the
+ * staging buffer was removed (`background/service-worker.js`). So it downloaded a
+ * well-formed, correctly-named, EMPTY file and reported success. The only artefact it ever
+ * produced on this machine — `ignition-hands-1781851220916.json`, 2026-06-19 — contains zero
+ * hands, and the Suspected-Fault Register records the consequence: the founder's own hands
+ * have had "no artefact any harness can read".
+ *
+ * It now reads the DURABLE JOURNAL, which is where completed hands actually live.
+ */
 const exportHands = async () => {
   try {
-    const result = await chrome.runtime.sendMessage({ type: MSG.GET_CAPTURED_HANDS });
-    const data = JSON.stringify(result.hands || [], null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
+    const { hands, pending, pendingSink, dropped } =
+      await chrome.runtime.sendMessage({ type: MSG.GET_JOURNAL_HANDS });
+    const list = hands || [];
+
+    if (list.length === 0) {
+      // Refusing to produce an empty file that looks like a successful export is the entire
+      // point of this fix. An empty download is indistinguishable from a broken pipeline.
+      $('error').textContent = 'No hands captured yet — nothing to export.';
+      $('error').style.display = 'block';
+      return;
+    }
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      source: 'ignition-extension-journal',
+      counts: { hands: list.length, pending, pendingSink, droppedToCap: dropped },
+      hands: list,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ignition-hands-${Date.now()}.json`;
+    a.download = `ignition-hands-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     a.click();
     URL.revokeObjectURL(url);
+
+    $('error').textContent = '';
+    $('error').style.display = 'none';
   } catch (e) {
     $('error').textContent = 'Export failed: ' + e.message;
     $('error').style.display = 'block';

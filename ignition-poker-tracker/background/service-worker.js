@@ -9,9 +9,9 @@
  *   - Serving popup/side-panel queries
  */
 
-import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION, APP_URLS } from '../shared/constants.js';
+import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION, APP_URLS, SESSION_SINK } from '../shared/constants.js';
 import * as errors from '../shared/error-reporter.js';
-import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands, restoreJournalToQueue } from '../shared/storage-writer.js';
+import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands, restoreJournalToQueue, journalAckSink, journalPendingForSink, getJournalStatus, getJournalHands } from '../shared/storage-writer.js';
 import { validateMessage } from '../shared/message-schemas.js';
 import { validateHandForRelay } from '../shared/wire-schemas.js';
 import { deepFreeze } from '../shared/freeze-utils.js';
@@ -29,9 +29,33 @@ const SW_VERSION = EXTENSION_VERSION;
 let cachedExploits = null;
 let cachedActionAdvice = null;
 let cachedTournament = null;
-let appBridgePort = null;
+/**
+ * EVERY port kind is a Set. There is no single-current-port anywhere.
+ *
+ * `capturePorts` was always a Set; the other two were single slots, and both the
+ * slot model and its unguarded teardown were wrong (2026-08-21):
+ *
+ *   - MULTIPLE APP BRIDGES ARE NORMAL. The worker opens an app tab itself
+ *     (`ensureAppTabOpen`), so any tab the founder opens by hand is a second one.
+ *     `saveOnlineHand` in the app already made its dedup atomic for exactly this
+ *     reason — the storage layer modelled two live bridges while this file
+ *     modelled one, and the disagreement is what produced the bugs.
+ *   - MULTIPLE PANELS ARE NORMAL. Chrome allows one side panel per window.
+ *   - A single slot silently DEMOTED the older client: the newest connection took
+ *     the slot and every earlier tab or panel stopped receiving pushes while still
+ *     appearing connected from its own side. Nothing recovers from that on its own
+ *     — `port-connect.js` reconnects on disconnect, and no disconnect ever
+ *     happens to a port that was merely displaced.
+ *
+ * A Set removes the failure class rather than guarding it: there is no "current"
+ * port to lose, membership is by identity, and teardown is `delete(port)` — which
+ * cannot clobber a different live client no matter what order Chrome fires events
+ * in. That ordering (old port's `onDisconnect` arriving AFTER its replacement's
+ * `onConnect`, on every reload) is what broke the guarded single-slot version.
+ */
 const capturePorts = new Set();
-let sidePanelPort = null;
+const appBridgePorts = new Set();
+const sidePanelPorts = new Set();
 const swStartTime = Date.now();
 
 // Cached pipeline status from content script (for popup/side-panel queries)
@@ -65,34 +89,59 @@ let totalHandsSaved = 0;
 // HELPERS
 // ===========================================================================
 
+/**
+ * Post to one port, dropping it from its Set if the channel is already gone.
+ *
+ * A throw here means the far end died without its `onDisconnect` reaching us, so
+ * the eviction is by identity and touches no other client. Deleting the current
+ * element during Set iteration is well-defined in JS, so callers can loop safely.
+ */
+const postTo = (port, msg, ports, label) => {
+  try {
+    port.postMessage(msg);
+  } catch (e) {
+    console.warn(`[SW] ${label} push failed:`, e.message);
+    ports.delete(port);
+  }
+};
+
 const pushToSidePanel = (msg) => {
-  if (!sidePanelPort) return;
-  try { sidePanelPort.postMessage(msg); } catch (e) { console.warn('[SW] Side panel push failed:', e.message); sidePanelPort = null; }
+  for (const port of sidePanelPorts) postTo(port, msg, sidePanelPorts, 'Side panel');
 };
 
 const pushToAppBridge = (msg) => {
-  if (!appBridgePort) return;
-  try { appBridgePort.postMessage(msg); } catch (e) { console.warn('[SW] App bridge push failed:', e.message); appBridgePort = null; }
+  for (const port of appBridgePorts) postTo(port, msg, appBridgePorts, 'App bridge');
 };
 
-const pushFullStateToSidePanel = async () => {
-  if (!sidePanelPort) return;
+/** True when at least one app tab is bridged — the `appConnected` wire field. */
+const isAppConnected = () => appBridgePorts.size > 0;
+
+/**
+ * Full state replay. Targets ONE panel when given a port — a panel that just
+ * connected or just asked to be resynced needs the backlog, and the panels that
+ * are already up to date should not be made to re-render for it.
+ */
+const pushFullStateToSidePanel = async (target = null) => {
+  if (!target && sidePanelPorts.size === 0) return;
+  const send = target
+    ? (msg) => postTo(target, msg, sidePanelPorts, 'Side panel')
+    : pushToSidePanel;
   try {
     const queueLength = await getQueueLength();
-    pushToSidePanel({
+    send({
       type: 'push_pipeline_status',
       tables: lastPipelineStatus.tables,
       tableCount: lastPipelineStatus.tableCount,
       completedHands: lastPipelineStatus.completedHands,
       storedHands: totalHandsSaved,
       queueLength,
-      appConnected: !!appBridgePort,
+      appConnected: isAppConnected(),
       liveContext: null,
       errorCount: errors.getCount(),
       diagnosticData: cachedDiagnostics,
     });
     if (cachedExploits) {
-      pushToSidePanel({ type: 'push_exploits', seats: cachedExploits.seats, appConnected: !!appBridgePort });
+      send({ type: 'push_exploits', seats: cachedExploits.seats, appConnected: isAppConnected() });
     }
     // RT-68: Before replaying cached advice, check for fresh live context in
     // session storage. On SW reanimation the previous hand's advice may
@@ -107,9 +156,9 @@ const pushFullStateToSidePanel = async () => {
       }
     } catch (_) { /* missing storage is non-fatal */ }
     if (freshContext) {
-      pushToSidePanel({ type: 'push_live_context', context: freshContext });
+      send({ type: 'push_live_context', context: freshContext });
       if (cachedActionAdvice) {
-        pushToSidePanel({ type: 'push_action_advice', ...cachedActionAdvice });
+        send({ type: 'push_action_advice', ...cachedActionAdvice });
       }
     }
     // If no fresh live context, drop the cached advice replay — the capture
@@ -117,7 +166,7 @@ const pushFullStateToSidePanel = async () => {
     // Holding stale advice at the SW layer duplicates the side-panel's
     // _pendingAdvice buffer and is the root of the S2/S3 cross-hand display.
     if (cachedTournament) {
-      pushToSidePanel({ type: 'push_tournament', ...cachedTournament });
+      send({ type: 'push_tournament', ...cachedTournament });
     }
   } catch (e) {
     errors.report('messaging', e, { op: 'push_full_state' });
@@ -134,6 +183,87 @@ const updateBadge = (count) => {
     chrome.action.setBadgeBackgroundColor({ color: '#d4a847' });
   } catch (e) {
     errors.report('messaging', e, { op: 'badge_update' });
+  }
+};
+
+// ===========================================================================
+// LOCAL SESSION SINK (scripts/sessionSink/serve.mjs)
+// ===========================================================================
+//
+// Puts each completed hand on disk on this machine, where the review runner can
+// read it. Without this the hands live only in browser storage and no node-side
+// instrument can ever see them — which is the entire reason a session could not
+// be reviewed automatically.
+//
+// THE CONTRACT, AND IT IS ONE-WAY: nothing here may block, slow, or fail the
+// capture path. Every call is fire-and-forget with a short timeout, every error
+// is swallowed to a counter, and a sink that is missing is indistinguishable to
+// the founder from one that is present. A hand the sink never receives stays
+// flagged in the journal and goes out on the next backfill.
+
+let sinkState = { reachable: false, lastOkAt: 0, lastErrorAt: 0, sent: 0, failed: 0, backfilled: 0 };
+
+/** POST with a hard timeout — an unreachable port must fail fast, not hang the worker. */
+const sinkFetch = async (url, body) => {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), SESSION_SINK.TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: ctl.signal,
+    });
+    if (!res.ok) throw new Error(`sink responded ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const deliverHandToSink = async (hand) => {
+  try {
+    const out = await sinkFetch(SESSION_SINK.HAND, { hand });
+    if (out?.ok && out.captureId) {
+      // ACK releases the journal's hold for the SINK only. The app's hold is separate,
+      // and the entry survives until both are satisfied.
+      await journalAckSink([out.captureId]);
+      sinkState = { ...sinkState, reachable: true, lastOkAt: Date.now(), sent: sinkState.sent + 1 };
+    } else {
+      sinkState = { ...sinkState, failed: sinkState.failed + 1, lastErrorAt: Date.now() };
+    }
+  } catch (_) {
+    // Expected and unremarkable whenever the sink is not running. Not reported as an error:
+    // an optional local service being absent is not a fault, and reporting it would train the
+    // founder to ignore the error channel.
+    sinkState = { ...sinkState, reachable: false, failed: sinkState.failed + 1, lastErrorAt: Date.now() };
+  }
+};
+
+/**
+ * Push everything the sink has not confirmed. Runs on startup and on a slow alarm, so a
+ * session played while the sink was down lands the moment it comes back.
+ */
+const backfillSink = async () => {
+  try {
+    const pending = await journalPendingForSink(250);
+    if (pending.length === 0) return { sent: 0 };
+    const out = await sinkFetch(SESSION_SINK.HANDS, { hands: pending });
+    if (out?.ok && Array.isArray(out.ackCaptureIds) && out.ackCaptureIds.length) {
+      await journalAckSink(out.ackCaptureIds);
+      sinkState = {
+        ...sinkState,
+        reachable: true,
+        lastOkAt: Date.now(),
+        backfilled: sinkState.backfilled + out.ackCaptureIds.length,
+      };
+      console.log(`[SW] sink backfill: ${out.ackCaptureIds.length}/${pending.length} hands`);
+      return { sent: out.ackCaptureIds.length };
+    }
+    return { sent: 0 };
+  } catch (_) {
+    sinkState = { ...sinkState, reachable: false };
+    return { sent: 0 };
   }
 };
 
@@ -174,6 +304,10 @@ chrome.runtime.onConnect.addListener((port) => {
                 chrome.storage.session.set({ total_hands_saved: totalHandsSaved }).catch(() => {});
                 pushToSidePanel({ type: 'push_hands_updated', totalHands: totalHandsSaved });
                 pushToAppBridge({ type: 'push_hand', hand });
+                // Deliberately NOT awaited: the local session sink is a convenience on top of a
+                // journal that is already durable, and the live path must never wait on it or
+                // fail because of it. A hand the sink misses stays in the journal and backfills.
+                deliverHandToSink(hand);
               } else {
                 console.warn('[SW] Failed to enqueue hand');
               }
@@ -228,7 +362,7 @@ chrome.runtime.onConnect.addListener((port) => {
             // app ourselves (background tab, no focus steal) — buffered hands
             // are on a 500-deep cap and the founder should never have to think
             // about that while in a hand.
-            if (msg.status.tableCount > 0 && !appBridgePort) ensureAppTabOpen();
+            if (msg.status.tableCount > 0 && !isAppConnected()) ensureAppTabOpen();
             // Forward to side panel so it tracks active tables in real time
             pushToSidePanel({
               type: 'push_pipeline_status',
@@ -236,7 +370,7 @@ chrome.runtime.onConnect.addListener((port) => {
               tableCount: msg.status.tableCount,
               completedHands: msg.status.completedHands,
               storedHands: totalHandsSaved,
-              appConnected: !!appBridgePort,
+              appConnected: isAppConnected(),
             });
           }
           break;
@@ -293,9 +427,10 @@ chrome.runtime.onConnect.addListener((port) => {
 
   // --- SIDE PANEL PORT ---
   if (port.name === 'side-panel') {
-    sidePanelPort = port;
+    sidePanelPorts.add(port);
     try { port.postMessage({ type: '__version_check', version: SW_VERSION }); } catch (e) { console.warn('[SW] Version check failed:', e.message); }
-    pushFullStateToSidePanel();
+    // Backlog goes to the panel that just connected, not to every open panel.
+    pushFullStateToSidePanel(port);
     port.onMessage.addListener((msg) => {
       const vErr = validateMessage(msg.type, msg);
       if (vErr) {
@@ -303,7 +438,27 @@ chrome.runtime.onConnect.addListener((port) => {
         return; // Drop invalid messages before handler dispatch
       }
       if (msg.type === 'request_full_state') {
-        pushFullStateToSidePanel();
+        /**
+         * Re-admit the sending port before replying. The Set makes losing a live
+         * panel far harder than the old single slot did, but this stays as the
+         * refresh button's repair path — ⟳ must be able to recover the panel from
+         * ANY state where it stopped receiving pushes, not only the ones we
+         * predicted.
+         *
+         * That mattered because nothing else recovers on its own: a panel whose
+         * pushes stop is not disconnected, so `port-connect.js` — which is
+         * disconnect-driven, not silence-driven — schedules no reconnect, there is
+         * no client watchdog, and `push_silence_alert`, the one signal meant to
+         * surface a dead pipeline, travels the dead channel itself. Before this,
+         * ⟳ called `pushFullStateToSidePanel`, which early-returned on the same
+         * null that had broken everything else. The button was decorative in the
+         * one state that most needed it.
+         *
+         * A message arriving on this port proves the port is alive, which makes it
+         * the one trustworthy moment to re-admit it.
+         */
+        sidePanelPorts.add(port);
+        pushFullStateToSidePanel(port);
       }
       if (msg.type === 'reload_ignition_tabs') {
         chrome.tabs.query({
@@ -316,14 +471,32 @@ chrome.runtime.onConnect.addListener((port) => {
         }).catch(e => errors.report('tabs', e, { op: 'reload_ignition_tabs' }));
       }
     });
-    port.onDisconnect.addListener(() => { sidePanelPort = null; });
+    /**
+     * Removes only ITSELF. Every other panel keeps receiving pushes.
+     *
+     * The single-slot version did `sidePanelPort = null` unconditionally, and
+     * Chrome fires the old port's `onDisconnect` AFTER its replacement's
+     * `onConnect` on a reload — so panel A reloading nulled panel B. B then sat
+     * connected from its own side while `pushToSidePanel` returned early forever:
+     * advice stopped arriving, the context aged into staleness, and the
+     * connection indicator went wrong — while capture kept saving hands normally,
+     * because capture was already a Set and was never affected. That asymmetry is
+     * what makes the failure present as "the sidebar is broken but hands are
+     * fine" rather than as a connection fault.
+     *
+     * Reloads are not an edge case: every `npm run build` + extension reload
+     * forces one, and so does opening the panel in a second window.
+     */
+    port.onDisconnect.addListener(() => {
+      sidePanelPorts.delete(port);
+    });
     return;
   }
 
   // --- APP BRIDGE PORT ---
   if (port.name !== 'app-bridge') return;
 
-  appBridgePort = port;
+  appBridgePorts.add(port);
   try { port.postMessage({ type: '__version_check', version: SW_VERSION }); } catch (e) { console.warn('[SW] Version check failed:', e.message); }
   port.postMessage({ type: 'status', connected: true, protocolVersion: PROTOCOL_VERSION });
 
@@ -389,8 +562,26 @@ chrome.runtime.onConnect.addListener((port) => {
     }
   });
 
+  /**
+   * Removes only ITSELF, exactly as the side-panel Set above does.
+   *
+   * Two live app bridges is the NORMAL case, not a corner: the SW opens an app
+   * tab itself (`ensureAppTabOpen`), so any tab the founder opens by hand is a
+   * second one — `saveOnlineHand` in the app already documents this and made its
+   * dedup atomic because of it. The storage layer modelled two bridges while this
+   * file modelled one.
+   *
+   * Under the old single slot the newest tab took the pushes and the older tab
+   * went silent while still appearing connected; then the older tab's disconnect
+   * nulled the newer tab's slot, and `appConnected` read false with a working app
+   * sitting right there on screen. Both halves of that are gone with a Set: every
+   * bridged tab receives every push, and one closing cannot silence another.
+   *
+   * Observed 2026-08-21: a diagnostic tab opened against prod took the slot from
+   * an existing tab, and closing it cleared the slot outright.
+   */
   port.onDisconnect.addListener(() => {
-    appBridgePort = null;
+    appBridgePorts.delete(port);
   });
 });
 
@@ -423,7 +614,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             completedHands: lastPipelineStatus.completedHands,
             storedHands: totalHandsSaved,
             queueLength,
-            appConnected: !!appBridgePort,
+            appConnected: isAppConnected(),
             liveContext,
             errorCount: errors.getCount(),
           });
@@ -437,7 +628,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case MSG.GET_EXPLOITS: {
       sendResponse(cachedExploits
-        ? { ...cachedExploits, appConnected: !!appBridgePort }
+        ? { ...cachedExploits, appConnected: isAppConnected() }
         : { seats: [], appConnected: false });
       return false;
     }
@@ -465,9 +656,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     case MSG.GET_CAPTURED_HANDS: {
-      // Legacy: return empty — hands now flow through session storage queue
-      sendResponse({ hands: [] });
+      // Legacy: return empty — hands now flow through session storage queue.
+      // Kept only so an old client does not throw; every caller in this repo now uses
+      // GET_JOURNAL_HANDS, because an empty array here reads as "no hands were captured"
+      // when the truth is "this message is obsolete".
+      sendResponse({ hands: [], legacy: true, use: MSG.GET_JOURNAL_HANDS });
       return false;
+    }
+
+    case MSG.GET_JOURNAL_HANDS: {
+      (async () => {
+        try {
+          const [hands, status] = await Promise.all([getJournalHands(), getJournalStatus()]);
+          sendResponse({ hands, ...status });
+        } catch (e) {
+          errors.report('storage', e, { op: 'get_journal_hands' });
+          sendResponse({ hands: [], pending: 0, pendingSink: 0, dropped: 0, error: e.message });
+        }
+      })();
+      return true; // async response
     }
 
     case MSG.CLEAR_CAPTURED_HANDS: {
@@ -648,11 +855,26 @@ const replayJournal = async () => {
 
 wireSidePanelBehavior();
 replayJournal();
+backfillSink();
 
 chrome.runtime.onStartup.addListener(() => {
   wireSidePanelBehavior();
   replayJournal();
+  backfillSink();
 });
+
+// A slow heartbeat so a sink that comes up mid-session catches everything it missed without
+// waiting for a browser restart. `chrome.alarms` rather than setInterval: MV3 suspends the
+// service worker aggressively, and a timer does not survive that. 5 minutes is well inside the
+// journal's 3-day sink-retention window and costs nothing when the sink is absent.
+try {
+  chrome.alarms?.create('sink-backfill', { periodInMinutes: 5 });
+  chrome.alarms?.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'sink-backfill') backfillSink();
+  });
+} catch (e) {
+  errors.report('startup', e, { op: 'sink_backfill_alarm' });
+}
 
 // ===========================================================================
 // LIFECYCLE
