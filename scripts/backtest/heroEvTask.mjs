@@ -205,6 +205,10 @@ export const scoreHeroEvPlayer = async ({
   // WS-540 Phase 1 — arm-independent context rows, retained per fragment for the same
   // reason `records` is: a chunked/resumed wave must replay them or the set comes up short.
   const contexts = [];
+  // Cadence for the byte probe below. Counts rows BUILT, not decisions SCORED — the two
+  // diverge at the arm gate, and keying a production probe off a post-gate count made its
+  // sample depend on which arms happened to fail.
+  let contextsBuilt = 0;
   const counters = newTaskCounters();
   const ledger = newHandLedger();
 
@@ -386,6 +390,84 @@ export const scoreHeroEvPlayer = async ({
         return built;
       };
 
+      // ── WS-540 — THE CONTEXT ROW IS BUILT ABOVE THE ARM GATE, DELIBERATELY ──────────
+      //
+      // It used to sit below it. The gate a few lines down drops a decision for EVERY arm
+      // when ANY arm fails, so a set written below it silently excluded exactly the
+      // decisions today's rules could not score — measured at 6 of 76 (7.9%) on a real
+      // slice. That is the opposite of what the set is for: "an arm authored tomorrow can
+      // still be scored against it" fails hardest on the rows today's arms could not handle.
+      //
+      // The replay gate cannot catch this. It re-scores the SAME rungs, so every row it
+      // sees is one they all handled, and it passes green over a biased set. The test that
+      // catches it has to assert a FAILING arm's decision still reaches the set.
+      //
+      // Nothing here reads an arm — the docblock below already said so, which is why this
+      // is a move and not a rewrite. Production gates (geometry, outcome, netBB) stay ABOVE
+      // it: those decisions have no valid row, and excluding them is correct.
+      // WS-540 Phase 0 — the PROSPECTIVE decision-context row, measured but not persisted.
+      // This is exactly the payload Phase 1 would write: everything the scoring half reads
+      // and nothing an arm produced. `ctx.hand` is the bulk and is measured separately, so
+      // a decision about column pruning can be made against a number rather than a guess.
+      // WS-540 Phase 1 — the row is now built by `buildDecisionContext`, the SAME function
+      // the writer uses. It used to be an object literal here, which meant the size this
+      // probe measured and the payload Phase 1 would eventually write were free to diverge
+      // silently — and the 730 MB sizing decision was taken against this measurement.
+      const contextRow = (captureContext || contextsBuilt % CONTEXT_BYTES_SAMPLE_EVERY === 0)
+        ? buildDecisionContext({
+          stable: { p: playerIndex, k: checkpointIndex, d: decisionOrdinal },
+          playerId: playerKey,
+          handId: ctx.handId,
+          order: ctx.order,
+          hand: ctx.hand,
+          holding: ctx.holding ?? null,
+          board: ctx.board ?? null,
+          handIdx: ctx.handIdx ?? null,
+          street: ctx.street,
+          heroSeat: ctx.playerSeat,
+          buttonSeat: ctx.buttonSeat ?? null,
+          opponentSeat: ctx.opponentSeat ?? null,
+          facingAction: ctx.facingAction,
+          isAgg: ctx.isAgg,
+          isIP: ctx.isIP,
+          texture: ctx.texture,
+          posCategory: ctx.posCategory,
+          situationKey: ctx.situationKey ?? null,
+          contextAction: ctx.contextAction ?? null,
+          rangeEquityPct: ctx.rangeEquityPct ?? null,
+          segmentation: ctx.segmentation ?? null,
+          observedAction: ctx.action,
+          observedAmount: ctx.amount ?? null,
+          geometry,
+          sizeBucket,
+          netBB,
+          netBBUnraked,
+          wentToShowdown: raked.wentToShowdown,
+          pool: { actions: pool.actions, evidenceN: pool.evidenceN },
+          decisionSeed,
+          playersInPot: liveOpponentCount(ctx.hand, ctx.order, ctx.playerSeat) + 1,
+        })
+        : null;
+
+      if (contextRow && contextsBuilt % CONTEXT_BYTES_SAMPLE_EVERY === 0) {
+        try {
+          const handBytes = Buffer.byteLength(JSON.stringify(ctx.hand ?? null), 'utf8');
+          timings.bytes.samples += 1;
+          timings.bytes.contextTotal += Buffer.byteLength(JSON.stringify(contextRow), 'utf8');
+          timings.bytes.handTotal += handBytes;
+        } catch { /* a size probe must never be able to kill a scoring pass */ }
+      }
+
+      // WS-540 Phase 1 — retained on the fragment for the same reason `records` is
+      // (heroEvTask's `--resume` note): a wave seeded from a chunk must be able to replay
+      // its context rows into the sink, or a resumed run silently writes a SHORT set — and
+      // a short set scores fewer decisions and reports a smaller edge without erroring.
+      // Retained on the fragment ONLY. The orchestrator emits these at the wave boundary in
+      // canonical `playerIndex` order — see `persistWave`. Streaming them from here would
+      // hand the sink task-completion order, which silently moves every bootstrap figure.
+      if (contextRow) contexts.push(contextRow);
+      contextsBuilt += 1;
+
       // ONE ENGINE PASS PER ARM, and a decision survives only if EVERY arm produced a
       // policy — a skip pattern that correlates with depth must not enter the contrast.
       const byArm = {};
@@ -507,68 +589,6 @@ export const scoreHeroEvPlayer = async ({
         },
       });
 
-      // WS-540 Phase 0 — the PROSPECTIVE decision-context row, measured but not persisted.
-      // This is exactly the payload Phase 1 would write: everything the scoring half reads
-      // and nothing an arm produced. `ctx.hand` is the bulk and is measured separately, so
-      // a decision about column pruning can be made against a number rather than a guess.
-      // WS-540 Phase 1 — the row is now built by `buildDecisionContext`, the SAME function
-      // the writer uses. It used to be an object literal here, which meant the size this
-      // probe measured and the payload Phase 1 would eventually write were free to diverge
-      // silently — and the 730 MB sizing decision was taken against this measurement.
-      const contextRow = (captureContext || decisions.length % CONTEXT_BYTES_SAMPLE_EVERY === 1)
-        ? buildDecisionContext({
-          stable: { p: playerIndex, k: checkpointIndex, d: decisionOrdinal },
-          playerId: playerKey,
-          handId: ctx.handId,
-          order: ctx.order,
-          hand: ctx.hand,
-          holding: ctx.holding ?? null,
-          board: ctx.board ?? null,
-          handIdx: ctx.handIdx ?? null,
-          street: ctx.street,
-          heroSeat: ctx.playerSeat,
-          buttonSeat: ctx.buttonSeat ?? null,
-          opponentSeat: ctx.opponentSeat ?? null,
-          facingAction: ctx.facingAction,
-          isAgg: ctx.isAgg,
-          isIP: ctx.isIP,
-          texture: ctx.texture,
-          posCategory: ctx.posCategory,
-          situationKey: ctx.situationKey ?? null,
-          contextAction: ctx.contextAction ?? null,
-          rangeEquityPct: ctx.rangeEquityPct ?? null,
-          segmentation: ctx.segmentation ?? null,
-          observedAction: ctx.action,
-          observedAmount: ctx.amount ?? null,
-          geometry,
-          sizeBucket,
-          netBB,
-          netBBUnraked,
-          wentToShowdown: raked.wentToShowdown,
-          pool: { actions: pool.actions, evidenceN: pool.evidenceN },
-          decisionSeed,
-          playersInPot: liveOpponentCount(ctx.hand, ctx.order, ctx.playerSeat) + 1,
-        })
-        : null;
-
-      if (contextRow && decisions.length % CONTEXT_BYTES_SAMPLE_EVERY === 1) {
-        try {
-          const handBytes = Buffer.byteLength(JSON.stringify(ctx.hand ?? null), 'utf8');
-          timings.bytes.samples += 1;
-          timings.bytes.contextTotal += Buffer.byteLength(JSON.stringify(contextRow), 'utf8');
-          timings.bytes.handTotal += handBytes;
-        } catch { /* a size probe must never be able to kill a scoring pass */ }
-      }
-
-      // WS-540 Phase 1 — retained on the fragment for the same reason `records` is
-      // (heroEvTask's `--resume` note): a wave seeded from a chunk must be able to replay
-      // its context rows into the sink, or a resumed run silently writes a SHORT set — and
-      // a short set scores fewer decisions and reports a smaller edge without erroring.
-      // Retained on the fragment ONLY. The orchestrator emits these at the wave boundary in
-      // canonical `playerIndex` order — see `persistWave`. Streaming them from here would
-      // hand the sink task-completion order, which silently moves every bootstrap figure.
-      if (contextRow) contexts.push(contextRow);
-
       // WS-393 — the full record, emitted as it completes; WS-431 — ALSO retained on the
       // fragment (`records`), so `persistWave` can put it in the chunk and a `--resume`
       // can replay it into the sink. Without that, chunk-seeded waves never re-execute
@@ -623,6 +643,29 @@ export const scoreHeroEvPlayer = async ({
       if (onProgress && decisions.length % 10 === 0) onProgress({ playerIndex, decisionsScored: decisions.length });
       if (decisions.length >= maxDecisionsForPlayer) { stop = true; break; }
     }
+  }
+
+  // ── WS-540 — THE INVARIANT THAT CATCHES THE BUG THIS BLOCK WAS WRITTEN FOR ─────────────
+  //
+  // A capturing run builds one context row per decision that clears the PRODUCTION gates,
+  // and the arm gate drops a further 8-10% of those (measured: 6/76 and 30/296 on real
+  // slices). So `contexts` must come out STRICTLY LONGER than `decisions` whenever any arm
+  // failed, and never shorter. If the context build ever drifts back below the arm gate,
+  // the two go equal and the set silently loses exactly the decisions today's rules cannot
+  // score — which is the population an arm authored tomorrow most needs.
+  //
+  // This fires at the moment of the error. The replay gate structurally cannot: it
+  // re-scores the SAME arms, so every row it sees is one they all handled, and it passes
+  // green over a biased set.
+  if (captureContext && contexts.length < decisions.length) {
+    throw new Error(
+      `heroEvTask: context set is SHORT for player ${playerKey} — ${contexts.length} rows for `
+      + `${decisions.length} scored decisions. A context row is built once per decision that `
+      + 'clears the production gates, so it can never be rarer than a scored decision. This '
+      + 'means the build moved below the arm gate and the set is now conditioned on the arms '
+      + 'that produced it. Refusing rather than writing a set whose bias nothing downstream '
+      + 'can detect.',
+    );
   }
 
   return {

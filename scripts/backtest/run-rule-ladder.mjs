@@ -250,6 +250,21 @@ const main = async () => {
       console.log(`
   CONTEXT SET  ${contextSetPath}`);
       console.log(`    rows ${contextManifest.rows}   ${contextManifest.contentHash}`);
+      // WS-540 — THE GAP IS THE POINT, so it prints rather than being derivable.
+      // The set carries every decision that cleared the PRODUCTION gates; `decisionsScored`
+      // counts only those every rung could also score. The difference is the decisions
+      // today's rules abstain on — precisely the ones a rung authored tomorrow needs, and
+      // precisely the ones the set used to drop silently.
+      //
+      // A ZERO HERE IS A RED FLAG, not a clean bill: it means the set is exactly the scored
+      // set, which is what the bug looked like. It is legitimate only when no arm failed —
+      // read it against the policySkips counters, never on its own.
+      const beyond = contextManifest.rows - run.decisionsScored;
+      console.log(beyond === 0
+        ? '    +0 beyond the scored set — legitimate ONLY if no arm abstained; check policySkips'
+        : `    +${beyond} beyond the ${run.decisionsScored} scored `
+          + `(${((beyond / contextManifest.rows) * 100).toFixed(1)}% of the set) — decisions the `
+          + 'rungs could not score, kept on purpose');
     }
 
     const runtimeMs = Date.now() - started;
