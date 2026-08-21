@@ -97,6 +97,22 @@ export class HandStateMachine {
 
     // Cards
     this.holeCards = ['', ''];
+    // heroSeat is deliberately STICKY across hands — it is what lets a hand
+    // whose deal we missed still be attributed to the right seat. The
+    // CONFIDENCE is not sticky, and conflating the two was a defect.
+    //
+    // 'high' means "this hand's hole cards were observed". Because it was set
+    // once and never reset, it survived into later hands and described an
+    // observation that had not happened: measured 2026-08-21, 10 of 122 hands
+    // in the session store claimed heroSeatConfidence 'high' while carrying no
+    // hole cards at all. That is the exact shape record-builder's own comment
+    // warns about — a carried-over value reading downstream as a measurement.
+    //
+    // The seat survives the reset; the claim to have SEEN it does not. If this
+    // hand's hole cards arrive, setHeroSeat(seat, true) restores 'high'.
+    if (this.heroSeat && this.heroSeatConfidence === 'high') {
+      this.heroSeatConfidence = 'carried';
+    }
     this.communityCards = [];
     this.allPlayerCards = {};
 
@@ -141,6 +157,18 @@ export class HandStateMachine {
 
   /**
    * Set hero seat with priority — higher priority sources always win.
+   *
+   * Confidence values, and each describes THIS hand only:
+   *   'high'    — this hand's hole cards were observed. Earned, never inherited.
+   *   'carried' — the seat is known from an earlier hand on this table, but this
+   *               hand's deal was not seen. Happens on a mid-hand reconnect:
+   *               Ignition's CO_TABLE_INFO snapshot lists every other seat
+   *               face-down (32896) and OMITS hero's own pcard entirely, so
+   *               hero's cards for a hand in progress are never re-sent. The
+   *               seat is still right; the cards are unknowable.
+   *   'low'     — seat inferred from a non-card signal.
+   *   'unknown' / 'none' — no seat, or no hero in the hand.
+   *
    * @param {number} seat
    * @param {boolean} definitive - true only for hole cards (most reliable signal)
    */
