@@ -25,7 +25,10 @@ import {
   PBR_SURFACE_ID,
   PBR_WARNING,
   PBR_SCOPE,
+  policyVocabulary,
+  assertPolicyTokens,
 } from '../backtest/poolBestResponse.mjs';
+import { existsSync, readFileSync } from 'node:fs';
 import { buildPolicyTable, POLICY_PARTITION_STAMP } from '../backtest/behaviorPolicy.mjs';
 import { LeakageError } from '../backtest/leakageGuard.mjs';
 import { STACK_LAYERS } from '../../src/utils/standardOfRecord/stack.js';
@@ -317,10 +320,55 @@ describe('responseContext', () => {
     });
     expect(rc.facingAction).toBe('bet');
     expect(rc.isIP).toBe('oop');
-    expect(rc.isAgg).toBe('nonagg');
+    // WS-634: this asserted 'nonagg' for months. The policy vocabulary is 'agg' | 'def', so
+    // 'nonagg' matched no key at any depth, every aggressor-node query resolved at the ROOT,
+    // and the bet-size argmax went degenerate. The test did not catch the bug — it PINNED it.
+    // A literal that only ever agrees with the code it tests proves the code is self-consistent
+    // and nothing else; the round-trip below is what actually binds it to the data.
+    expect(rc.isAgg).toBe('def');
     // Street and texture are properties of the board, not of whose turn it is.
     expect(rc.street).toBe('flop');
     expect(rc.texture).toBe('dry');
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────────────────
+  // THE ROUND TRIP — the assertion that would have caught WS-634 on the day it landed
+  // ───────────────────────────────────────────────────────────────────────────────────────
+  //
+  // Binds the emitted token to the SHIPPED TABLE's own vocabulary rather than to a literal in
+  // this file. A literal cannot fail when the code and the test are edited together, which is
+  // exactly how 'nonagg' survived.
+  it('emits only tokens the real policy table contains', () => {
+    const path = 'out/behavior-policy.json';
+    if (!existsSync(path)) return; // no table on this machine — nothing to bind against
+    const policy = JSON.parse(readFileSync(path, 'utf8'));
+    const vocab = policyVocabulary(policy);
+
+    for (const isAgg of ['agg', 'def']) {
+      for (const isIP of ['ip', 'oop']) {
+        for (const facing of ['bet', 'raise']) {
+          const rc = responseContext(mkCtx({ isIP, isAgg }), mkHand(), {
+            heroBetTotalBB: 6, potBeforeVillainBB: 18, facing,
+          });
+          // The guard itself must not throw on any legitimate node…
+          expect(() => assertPolicyTokens(policy, rc)).not.toThrow();
+          // …and every keyed dimension must be a token the table knows.
+          for (const [dim, allowed] of vocab) {
+            if (rc[dim] === undefined || allowed.size === 0) continue;
+            expect(allowed.has(String(rc[dim]))).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it('REFUSES a token the policy table does not contain', () => {
+    const path = 'out/behavior-policy.json';
+    if (!existsSync(path)) return;
+    const policy = JSON.parse(readFileSync(path, 'utf8'));
+    // The exact bug: a plausible-looking token that exists in no table. It must throw rather
+    // than silently resolve at the root with a healthy-looking evidenceN.
+    expect(() => assertPolicyTokens(policy, { isAgg: 'nonagg' })).toThrow(/WS-634|does not contain/);
   });
 
   it('keys the size bucket on hero\'s bet against the pot villain faces', () => {

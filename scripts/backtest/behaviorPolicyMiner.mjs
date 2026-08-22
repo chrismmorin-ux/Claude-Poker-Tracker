@@ -129,6 +129,31 @@ export const minePolicyObservations = async ({
     profileFailures,
     accumulateFailures,
     geometryFailures,
+    // ─────────────────────────────────────────────────────────────────────────────────────
+    // POPULATION IDENTITY AND HOLD-OUT, STAMPED AT THE SOURCE (WS-632)
+    // ─────────────────────────────────────────────────────────────────────────────────────
+    //
+    // These three fields exist because a consumer must be able to answer "whose field is this"
+    // and "could it contain the thing I am scoring" FROM THE ARTIFACT, without knowing which
+    // miner produced it. Before WS-632 a corpus table carried neither, so `reviewSession`
+    // refused it for an unverifiable hold-out — and when it was hand-stamped to get past that
+    // gate, the review labelled a 2009 online table `measured-on-this-field` and priced a 2026
+    // live session against it. Leakage-freedom and population-identity are DIFFERENT FACTS and
+    // the absence of one must never be read as evidence of the other.
+    source: 'handhq-corpus',
+    population:
+      `HandHQ datamined online cash hands, ${stakes.join('/')} — a 2009 ONLINE pool. This is a `
+      + 'distinct population from the founder\'s live/Ignition game. Any level taken from here '
+      + 'and reported about his table is TRANSFERRED, NOT MEASURED '
+      + '(.claude/rules/corpus-transfer-is-earned.md).',
+    // Verified-empty, not unexamined. A 2009 datamined corpus cannot contain a session the
+    // founder played in 2026, so the hold-out is satisfied BY CONSTRUCTION rather than by
+    // exclusion — and saying so explicitly is what lets the consumer verify it instead of
+    // defaulting. `observed-zero` and `unexamined` stay distinct here as everywhere.
+    contributingSessions: [],
+    contributingSessionsBasis:
+      'observed-zero by construction: this table is mined from third-party datamined 2009 '
+      + 'online history, which contains no founder session.',
   }, { hierarchy });
 
   // Sanity: the hierarchy the table was built with must be the one queries will use.

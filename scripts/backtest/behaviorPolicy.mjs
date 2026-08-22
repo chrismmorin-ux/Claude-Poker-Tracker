@@ -55,6 +55,49 @@ export const POLICY_HIERARCHY = [...HIERARCHY_ORDER, 'sizeBucket'];
 /** Provenance stamp the leakage guard requires. Same value the reference table uses. */
 export const POLICY_PARTITION_STAMP = 'pool-train';
 
+/**
+ * Is a table a measurement OF the field being priced, or a transfer INTO it? (WS-632)
+ *
+ * LIVES HERE, in the module that owns the policy table's shape, because it is a statement about
+ * a table's provenance and because there must be exactly ONE of it. The first version of this
+ * fix put it in `reviewSession.mjs` and missed `runMoneyColumn.mjs`, which derives the same
+ * label from a CLI FLAG — so passing the 2009 corpus table to `--field-policy` printed
+ * "76.39bb [measured-on-this-field]" and wrote `comparativeClaim: true`. One fix, two call
+ * sites, one of them still wrong: the WS-291 mechanism, reproduced by the change that was
+ * supposed to remove it.
+ *
+ * Derived from the table's DECLARED source. Never from a flag, never from the caller's
+ * intention, and never from the shape or emptiness of the hold-out — leakage-freedom and
+ * population-identity are different facts, and reading one off the other is the original bug.
+ *
+ * Returns a structured object rather than a string so a renderer cannot show a level without
+ * its label.
+ */
+export const transferStatusFor = (policy) => {
+  const source = policy?.provenance?.source ?? null;
+  const population = policy?.provenance?.population ?? null;
+  if (source === 'ignition-sessions') {
+    return {
+      kind: 'measured',
+      label: 'MEASURED ON THIS FIELD',
+      population,
+      short: 'measured-on-this-field',
+      warn: null,
+    };
+  }
+  return {
+    kind: 'transferred',
+    label: 'TRANSFERRED, NOT MEASURED',
+    population,
+    short: `transferred-from:${source ?? 'undeclared-source'}`,
+    warn:
+      'Every bb figure below is the max-EV response to a DIFFERENT population than the one you '
+      + 'sat in. It is the top-ranked entry in the Suspected-Fault Register. Treat the ordering '
+      + 'of the leaks as the signal and the absolute levels as provisional until an '
+      + 'Ignition-mined arm exists to measure the delta against.',
+  };
+};
+
 /** Dirichlet strength of the parent constraint at each shrinkage step. */
 export const DEFAULT_SHRINK_WEIGHT = 10;
 

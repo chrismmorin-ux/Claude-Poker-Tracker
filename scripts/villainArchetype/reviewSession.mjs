@@ -66,6 +66,7 @@ import { loadLeakRules } from './loadLeakRules.mjs';
 import { renderSessionReview } from './renderSessionReview.mjs';
 import { priceSession } from './priceSession.mjs';
 import { heroContexts } from './runMoneyColumn.mjs';
+import { transferStatusFor } from '../backtest/behaviorPolicy.mjs';
 import { conductCardProblems } from '../../src/utils/standardOfRecord/conductCard.js';
 import { accumulateHeroDecisions } from '../../src/utils/skillAssessment/heroDecisionAccumulator.js';
 import { detectWithRules, stabilizeLeaks } from '../../src/utils/skillAssessment/detectWithRules.js';
@@ -534,13 +535,44 @@ const priceAgainstPoolBestResponse = ({ fieldPolicyPath, sessionId }) => {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // POPULATION IDENTITY IS CHECKED BEFORE THE HOLD-OUT, AND SEPARATELY (WS-632)
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  //
+  // These were once entangled: the hold-out gate demanded `contributingSessions`, the corpus
+  // table had none, and the money arm refused for 14 straight sessions over a MISSING STAMP
+  // while a table with 12,191 observations sat unused. When that table was hand-stamped to
+  // clear the gate, the review then declared it `measured-on-this-field` — a 2009 online
+  // policy labelled as a measurement of a 2026 live table, which is entry #1 of the
+  // Suspected-Fault Register generated automatically.
+  //
+  // The inversion is worth naming because it reads as safe: an EMPTY contributingSessions is
+  // evidence the policy was NOT measured on this field, and the old code read it as proof that
+  // it WAS. So population is now declared, checked first, and never inferred from the shape or
+  // emptiness of the hold-out.
+  const declaredPopulation = policy?.provenance?.population;
+  const policySource = policy?.provenance?.source;
+  if (typeof declaredPopulation !== 'string' || !declaredPopulation.trim()) {
+    return refuse(
+      'unexamined:field-policy-population-undeclared',
+      'The field policy does not declare `provenance.population`, so what it measured cannot be '
+      + 'named — and an unnamed population defaults to whatever the reader assumes, which is how '
+      + 'a corpus level ends up reported as a live measurement.',
+      'Re-mine it. Both miners stamp `population` and `source`: mineFieldPolicy.mjs '
+      + '(ignition-sessions) and behaviorPolicyMiner.mjs (handhq-corpus).',
+    );
+  }
+
   const contributing = policy?.provenance?.contributingSessions;
   if (!Array.isArray(contributing)) {
     return refuse(
       'unexamined:field-policy-unstamped',
       'The field policy carries no `provenance.contributingSessions`, so the hold-out cannot be '
-      + 'verified. An unverifiable hold-out is indistinguishable from none.',
-      'Re-mine with scripts/sessionSink/mineFieldPolicy.mjs, which stamps it.',
+      + 'verified. An unverifiable hold-out is indistinguishable from none. An empty array is a '
+      + 'valid answer (observed-zero) and is what a corpus-mined table stamps; a MISSING field '
+      + 'is not, because it cannot be told apart from nobody having looked.',
+      'Re-mine with scripts/sessionSink/mineFieldPolicy.mjs or scripts/backtest/'
+      + 'behaviorPolicyMiner.mjs — both stamp it.',
     );
   }
   if (sessionId && contributing.includes(sessionId)) {
@@ -561,8 +593,11 @@ const priceAgainstPoolBestResponse = ({ fieldPolicyPath, sessionId }) => {
     policy,
     fieldPolicyPath,
     holdOut: { verified: true, contributingSessions: contributing, excluded: sessionId },
+    population: declaredPopulation,
+    policySource: policySource ?? null,
   };
 };
+
 
 /**
  * The money column, run over hero's own decisions.
@@ -611,7 +646,7 @@ const runMoneyColumn = async ({ policyGate, adapted, heroSeat, heroRows }) => {
     refused: false,
     fieldPolicyPath: policyGate.fieldPolicyPath,
     holdOut: policyGate.holdOut,
-    transferStatus: 'measured-on-this-field',
+    transferStatus: transferStatusFor(policyGate.policy),
     comparativeClaim: true,
     totals: result.totals,
     priced: result.priced,
@@ -624,7 +659,12 @@ const runMoneyColumn = async ({ policyGate, adapted, heroSeat, heroRows }) => {
     },
     scope: result.scope,
     pierPosts: {
-      upper: 'pool-best-response, against the field in this session',
+      // Names the population it is a best response TO. Saying "the field in this session"
+      // while scoring against a 2009 corpus table is the same false claim WS-632 removed one
+      // field above, and a reader who trusts the pier post would never see the correction.
+      upper: policyGate.policySource === 'ignition-sessions'
+        ? 'pool-best-response, against the field in this session'
+        : `pool-best-response, against ${policyGate.population} — NOT this session's field`,
       // Not an oversight. `equilibriumPost.mjs` returns null BY DESIGN because SRC-013 does
       // not exist, and it explicitly refuses to substitute the "GTO-approximate" charts.
       lower: 'equilibrium — UNAVAILABLE, not faked (SRC-013 does not exist)',

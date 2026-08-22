@@ -35,6 +35,7 @@ import { adaptAppRecord } from '../backtest/appRecordAdapter.mjs';
 import { accumulateDecisions } from '../../src/utils/exploitEngine/decisionAccumulator.js';
 import { buildRangeProfile } from '../../src/utils/rangeEngine/index.js';
 import { labelDecisions } from './decisionLabeler.mjs';
+import { transferStatusFor } from '../backtest/behaviorPolicy.mjs';
 import { priceSession } from './priceSession.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -116,14 +117,16 @@ const main = async () => {
   }
 
   // ── Which field, and therefore what the number means ────────────────────────────────
+  // WS-632/WS-634: the label is derived from the POLICY, never from which flag was used.
+  // This block used to set `transferStatus = 'measured-on-this-field'` whenever --field-policy
+  // was passed — so handing it the 2009 corpus table printed "76.39bb [measured-on-this-field]"
+  // and wrote `comparativeClaim: true`. The flag says which FILE to load; only the file can say
+  // what population it measured.
   let policyPath = null;
-  let transferStatus = null;
   if (typeof args['field-policy'] === 'string') {
     policyPath = args['field-policy'];
-    transferStatus = 'measured-on-this-field';
   } else if (args['corpus-policy']) {
     policyPath = join(REPO, 'out', 'behavior-policy.json');
-    transferStatus = 'transferred-not-measured';
   } else {
     console.error('REFUSED: no field named. Pass --field-policy <path> for a live claim, or '
       + '--corpus-policy to exercise the machinery against the 2009 corpus (not a live claim).');
@@ -134,6 +137,15 @@ const main = async () => {
   try { policy = JSON.parse(readFileSync(policyPath, 'utf8')); } catch (e) {
     console.error(`REFUSED: policy unreadable at ${policyPath} — ${e.message}`);
     process.exit(1);
+  }
+
+  const transferStatus = transferStatusFor(policy);
+  if (!transferStatus.population) {
+    console.error(`REFUSED: ${policyPath} declares no provenance.population, so what it measured `
+      + 'cannot be named. An unnamed population defaults to whatever the reader assumes, which is '
+      + 'how a corpus level ends up reported as a live measurement. Re-mine it — both miners '
+      + 'stamp it.');
+    process.exit(2);
   }
 
   const read = await readSessionHands(sessionDir);
@@ -203,7 +215,8 @@ const main = async () => {
   // ── Output ──────────────────────────────────────────────────────────────────────────
   const t = result.totals;
   console.log(`session ${read.manifest?.setId ?? sessionDir}`);
-  console.log(`field: ${policyPath}  [${transferStatus}]`);
+  console.log(`field: ${policyPath}  [${transferStatus.short}]`);
+  console.log(`  ${transferStatus.label} — ${transferStatus.population ?? 'population UNDECLARED'}`);
   console.log(`hero seat ${heroSeat} (id ${heroPid}): ${result.coverage.decisionsAttempted} decisions, `
     + `${result.coverage.decisionsPriced} priced, ${result.coverage.decisionsUnpriced} unpriced`);
   console.log(`unpriced: ${JSON.stringify(result.unpriced)}`);
@@ -248,7 +261,7 @@ const main = async () => {
       transferStatus,
       // A corpus-anchored figure is NOT a comparative claim about a live table, and the
       // artifact says so in a field rather than in prose a consumer can skip.
-      comparativeClaim: transferStatus === 'measured-on-this-field',
+      comparativeClaim: transferStatus.kind === 'measured',
       ...result,
     }, null, 2)}\n`, 'utf8');
     console.log(`\nwritten to ${args.out}`);

@@ -36,6 +36,49 @@ const card = (title, body, tone = '') => `
     ${body}
   </section>`;
 
+/**
+ * The money card's body.
+ *
+ * This rendered the literal string `<p>Priced.</p>` until 2026-08-21 — the money arm had
+ * refused on every session ever run, so the success path had never once been exercised. That is
+ * the `shipped-but-inert-capability` failure by name: a branch nothing reached could not be
+ * seen to be empty.
+ *
+ * The transfer label is rendered FIRST and unconditionally. `transferStatus` is a structured
+ * object exactly so this function cannot show a level without its population (WS-632), and a
+ * missing label refuses the whole block rather than printing a bare number — WS-415 is the bug
+ * where a renderer silently dropped a population caveat.
+ */
+const moneyBlock = (m) => {
+  const t = m.totals ?? {};
+  const cov = m.coverage ?? {};
+  const ts = m.transferStatus;
+  if (!ts || typeof ts !== 'object') {
+    return `<div class="refusal">
+      <div class="refusal-head">Not shown — this figure carries no population label.</div>
+      <div class="refusal-detail">A bb figure with no statement of which field it was measured
+        against is the exact ambiguity the Standard of Record exists to remove.</div>
+      <code>render-refused:no-transfer-status</code></div>`;
+  }
+  const transferred = ts.kind === 'transferred';
+  return `
+    <div class="refusal" style="${transferred ? '' : 'display:none'}">
+      <div class="refusal-head">${esc(ts.label)}</div>
+      <div class="refusal-detail">${esc(ts.warn ?? '')}</div>
+      <div class="refusal-fix"><span>Population</span> ${esc(ts.population)}</div>
+    </div>
+    <dl class="facts">
+      <dt>Left on the table</dt><dd>${(t.evLeftBB ?? 0).toFixed(2)}bb</dd>
+      <dt>Of the money that was there, you took</dt><dd>${pct(t.exploitationEfficiency ?? 0)}</dd>
+      <dt>Decisions priced</dt><dd>${t.decisionsPriced ?? 0} of ${cov.heroDecisionsTotal ?? '?'}</dd>
+      <dt>Matched the best available action</dt><dd>${t.agreedCount ?? 0}</dd>
+    </dl>
+    <p class="fineprint">Every decision, with the hand it happened in around it, is in the
+      review artifact — <code>node scripts/villainArchetype/buildReviewArtifact.mjs</code>.
+      Session totals sum decisions that could not all have occurred (WS-619); the per-decision
+      figures are sound, the total is not yet.</p>`;
+};
+
 const refusalBlock = (r) => `
   <div class="refusal">
     <div class="refusal-head">${esc(REFUSAL_BLURB[r.reason] || 'Not answered.')}</div>
@@ -150,7 +193,7 @@ export const renderSessionReview = (review) => {
 ${card('Your play', heroBlock + cardsKnownNote)}
 
 ${card('What this session cost or made you',
-    review.money.refused ? refusalBlock(review.money) : '<p>Priced.</p>', 'money')}
+    review.money.refused ? refusalBlock(review.money) : moneyBlock(review.money), 'money')}
 
 ${card(`The players you sat with (${carded.length} with enough hands, ${thin.length} too thin)`,
     `<div class="tablewrap"><table>

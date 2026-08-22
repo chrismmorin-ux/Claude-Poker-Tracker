@@ -92,7 +92,20 @@ export const buildDossier = (hand, seat) => {
 
   L.push('');
   L.push('THE ACTION, IN ORDER');
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // THE SAME WALK, KEPT AS DATA (WS-624)
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  //
+  // Everything a reader needs to see the hand — seat, street, board, texture, geometry — is
+  // computed here and was previously flattened into prose and thrown away, leaving any
+  // consumer that wanted to put the ANALYSIS beside the ACTION no option but to re-parse the
+  // text. Joining a priced decision to its moment in the hand by regex over `>>> STUDIED
+  // PLAYER` is exactly the kind of second representation that WS-291 is about. `order` is the
+  // join key, and it is the same key the pricer stamps.
+  const actions = [];
   let cur = null;
+  let curBoard = [];
+  let curTex = '';
   for (const e of seq) {
     if (e.street !== cur) {
       cur = e.street;
@@ -103,12 +116,42 @@ export const buildDossier = (hand, seat) => {
         (tex.connected || tex.straighty) && 'connected',
       ].filter(Boolean).join(', ') || 'dry / disconnected' : '';
       L.push(`  --- ${cur.toUpperCase()}${board.length ? '  ' + board.join(' ') : ''}${texWords ? `   (${texWords})` : ''}`);
+      curBoard = board;
+      curTex = texWords;
     }
     const me = String(e.seat) === s;
     const geo = me && !POSTED.has(e.action) ? decisionGeometryFull(hand, e.order, e.street, s) : null;
     const amt = Number.isFinite(e.amount) ? ` ${(e.amount / bb).toFixed(2)}bb` : '';
     const who = me ? '>>> STUDIED PLAYER' : `    seat ${e.seat} (${positionName(e.seat, button, occupied)})`;
     L.push(`  ${who.padEnd(28)} ${e.action}${amt}`);
+    const madeHand = me && villainCards && STREET_CARDS[e.street] >= 3
+      ? classifyMadeHand(villainCards, community.slice(0, STREET_CARDS[e.street])) : null;
+    actions.push({
+      order: e.order,
+      street: e.street,
+      seat: String(e.seat),
+      isHero: me,
+      position: positionName(e.seat, button, occupied),
+      action: e.action,
+      amountBB: Number.isFinite(e.amount) ? e.amount / bb : null,
+      board: curBoard.slice(),
+      texture: curTex || null,
+      // Present only on hero's own non-posted actions, because that is the only place
+      // `decisionGeometryFull` is computed. A null here means not-applicable, never zero.
+      geo: geo ? {
+        potBB: geo.potBB,
+        facingBetBB: geo.facingBetBB,
+        equityNeededPct: geo.facingBetBB > 0
+          ? (geo.facingBetBB / (geo.potBB + geo.facingBetBB)) * 100 : null,
+        spr: geo.spr ?? null,
+        liveOpponents: geo.liveOpponents,
+        closesAction: geo.closesAction,
+        madeHand: madeHand
+          ? ([madeHand.pairClass, madeHand.kicker && `${madeHand.kicker} kicker`]
+            .filter(Boolean).join(', ') || madeHand.category)
+          : null,
+      } : null,
+    });
     if (geo) {
       const facing = geo.facingBetBB;
       const price = facing > 0 ? `${((facing / (geo.potBB + facing)) * 100).toFixed(0)}% equity needed to call` : 'nothing to call';
@@ -137,10 +180,21 @@ export const buildDossier = (hand, seat) => {
 
   return {
     text: L.join('\n'),
+    actions,
     facts: {
       handId: hand.handId, seat: s, villainCards, board: community,
       position: positionName(s, button, occupied), players: occupied.length,
       showdown: Object.keys(showdown).length > 0,
+      stakeLabel: bt.stakeLabel ?? null,
+      button: button ?? null,
+      seats: occupied.map((o) => ({
+        seat: o,
+        position: positionName(o, button, occupied),
+        isHero: o === s,
+        shown: showdown[o] ?? null,
+      })),
+      effectiveStackBB: (firstOrder != null && stacks[firstOrder] != null)
+        ? stacks[firstOrder] / bb : null,
     },
   };
 };

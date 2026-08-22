@@ -250,7 +250,26 @@ export const responseContext = (ctx, hand, { heroBetTotalBB, potBeforeVillainBB,
   facingAction: facing,
   // Villain is in position exactly when hero is not.
   isIP: ctx.isIP === 'ip' ? 'oop' : 'ip',
-  isAgg: ctx.isAgg === 'agg' ? 'nonagg' : 'agg',
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // 'def', NOT 'nonagg' (WS-634)
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  //
+  // The policy vocabulary is 'agg' | 'def' — `villainDecisionModel.js:480`, and the shipped
+  // table's level-1 keys are none|def, bet|def, none|agg, bet|agg, raise|def, raise|agg.
+  // 'nonagg' is in NO table. Emitting it made every query for a node where hero is the
+  // aggressor miss at all six depths and resolve at the ROOT, returning a flat 0.5366 fold
+  // rate identical across all four PBR_SIZINGS. With foldPct constant, `calcFoldEquity` is
+  // monotone in bet size, so `bestAggressive`'s argmax became degenerate — it took the largest
+  // sizing every time, and the entire sizeBucket dimension was inert.
+  //
+  // Nothing could see it: `makeFoldRateFor` discarded `deepestDepth`, and `evidenceN` reads
+  // 3656 for both a depth-6 hit and the depth-0 fallback, so the broken query looked BETTER
+  // evidenced than a good one. A test pinned the bug in place
+  // (`poolBestResponse.test.js` asserted `'nonagg'`), which is why a green suite meant nothing.
+  //
+  // The guard against recurrence is `assertPolicyToken` below — a check that fires at the
+  // moment of the error, not a comment asking the next reader to remember this.
+  isAgg: ctx.isAgg === 'agg' ? 'def' : 'agg',
   texture: ctx.texture,
   street: ctx.street,
   posCategory: ctx.opponentSeat != null
@@ -372,11 +391,105 @@ export const actionValues = ({
  *
  * @returns {(heroBetTotalBB: number, isRaise: boolean) => number|undefined}
  */
+/**
+ * Does every token this query emits actually exist in the table it queries? (WS-634)
+ *
+ * The guard exists because the failure it catches is INVISIBLE by construction: a token the
+ * table has never heard of misses at every depth, resolves at the root, and comes back with a
+ * plausible number and a healthy-looking `evidenceN`. There is no error, no NaN, and no
+ * missing field — just a global marginal presented as a six-dimensional conditional estimate.
+ * A comment cannot catch that and a code review did not; only an assertion at the query
+ * boundary can.
+ *
+ * Scoped to the DIMENSION tokens the hierarchy keys on, and it reads the vocabulary out of the
+ * table rather than hard-coding it — a hard-coded list is a second representation of the
+ * table's own schema, and keeping two of those in sync is the WS-291 mechanism again.
+ *
+ * Memoized per table: the vocabulary cannot change under a frozen artifact, and this runs on
+ * every sizing of every response of every decision.
+ */
+const VOCAB_CACHE = new WeakMap();
+
+export const policyVocabulary = (policy) => {
+  const hit = VOCAB_CACHE.get(policy);
+  if (hit) return hit;
+  const dims = policy?.provenance?.hierarchy ?? [];
+  // `levelKey` (behaviorPolicy.mjs:94-98) builds `[facingAction, ...hierarchy[0..depth-1]]`, so
+  // part 0 is ALWAYS facingAction and part i+1 is hierarchy[i]. Getting this off by one is how
+  // the first version of this guard reported isAgg's vocabulary as {bet, raise, none} and threw
+  // on every legitimate node — the same class of mistake as WS-634 itself, caught by running it.
+  const vocab = new Map([['facingAction', new Set()], ...dims.map((d) => [d, new Set()])]);
+  for (const lvl of Object.values(policy?.levels ?? {})) {
+    for (const key of Object.keys(lvl)) {
+      const parts = String(key).split('|');
+      vocab.get('facingAction').add(parts[0]);
+      for (let i = 1; i < parts.length && i - 1 < dims.length; i += 1) {
+        vocab.get(dims[i - 1]).add(parts[i]);
+      }
+    }
+  }
+  VOCAB_CACHE.set(policy, vocab);
+  return vocab;
+};
+
+export class PolicyTokenError extends Error {
+  constructor(message, detail) { super(message); this.name = 'PolicyTokenError'; this.detail = detail; }
+}
+
+export const assertPolicyTokens = (policy, rc) => {
+  const vocab = policyVocabulary(policy);
+  for (const [dim, allowed] of vocab) {
+    const tok = rc?.[dim];
+    if (tok === undefined || allowed.size === 0) continue;
+    // `levelKey` stamps '*' for a dimension an observation did not carry
+    // (behaviorPolicy.mjs:96). A table whose ONLY token for a dimension is '*' never populated
+    // it at all, so every query legitimately resolves to the catch-all cell and there is no
+    // vocabulary to check against. Skipping is correct here and is not a hole: the moment the
+    // table carries real tokens for that dimension, a stray one throws again. Getting this
+    // wrong in the first draft — throwing on every sparse table — is why the guard is tested
+    // against both a real table and a sparse fixture rather than only the real one.
+    if (allowed.size === 1 && allowed.has('*')) continue;
+    if (!allowed.has(String(tok))) {
+      throw new PolicyTokenError(
+        `poolBestResponse: emitted "${tok}" for dimension "${dim}", which this policy table does `
+        + `not contain. Known: ${[...allowed].join(', ')}. The query would have missed at every `
+        + 'depth and resolved at the ROOT, returning the table\'s global marginal as if it were a '
+        + 'conditional estimate — silently, with a healthy evidenceN. This is WS-634.',
+        { dim, token: tok, allowed: [...allowed] },
+      );
+    }
+  }
+};
+
+/**
+ * How deep did the queries for this decision actually resolve?
+ *
+ * Reported so a caller can tell a measured node from one that fell back. Returned alongside the
+ * fold-rate function rather than logged, because a number nobody can read is how WS-634 lasted.
+ */
+const makeResolutionMeter = () => {
+  const depths = [];
+  return {
+    note: (d) => { if (Number.isFinite(d)) depths.push(d); },
+    summary: () => (depths.length
+      ? {
+        queries: depths.length,
+        rootFallbacks: depths.filter((d) => d === 0).length,
+        minDepth: Math.min(...depths),
+        maxDepth: Math.max(...depths),
+        meanDepth: depths.reduce((s, d) => s + d, 0) / depths.length,
+      }
+      : null),
+  };
+};
+
 export const makeFoldRateFor = ({ ctx, hand, geo, policy, shrinkWeight }) => {
   const B = geo.facingBetBB;
   const P = Math.max(0, geo.potBB - B);
   const foldCache = new Map();
-  return (heroBetTotalBB, isRaise) => {
+  const meter = makeResolutionMeter();
+  const noteResolution = meter.note;
+  const foldRateFor = (heroBetTotalBB, isRaise) => {
     const key = `${isRaise ? 'r' : 'b'}|${heroBetTotalBB.toFixed(4)}`;
     if (foldCache.has(key)) return foldCache.get(key);
     const potBeforeVillainBB = P + (isRaise ? B : 0) + heroBetTotalBB;
@@ -386,11 +499,22 @@ export const makeFoldRateFor = ({ ctx, hand, geo, policy, shrinkWeight }) => {
       // Villain faces a RAISE only when they already have money in this street.
       facing: isRaise ? 'raise' : 'bet',
     });
-    const { actions } = queryPolicy(policy, rc, { shrinkWeight });
+    assertPolicyTokens(policy, rc);
+    const { actions, deepestDepth } = queryPolicy(policy, rc, { shrinkWeight });
+    // A root resolution is not a measurement of THIS node — it is the table's global marginal
+    // wearing the node's clothes. WS-634 shipped for months because this was silently
+    // acceptable and `evidenceN` reported the same 3656 either way. Surfaced through the
+    // resolution meter rather than thrown: a legitimately unseen node should degrade to the
+    // prior, but it must never be indistinguishable from a six-deep hit.
+    noteResolution(deepestDepth);
     const f = actions?.fold;
     foldCache.set(key, f);
     return f;
   };
+  // The meter rides on the function so an existing caller keeps working unchanged, and a caller
+  // that wants to know how deep its numbers resolved can ask.
+  foldRateFor.resolution = meter.summary;
+  return foldRateFor;
 };
 
 /**

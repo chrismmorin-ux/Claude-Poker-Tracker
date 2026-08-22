@@ -133,16 +133,37 @@ describe('the leakage guard in the review runner', () => {
     await writeFile(path, JSON.stringify(held.table), 'utf8');
 
     const out = await reviewSession({ sessionDir, fieldPolicyPath: path, now: () => 'T' });
-    // Not priced yet — the per-decision PBR evaluation is the remaining stage — but the
-    // hold-out passed, which is the gate under test.
-    expect(out.review.money.reason).toBe('unexamined:pbr-evaluation-not-wired');
+    // This asserted 'unexamined:pbr-evaluation-not-wired' until 2026-08-21 — a string that by
+    // then existed nowhere in source, so the test was pinning a stage that had already shipped.
+    // The per-decision PBR evaluation now runs, so the gate under test passes and the column
+    // prices. An Ignition-mined policy is MEASURED on this field, which is the whole point of
+    // holding the session out.
+    expect(out.review.money.refused).toBeFalsy();
+    expect(out.review.money.transferStatus.kind).toBe('measured');
     expect(out.review.money.holdOut.verified).toBe(true);
     expect(out.review.money.holdOut.contributingSessions).not.toContain(sessionId);
   }, 180_000);
 
+  // WS-632 put a POPULATION gate ahead of the hold-out gate, deliberately: a table that cannot
+  // say which field it measured cannot be interpreted at all, whereas a table that cannot prove
+  // its hold-out is interpretable but inadmissible. A fixture missing BOTH therefore now refuses
+  // for the population, and that is correct rather than a regression — but it silently removed
+  // coverage of the hold-out gate, so both are pinned separately below.
+  it('refuses a policy that does not declare its population', async () => {
+    const path = join(root, 'no-population.json');
+    await writeFile(path, JSON.stringify({ provenance: {}, levels: [] }), 'utf8');
+
+    const out = await reviewSession({ sessionDir, fieldPolicyPath: path, now: () => 'T' });
+    expect(out.review.money.reason).toBe('unexamined:field-policy-population-undeclared');
+  }, 180_000);
+
   it('refuses an unstamped policy rather than assuming it was held out', async () => {
     const path = join(root, 'unstamped.json');
-    await writeFile(path, JSON.stringify({ provenance: {}, levels: [] }), 'utf8');
+    // Population declared, hold-out ABSENT — isolates the gate this test has always been for.
+    await writeFile(path, JSON.stringify({
+      provenance: { population: 'a declared population', source: 'handhq-corpus' },
+      levels: [],
+    }), 'utf8');
 
     const out = await reviewSession({ sessionDir, fieldPolicyPath: path, now: () => 'T' });
     expect(out.review.money.reason).toBe('unexamined:field-policy-unstamped');
